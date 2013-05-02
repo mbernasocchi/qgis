@@ -20,6 +20,7 @@
 #include <QSettings>
 #include <QDate>
 #include <QRegExp>
+#include <QColor>
 
 #include <math.h>
 #include <limits>
@@ -30,6 +31,9 @@
 #include "qgslogger.h"
 #include "qgsogcutils.h"
 #include "qgsvectorlayer.h"
+#include "qgssymbollayerv2utils.h"
+#include "qgsvectorcolorrampv2.h"
+#include "qgsstylev2.h"
 
 // from parser
 extern QgsExpression::Node* parseExpression( const QString& str, QString& parserErrorMsg );
@@ -481,6 +485,21 @@ static QVariant fcnRegexpReplace( const QVariantList& values, QgsFeature* , QgsE
   }
   return QVariant( str.replace( re, after ) );
 }
+
+static QVariant fcnRegexpMatch( const QVariantList& values, QgsFeature* , QgsExpression* parent )
+{
+  QString str = getStringValue( values.at( 0 ), parent );
+  QString regexp = getStringValue( values.at( 1 ), parent );
+
+  QRegExp re( regexp );
+  if ( !re.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Invalid regular expression '%1': %2" ).arg( regexp ).arg( re.errorString() ) );
+    return QVariant();
+  }
+  return QVariant( str.contains( re ) ? 1 : 0 );
+}
+
 static QVariant fcnSubstr( const QVariantList& values, QgsFeature* , QgsExpression* parent )
 {
   QString str = getStringValue( values.at( 0 ), parent );
@@ -975,6 +994,174 @@ static QVariant fcnFormatDate( const QVariantList& values, QgsFeature*, QgsExpre
   return dt.toString( format );
 }
 
+static QVariant fcnColorRgb( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  int red = getIntValue( values.at( 0 ), parent );
+  int green = getIntValue( values.at( 1 ), parent );
+  int blue = getIntValue( values.at( 2 ), parent );
+  QColor color = QColor( red, green, blue );
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3' to color" ).arg( red ).arg( green ).arg( blue ) );
+    color = QColor( 0, 0, 0 );
+  }
+
+  return color.name();
+}
+
+static QVariant fncColorRgba( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  int red = getIntValue( values.at( 0 ), parent );
+  int green = getIntValue( values.at( 1 ), parent );
+  int blue = getIntValue( values.at( 2 ), parent );
+  int alpha = getIntValue( values.at( 3 ), parent );
+  QColor color = QColor( red, green, blue, alpha );
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3:%4' to color" ).arg( red ).arg( green ).arg( blue ).arg( alpha ) );
+    color = QColor( 0, 0, 0 );
+  }
+  return QgsSymbolLayerV2Utils::encodeColor( color );
+}
+
+QVariant fcnRampColor( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  QString rampName = getStringValue( values.at( 0 ), parent );
+  const QgsVectorColorRampV2 *mRamp = QgsStyleV2::defaultStyle()->colorRampRef( rampName );
+  if ( ! mRamp )
+  {
+    parent->setEvalErrorString( QObject::tr( "\"%1\" is not a valid color ramp" ).arg( rampName ) );
+    return QColor( 0, 0, 0 ).name();
+  }
+  double value = getDoubleValue( values.at( 1 ), parent );
+  QColor color = mRamp->color( value );
+  return color.name();
+}
+
+static QVariant fcnColorHsl( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  // Hue ranges from 0 - 360
+  double hue = getIntValue( values.at( 0 ), parent ) / 360.0;
+  // Saturation ranges from 0 - 100
+  double saturation = getIntValue( values.at( 1 ), parent ) / 100.0;
+  // Lightness ranges from 0 - 100
+  double lightness = getIntValue( values.at( 2 ), parent ) / 100.0;
+
+  QColor color = QColor::fromHslF( hue, saturation, lightness );
+
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3' to color" ).arg( hue ).arg( saturation ).arg( lightness ) );
+    color = QColor( 0, 0, 0 );
+  }
+
+  return color.name();
+}
+
+static QVariant fncColorHsla( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  // Hue ranges from 0 - 360
+  double hue = getIntValue( values.at( 0 ), parent ) / 360.0;
+  // Saturation ranges from 0 - 100
+  double saturation = getIntValue( values.at( 1 ), parent ) / 100.0;
+  // Lightness ranges from 0 - 100
+  double lightness = getIntValue( values.at( 2 ), parent ) / 100.0;
+  // Alpha ranges from 0 - 255
+  double alpha = getIntValue( values.at( 3 ), parent ) / 255.0;
+
+  QColor color = QColor::fromHslF( hue, saturation, lightness, alpha );
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3:%4' to color" ).arg( hue ).arg( saturation ).arg( lightness ).arg( alpha ) );
+    color = QColor( 0, 0, 0 );
+  }
+  return QgsSymbolLayerV2Utils::encodeColor( color );
+}
+
+static QVariant fcnColorHsv( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  // Hue ranges from 0 - 360
+  double hue = getIntValue( values.at( 0 ), parent ) / 360.0;
+  // Saturation ranges from 0 - 100
+  double saturation = getIntValue( values.at( 1 ), parent ) / 100.0;
+  // Value ranges from 0 - 100
+  double value = getIntValue( values.at( 2 ), parent ) / 100.0;
+
+  QColor color = QColor::fromHsvF( hue, saturation, value );
+
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3' to color" ).arg( hue ).arg( saturation ).arg( value ) );
+    color = QColor( 0, 0, 0 );
+  }
+
+  return color.name();
+}
+
+static QVariant fncColorHsva( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  // Hue ranges from 0 - 360
+  double hue = getIntValue( values.at( 0 ), parent ) / 360.0;
+  // Saturation ranges from 0 - 100
+  double saturation = getIntValue( values.at( 1 ), parent ) / 100.0;
+  // Value ranges from 0 - 100
+  double value = getIntValue( values.at( 2 ), parent ) / 100.0;
+  // Alpha ranges from 0 - 255
+  double alpha = getIntValue( values.at( 3 ), parent ) / 255.0;
+
+  QColor color = QColor::fromHsvF( hue, saturation, value, alpha );
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3:%4' to color" ).arg( hue ).arg( saturation ).arg( value ).arg( alpha ) );
+    color = QColor( 0, 0, 0 );
+  }
+  return QgsSymbolLayerV2Utils::encodeColor( color );
+}
+
+static QVariant fcnColorCmyk( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  // Cyan ranges from 0 - 100
+  double cyan = getIntValue( values.at( 0 ), parent ) / 100.0;
+  // Magenta ranges from 0 - 100
+  double magenta = getIntValue( values.at( 1 ), parent ) / 100.0;
+  // Yellow ranges from 0 - 100
+  double yellow = getIntValue( values.at( 2 ), parent ) / 100.0;
+  // Black ranges from 0 - 100
+  double black = getIntValue( values.at( 3 ), parent ) / 100.0;
+
+  QColor color = QColor::fromCmykF( cyan, magenta, yellow, black );
+
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3:%4' to color" ).arg( cyan ).arg( magenta ).arg( yellow ).arg( black ) );
+    color = QColor( 0, 0, 0 );
+  }
+
+  return color.name();
+}
+
+static QVariant fncColorCmyka( const QVariantList &values, QgsFeature *, QgsExpression *parent )
+{
+  // Cyan ranges from 0 - 100
+  double cyan = getIntValue( values.at( 0 ), parent ) / 100.0;
+  // Magenta ranges from 0 - 100
+  double magenta = getIntValue( values.at( 1 ), parent ) / 100.0;
+  // Yellow ranges from 0 - 100
+  double yellow = getIntValue( values.at( 2 ), parent ) / 100.0;
+  // Black ranges from 0 - 100
+  double black = getIntValue( values.at( 3 ), parent ) / 100.0;
+  // Alpha ranges from 0 - 255
+  double alpha = getIntValue( values.at( 4 ), parent ) / 255.0;
+
+  QColor color = QColor::fromCmykF( cyan, magenta, yellow, black, alpha );
+  if ( ! color.isValid() )
+  {
+    parent->setEvalErrorString( QObject::tr( "Cannot convert '%1:%2:%3:%4:%5' to color" ).arg( cyan ).arg( magenta ).arg( yellow ).arg( black ).arg( alpha ) );
+    color = QColor( 0, 0, 0 );
+  }
+  return QgsSymbolLayerV2Utils::encodeColor( color );
+}
+
 static QVariant fcnSpecialColumn( const QVariantList& values, QgsFeature* /*f*/, QgsExpression* parent )
 {
   QString varName = getStringValue( values.at( 0 ), parent );
@@ -1008,25 +1195,31 @@ bool QgsExpression::unregisterFunction( QString name )
   return false;
 }
 
+
+
 QStringList QgsExpression::gmBuiltinFunctions;
 
 const QStringList &QgsExpression::BuiltinFunctions()
 {
   if ( gmBuiltinFunctions.isEmpty() )
   {
-    gmBuiltinFunctions << "sqrt"
+    gmBuiltinFunctions
     << "sqrt" << "cos" << "sin" << "tan"
     << "asin" << "acos" << "atan" << "atan2"
     << "exp" << "ln" << "log10" << "log"
     << "round" << "toint" << "toreal" << "tostring"
     << "todatetime" << "todate" << "totime" << "tointerval"
-    << "coalesce" << "$now" << "age" << "year"
+    << "coalesce" << "regexp_match" << "$now" << "age" << "year"
     << "month" << "week" << "day" << "hour"
     << "minute" << "second" << "lower" << "upper"
     << "title" << "length" << "replace" << "regexp_replace"
     << "substr" << "concat" << "strpos" << "left"
-    << "right" << "rpad" << "lpad" << "format_number"
-    << "format_date" << "xat" << "yat" << "$area"
+    << "right" << "rpad" << "lpad"
+    << "format_number" << "format_date"
+    << "color_rgb" << "color_rgba" << "ramp_color"
+    << "color_hsl" << "color_hsla" << "color_hsv" << "color_hsva"
+    << "color_cymk" << "color_cymka"
+    << "xat" << "yat" << "$area"
     << "$length" << "$perimeter" << "$x" << "$y"
     << "$rownum" << "$id" << "$scale" << "_specialcol_";
   }
@@ -1062,6 +1255,7 @@ const QList<QgsExpression::Function*> &QgsExpression::Functions()
     << new StaticFunction( "totime", 1, fcnToTime, QObject::tr( "Conversions" ) )
     << new StaticFunction( "tointerval", 1, fcnToInterval, QObject::tr( "Conversions" ) )
     << new StaticFunction( "coalesce", -1, fcnCoalesce, QObject::tr( "Conditionals" ) )
+    << new StaticFunction( "regexp_match", 2, fcnRegexpMatch, QObject::tr( "Conditionals" ) )
     << new StaticFunction( "$now", 0, fcnNow, QObject::tr( "Date and Time" ) )
     << new StaticFunction( "age", 2, fcnAge, QObject::tr( "Date and Time" ) )
     << new StaticFunction( "year", 1, fcnYear, QObject::tr( "Date and Time" ) )
@@ -1087,6 +1281,15 @@ const QList<QgsExpression::Function*> &QgsExpression::Functions()
     << new StaticFunction( "format", -1, fcnFormatString, QObject::tr( "String" ) )
     << new StaticFunction( "format_number", 2, fcnFormatNumber, QObject::tr( "String" ) )
     << new StaticFunction( "format_date", 2, fcnFormatDate, QObject::tr( "String" ) )
+    << new StaticFunction( "color_rgb", 3, fcnColorRgb, QObject::tr( "Color" ) )
+    << new StaticFunction( "color_rgba", 4, fncColorRgba, QObject::tr( "Color" ) )
+    << new StaticFunction( "ramp_color", 2, fcnRampColor, QObject::tr( "Color" ) )
+    << new StaticFunction( "color_hsl", 3, fcnColorHsl, QObject::tr( "Color" ) )
+    << new StaticFunction( "color_hsla", 4, fncColorHsla, QObject::tr( "Color" ) )
+    << new StaticFunction( "color_hsv", 3, fcnColorHsv, QObject::tr( "Color" ) )
+    << new StaticFunction( "color_hsva", 4, fncColorHsva, QObject::tr( "Color" ) )
+    << new StaticFunction( "color_cmyk", 4, fcnColorCmyk, QObject::tr( "Color" ) )
+    << new StaticFunction( "color_cmyka", 5, fncColorCmyka, QObject::tr( "Color" ) )
     << new StaticFunction( "xat", 1, fcnXat, QObject::tr( "Geometry" ), "", true )
     << new StaticFunction( "yat", 1, fcnYat, QObject::tr( "Geometry" ), "", true )
     << new StaticFunction( "$area", 0, fcnGeomArea, QObject::tr( "Geometry" ), "", true )

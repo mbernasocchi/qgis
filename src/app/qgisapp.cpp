@@ -4295,7 +4295,10 @@ void QgisApp::saveAsRasterFile()
       }
 
       QgsRasterNuller *nuller = new QgsRasterNuller();
-      nuller->setNoData( d.noData() );
+      for ( int band = 1; band <= rasterLayer->dataProvider()->bandCount(); band ++ )
+      {
+        nuller->setNoData( band, d.noData() );
+      }
       if ( !pipe->insert( 1, nuller ) )
       {
         QgsDebugMsg( "Cannot set pipe nuller" );
@@ -6446,25 +6449,25 @@ void QgisApp::options()
 
 void QgisApp::fullHistogramStretch()
 {
-  histogramStretch( false, QgsRasterLayer::ContrastEnhancementMinMax );
+  histogramStretch( false, QgsRaster::ContrastEnhancementMinMax );
 }
 
 void QgisApp::localHistogramStretch()
 {
-  histogramStretch( true, QgsRasterLayer::ContrastEnhancementMinMax );
+  histogramStretch( true, QgsRaster::ContrastEnhancementMinMax );
 }
 
 void QgisApp::fullCumulativeCutStretch()
 {
-  histogramStretch( false, QgsRasterLayer::ContrastEnhancementCumulativeCut );
+  histogramStretch( false, QgsRaster::ContrastEnhancementCumulativeCut );
 }
 
 void QgisApp::localCumulativeCutStretch()
 {
-  histogramStretch( true, QgsRasterLayer::ContrastEnhancementCumulativeCut );
+  histogramStretch( true, QgsRaster::ContrastEnhancementCumulativeCut );
 }
 
-void QgisApp::histogramStretch( bool visibleAreaOnly, QgsRasterLayer::ContrastEnhancementLimits theLimits )
+void QgisApp::histogramStretch( bool visibleAreaOnly, QgsRaster::ContrastEnhancementLimits theLimits )
 {
   QgsMapLayer * myLayer = mMapLegend->currentLayer();
 
@@ -6488,7 +6491,7 @@ void QgisApp::histogramStretch( bool visibleAreaOnly, QgsRasterLayer::ContrastEn
   QgsRectangle myRectangle;
   if ( visibleAreaOnly ) myRectangle = mMapCanvas->mapRenderer()->outputExtentToLayerExtent( myRasterLayer, mMapCanvas->extent() );
 
-  myRasterLayer->setContrastEnhancementAlgorithm( QgsContrastEnhancement::StretchToMinimumMaximum, theLimits, myRectangle );
+  myRasterLayer->setContrastEnhancement( QgsContrastEnhancement::StretchToMinimumMaximum, theLimits, myRectangle );
 
   myRasterLayer->setCacheImage( NULL );
   mMapCanvas->refresh();
@@ -7342,6 +7345,11 @@ int QgisApp::addPluginToolBarIcon( QAction * qAction )
   return 0;
 }
 
+QAction*QgisApp::addPluginToolBarWidget( QWidget* widget )
+{
+  return mPluginToolBar->addWidget( widget );
+}
+
 void QgisApp::removePluginToolBarIcon( QAction *qAction )
 {
   mPluginToolBar->removeAction( qAction );
@@ -7351,6 +7359,11 @@ int QgisApp::addRasterToolBarIcon( QAction * qAction )
 {
   mRasterToolBar->addAction( qAction );
   return 0;
+}
+
+QAction*QgisApp::addRasterToolBarWidget( QWidget* widget )
+{
+  return mRasterToolBar->addWidget( widget );
 }
 
 void QgisApp::removeRasterToolBarIcon( QAction *qAction )
@@ -7364,6 +7377,11 @@ int QgisApp::addVectorToolBarIcon( QAction * qAction )
   return 0;
 }
 
+QAction*QgisApp::addVectorToolBarWidget( QWidget* widget )
+{
+  return mVectorToolBar->addWidget( widget );
+}
+
 void QgisApp::removeVectorToolBarIcon( QAction *qAction )
 {
   mVectorToolBar->removeAction( qAction );
@@ -7375,6 +7393,11 @@ int QgisApp::addDatabaseToolBarIcon( QAction * qAction )
   return 0;
 }
 
+QAction*QgisApp::addDatabaseToolBarWidget( QWidget* widget )
+{
+  return mDatabaseToolBar->addWidget( widget );
+}
+
 void QgisApp::removeDatabaseToolBarIcon( QAction *qAction )
 {
   mDatabaseToolBar->removeAction( qAction );
@@ -7384,6 +7407,11 @@ int QgisApp::addWebToolBarIcon( QAction * qAction )
 {
   mWebToolBar->addAction( qAction );
   return 0;
+}
+
+QAction*QgisApp::addWebToolBarWidget( QWidget* widget )
+{
+  return mWebToolBar->addWidget( widget );
 }
 
 void QgisApp::removeWebToolBarIcon( QAction *qAction )

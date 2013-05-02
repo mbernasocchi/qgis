@@ -109,28 +109,28 @@ class PythonConsoleWidget(QWidget):
         self.splitter.addWidget(self.shellOut)
         self.splitter.addWidget(self.shell)
         #self.splitterEditor.addWidget(self.tabEditorWidget)
-        
+
         self.splitterObj = QSplitter(self.splitterEditor)
         self.splitterObj.setHandleWidth(3)
         self.splitterObj.setOrientation(Qt.Horizontal)
         #self.splitterObj.setSizes([0, 0])
         #self.splitterObj.setStretchFactor(0, 1)
-        
+
         self.widgetEditor = QWidget(self.splitterObj)
-        
+
         self.listClassMethod = QTreeWidget(self.splitterObj)
         self.listClassMethod.setColumnCount(2)
         self.listClassMethod.setHeaderLabels(['Object', 'Line'])
         self.listClassMethod.setColumnHidden(1, True)
         self.listClassMethod.setAlternatingRowColors(True)
 
-        
+
         #self.splitterEditor.addWidget(self.widgetEditor)
         #self.splitterObj.addWidget(self.listClassMethod)
         #self.splitterObj.addWidget(self.widgetEditor)
 
         # Hide side editor on start up
-        self.widgetEditor.hide()
+        self.splitterObj.hide()
         self.listClassMethod.hide()
 
         sizes = self.splitter.sizes()
@@ -474,7 +474,12 @@ class PythonConsoleWidget(QWidget):
 
     def onClickGoToLine(self, item, column):
         linenr = int(item.text(1))
-        objName = item.text(0)
+        itemName = str(item.text(0))
+        charPos = itemName.find(' ')
+        if charPos != -1:
+            objName = itemName[0:charPos]
+        else:
+            objName = itemName
         self.tabEditorWidget.currentWidget().newEditor.goToLine(objName, linenr)
 
     def sextante(self):
@@ -487,7 +492,7 @@ class PythonConsoleWidget(QWidget):
        self.shell.commandConsole('qtGui')
 
     def toggleEditor(self, checked):
-        self.widgetEditor.show() if checked else self.widgetEditor.hide()
+        self.splitterObj.show() if checked else self.splitterObj.hide()
         self.tabEditorWidget.enableToolBarEditor(checked)
 
     def toggleObjectListWidget(self, checked):
@@ -523,7 +528,7 @@ class PythonConsoleWidget(QWidget):
 #               if line != "\n":
 #                   listScriptFile.append(line)
 #           self.shell.insertTextFromFile(listScriptFile)
-#    
+#
 #           lastDirPath = QFileInfo(scriptFile).path()
 #           settings.setValue("pythonConsole/lastDirPath", QVariant(scriptFile))
 #
@@ -533,7 +538,7 @@ class PythonConsoleWidget(QWidget):
 #        scriptFile.setDefaultSuffix(".py")
 #        fName = scriptFile.getSaveFileName(
 #                        self, "Save file", QString(), "Script file (*.py)")
-#    
+#
 #        if fName.isEmpty() == False:
 #            filename = str(fName)
 #            if not filename.endswith(".py"):
@@ -601,17 +606,17 @@ class PythonConsoleWidget(QWidget):
         self.options.exec_()
 
     def prefChanged(self):
-        self.shell.refreshLexerProperties()
+        self.shell.settingsShell()
         self.shellOut.refreshLexerProperties()
-        self.tabEditorWidget.changeFont()
+        self.tabEditorWidget.refreshSettingsEditor()
 
     def callWidgetMessageBar(self, text):
         self.shellOut.widgetMessageBar(iface, text)
 
-    def callWidgetMessageBarEditor(self, text):
-        self.tabEditorWidget.widgetMessageBar(iface, text)
+    def callWidgetMessageBarEditor(self, text, level, timed):
+        self.tabEditorWidget.widgetMessageBar(iface, text, level, timed)
 
-    def updateTabListScript(self, script, action=None): 
+    def updateTabListScript(self, script, action=None):
         if script != '':
             settings = QSettings()
             if script == 'empty':

@@ -73,8 +73,8 @@ class CORE_EXPORT QgsRasterFileWriter
     void setMaxTileWidth( int w ) { mMaxTileWidth = w; }
     int maxTileWidth() const { return mMaxTileWidth; }
 
-    QgsRasterDataProvider::RasterBuildPyramids buildPyramidsFlag() const { return mBuildPyramidsFlag; }
-    void setBuildPyramidsFlag( QgsRasterDataProvider::RasterBuildPyramids f ) { mBuildPyramidsFlag = f; }
+    QgsRaster::RasterBuildPyramids buildPyramidsFlag() const { return mBuildPyramidsFlag; }
+    void setBuildPyramidsFlag( QgsRaster::RasterBuildPyramids f ) { mBuildPyramidsFlag = f; }
 
     QList< int > pyramidsList() const { return mPyramidsList; }
     void setPyramidsList( const QList< int > & list ) { mPyramidsList = list; }
@@ -82,8 +82,8 @@ class CORE_EXPORT QgsRasterFileWriter
     QString pyramidsResampling() const { return mPyramidsResampling; }
     void setPyramidsResampling( const QString & str ) { mPyramidsResampling = str; }
 
-    QgsRasterDataProvider::RasterPyramidsFormat pyramidsFormat() const { return mPyramidsFormat; }
-    void setPyramidsFormat( QgsRasterDataProvider::RasterPyramidsFormat f ) { mPyramidsFormat = f; }
+    QgsRaster::RasterPyramidsFormat pyramidsFormat() const { return mPyramidsFormat; }
+    void setPyramidsFormat( QgsRaster::RasterPyramidsFormat f ) { mPyramidsFormat = f; }
 
     void setMaxTileHeight( int h ) { mMaxTileHeight = h; }
     int maxTileHeight() const { return mMaxTileHeight; }
@@ -96,7 +96,6 @@ class CORE_EXPORT QgsRasterFileWriter
 
   private:
     QgsRasterFileWriter(); //forbidden
-    //WriterError writeDataRaster( QgsRasterIterator* iter, int nCols, int nRows, const QgsRectangle& outputExtent,
     WriterError writeDataRaster( const QgsRasterPipe* pipe, QgsRasterIterator* iter, int nCols, int nRows, const QgsRectangle& outputExtent,
                                  const QgsCoordinateReferenceSystem& crs, QProgressDialog* progressDialog = 0 );
 
@@ -115,7 +114,10 @@ class CORE_EXPORT QgsRasterFileWriter
     WriterError writeImageRaster( QgsRasterIterator* iter, int nCols, int nRows, const QgsRectangle& outputExtent,
                                   const QgsCoordinateReferenceSystem& crs, QProgressDialog* progressDialog = 0 );
 
-    //initialize vrt member variables
+    /** \brief Initialize vrt member variables
+     *  @param destHasNoDataValueList true if destination has no data value, indexed from 0
+     *  @param destNoDataValueList no data value, indexed from 0
+     */
     void createVRT( int xSize, int ySize, const QgsCoordinateReferenceSystem& crs, double* geoTransform, QGis::DataType type, QList<bool> destHasNoDataValueList, QList<double> destNoDataValueList );
     //write vrt document to disk
     bool writeVRT( const QString& file );
@@ -123,15 +125,16 @@ class CORE_EXPORT QgsRasterFileWriter
     void addToVRT( const QString& filename, int band, int xSize, int ySize, int xOffset, int yOffset );
     void buildPyramids( const QString& filename );
 
-    //static int pyramidsProgress( double dfComplete, const char *pszMessage, void* pData );
-
     /**Create provider and datasource for a part image (vrt mode)*/
     QgsRasterDataProvider* createPartProvider( const QgsRectangle& extent, int nCols, int iterCols, int iterRows,
         int iterLeft, int iterTop,
         const QString& outputUrl, int fileIndex, int nBands, QGis::DataType type,
         const QgsCoordinateReferenceSystem& crs );
 
-    /**Init VRT (for tiled mode) or create global output provider (single-file mode)*/
+    /** \brief Init VRT (for tiled mode) or create global output provider (single-file mode)
+     *  @param destHasNoDataValueList true if destination has no data value, indexed from 0
+     *  @param destNoDataValueList no data value, indexed from 0
+     */
     QgsRasterDataProvider* initOutput( int nCols, int nRows,
                                        const QgsCoordinateReferenceSystem& crs, double* geoTransform, int nBands,
                                        QGis::DataType type,
@@ -157,8 +160,8 @@ class CORE_EXPORT QgsRasterFileWriter
 
     QList< int > mPyramidsList;
     QString mPyramidsResampling;
-    QgsRasterDataProvider::RasterBuildPyramids mBuildPyramidsFlag;
-    QgsRasterDataProvider::RasterPyramidsFormat mPyramidsFormat;
+    QgsRaster::RasterBuildPyramids mBuildPyramidsFlag;
+    QgsRaster::RasterPyramidsFormat mPyramidsFormat;
     QStringList mPyramidsConfigOptions;
 
     QDomDocument mVRTDocument;

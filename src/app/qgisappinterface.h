@@ -80,22 +80,67 @@ class QgisAppInterface : public QgisInterface
 
     //! Add an icon to the plugins toolbar
     int addToolBarIcon( QAction *qAction );
+    /**
+     * Add a widget to the plugins toolbar.
+     * To remove this widget again, call {@link removeToolBarIcon}
+     * with the returned QAction.
+     *
+     * @param widget widget to add. The toolbar will take ownership of this widget
+     * @return the QAction you can use to remove this widget from the toolbar
+     */
+    QAction* addToolBarWidget( QWidget* widget );
     //! Remove an icon (action) from the plugin toolbar
     void removeToolBarIcon( QAction *qAction );
     //! Add an icon to the Raster toolbar
     int addRasterToolBarIcon( QAction *qAction );
+    /**
+     * Add a widget to the raster toolbar.
+     * To remove this widget again, call {@link removeRasterToolBarIcon}
+     * with the returned QAction.
+     *
+     * @param widget widget to add. The toolbar will take ownership of this widget
+     * @return the QAction you can use to remove this widget from the toolbar
+     */
+    QAction* addRasterToolBarWidget( QWidget* widget );
     //! Remove an icon (action) from the Raster toolbar
     void removeRasterToolBarIcon( QAction *qAction );
     //! Add an icon to the Vector toolbar
     int addVectorToolBarIcon( QAction *qAction );
+    /**
+     * Add a widget to the vector toolbar.
+     * To remove this widget again, call {@link removeVectorToolBarIcon}
+     * with the returned QAction.
+     *
+     * @param widget widget to add. The toolbar will take ownership of this widget
+     * @return the QAction you can use to remove this widget from the toolbar
+     */
+    QAction* addVectorToolBarWidget( QWidget* widget );
     //! Remove an icon (action) from the Vector toolbar
     void removeVectorToolBarIcon( QAction *qAction );
     //! Add an icon to the Database toolbar
     int addDatabaseToolBarIcon( QAction *qAction );
+    /**
+     * Add a widget to the database toolbar.
+     * To remove this widget again, call {@link removeDatabaseToolBarIcon}
+     * with the returned QAction.
+     *
+     * @param widget widget to add. The toolbar will take ownership of this widget
+     * @return the QAction you can use to remove this widget from the toolbar
+     */
+    QAction* addDatabaseToolBarWidget( QWidget* widget );
     //! Remove an icon (action) from the Database toolbar
     void removeDatabaseToolBarIcon( QAction *qAction );
     //! Add an icon to the Web toolbar
     int addWebToolBarIcon( QAction *qAction );
+    /**
+     * Add a widget to the web toolbar.
+     * To remove this widget again, call {@link removeWebToolBarIcon}
+     * with the returned QAction.
+     *
+     * @param widget widget to add. The toolbar will take ownership of this widget
+     * @return the QAction you can use to remove this widget from the toolbar
+     */
+    QAction* addWebToolBarWidget( QWidget* widget );
     //! Remove an icon (action) from the Web toolbar
     void removeWebToolBarIcon( QAction *qAction );
 
@@ -382,6 +427,19 @@ class QgisAppInterface : public QgisInterface
 
     virtual QDialog* getFeatureForm( QgsVectorLayer *l, QgsFeature &f );
 
+    /** This method is only needed when using a UI form with a custom widget plugin and calling
+     * openFeatureForm or getFeatureForm from Python (PyQt4) and you havn't used the info tool first.
+     * Python will crash bringing QGIS wtih it
+     * if the custom form is not loaded from a C++ method call.
+     *
+     * This method uses a QTimer to call QUiLoader in order to load the form via C++
+     * you only need to call this once after that you can call openFeatureForm/getFeatureForm
+     * like normal
+     *
+     * More information here: http://qt-project.org/forums/viewthread/27098/
+     */
+    virtual void preloadForm( QString uifile );
+
     /** Return vector layers in edit mode
      * @param modified whether to return only layers that have been modified
      * @returns list of layers in legend order, or empty list
@@ -395,6 +453,10 @@ class QgisAppInterface : public QgisInterface
   signals:
     void currentThemeChanged( QString );
 
+  private slots:
+
+    void cacheloadForm( QString uifile );
+
   private:
 
     /// QgisInterface aren't copied
@@ -405,6 +467,8 @@ class QgisAppInterface : public QgisInterface
 
     //! Pointer to the QgisApp object
     QgisApp *qgis;
+
+    QTimer *mTimer;
 
     //! Pointer to the LegendInterface object
     QgsAppLegendInterface legendIface;

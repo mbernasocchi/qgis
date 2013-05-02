@@ -39,7 +39,7 @@ class writeOut:
         self.style = style
 
     def write(self, m):
-        if self.style == "traceback":
+        if self.style == "_traceback":
             # Show errors in red
             pos = self.sO.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
             self.sO.SendScintilla(QsciScintilla.SCI_STARTSTYLING, pos, 31)
@@ -73,6 +73,8 @@ class ShellOutputScintilla(QsciScintilla):
         self.parent = parent
         self.shell = self.parent.shell
 
+        self.settings = QSettings()
+
         # Creates layout for message bar
         self.layout = QGridLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -88,7 +90,7 @@ class ShellOutputScintilla(QsciScintilla):
         self.setUtf8(True)
 
         sys.stdout = writeOut(self, sys.stdout)
-        sys.stderr = writeOut(self, sys.stderr, "traceback")
+        sys.stderr = writeOut(self, sys.stderr, "_traceback")
 
         self.insertInitText()
         self.setLexers()
@@ -119,6 +121,9 @@ class ShellOutputScintilla(QsciScintilla):
         self.setWrapMode(QsciScintilla.WrapCharacter)
         self.SendScintilla(QsciScintilla.SCI_SETHSCROLLBAR, 0)
 
+        self.runScut = QShortcut(QKeySequence(Qt.CTRL + Qt.Key_E), self)
+        self.runScut.setContext(Qt.WidgetShortcut)
+        self.runScut.activated.connect(self.enteredSelected)
         # Reimplemeted copy action to prevent paste prompt (>>>,...) in command view
         self.copyShortcut = QShortcut(QKeySequence.Copy, self)
         self.copyShortcut.activated.connect(self.copy)
@@ -126,7 +131,7 @@ class ShellOutputScintilla(QsciScintilla):
         self.selectAllShortcut.activated.connect(self.selectAll)
 
     def insertInitText(self):
-        txtInit = QCoreApplication.translate("PythonConsole", 
+        txtInit = QCoreApplication.translate("PythonConsole",
                                              "Python %1 on %2\n"
                                              "## Type help(iface) for more info and list of methods.\n").arg(sys.version,  socket.gethostname())
         initText = self.setText(txtInit)
@@ -137,9 +142,8 @@ class ShellOutputScintilla(QsciScintilla):
     def setLexers(self):
         self.lexer = QsciLexerPython()
 
-        settings = QSettings()
-        loadFont = settings.value("pythonConsole/fontfamilytext", "Monospace").toString()
-        fontSize = settings.value("pythonConsole/fontsize", 10).toInt()[0]
+        loadFont = self.settings.value("pythonConsole/fontfamilytext", "Monospace").toString()
+        fontSize = self.settings.value("pythonConsole/fontsize", 10).toInt()[0]
         font = QFont(loadFont)
         font.setFixedPitch(True)
         font.setPointSize(fontSize)
@@ -165,6 +169,7 @@ class ShellOutputScintilla(QsciScintilla):
         iconRun = QgsApplication.getThemeIcon("console/iconRunConsole.png")
         iconClear = QgsApplication.getThemeIcon("console/iconClearConsole.png")
         iconHideTool = QgsApplication.getThemeIcon("console/iconHideToolConsole.png")
+        iconSettings = QgsApplication.getThemeIcon("console/iconSettingsConsole.png")
         hideToolBar = menu.addAction(iconHideTool,
                                      "Hide/Show Toolbar",
                                      self.hideToolBar)
@@ -187,6 +192,10 @@ class ShellOutputScintilla(QsciScintilla):
         selectAllAction = menu.addAction("Select All",
                                          self.selectAll,
                                          QKeySequence.SelectAll)
+        menu.addSeparator()
+        settingsDialog = menu.addAction(iconSettings,
+                                        "Settings",
+                                        self.parent.openSettings)
         runAction.setEnabled(False)
         clearAction.setEnabled(False)
         copyAction.setEnabled(False)
@@ -208,8 +217,8 @@ class ShellOutputScintilla(QsciScintilla):
         self.shell.setFocus()
 
     def showEditor(self):
-        Ed = self.parent.widgetEditor
-        if not Ed.isVisible(): 
+        Ed = self.parent.splitterObj
+        if not Ed.isVisible():
             Ed.show()
             self.parent.showEditorButton.setChecked(True)
         self.shell.setFocus()
@@ -242,4 +251,4 @@ class ShellOutputScintilla(QsciScintilla):
 
     def widgetMessageBar(self, iface, text):
         timeout = iface.messageTimeout()
-        self.infoBar.pushMessage('Console', text, QgsMessageBar.INFO, timeout)
+        self.infoBar.pushMessage(text, QgsMessageBar.INFO, timeout)

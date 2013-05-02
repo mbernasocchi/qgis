@@ -124,7 +124,7 @@ class QgsGdalProvider : public QgsRasterDataProvider, QgsGdalProviderBase
     */
     bool isValid();
 
-    QgsRasterIdentifyResult identify( const QgsPoint & thePoint, IdentifyFormat theFormat, const QgsRectangle &theExtent = QgsRectangle(), int theWidth = 0, int theHeight = 0 );
+    QgsRasterIdentifyResult identify( const QgsPoint & thePoint, QgsRaster::IdentifyFormat theFormat, const QgsRectangle &theExtent = QgsRectangle(), int theWidth = 0, int theHeight = 0 );
 
     /**
      * \brief   Returns the caption error text for the last error in this provider
@@ -215,7 +215,7 @@ class QgsGdalProvider : public QgsRasterDataProvider, QgsGdalProviderBase
 
     QString buildPyramids( const QList<QgsRasterPyramid> & theRasterPyramidList,
                            const QString & theResamplingMethod = "NEAREST",
-                           RasterPyramidsFormat theFormat = PyramidsGTiff,
+                           QgsRaster::RasterPyramidsFormat theFormat = QgsRaster::PyramidsGTiff,
                            const QStringList & theCreateOptions = QStringList() );
     QList<QgsRasterPyramid> buildPyramidList( QList<int> overviewList = QList<int>() );
 
@@ -228,29 +228,16 @@ class QgsGdalProvider : public QgsRasterDataProvider, QgsGdalProviderBase
 
     static QMap<QString, QString> supportedMimes();
 
-    /** Creates a new dataset with mDataSourceURI
-        @return true in case of success*/
-    /*
-    bool create( const QString& format, int nBands,
-                 QGis::DataType type,
-                 int width, int height, double* geoTransform,
-                 const QgsCoordinateReferenceSystem& crs,
-                 QStringList createOptions = QStringList() );
-    */
-
     /**Writes into the provider datasource*/
     bool write( void* data, int band, int width, int height, int xOffset, int yOffset );
 
     bool setNoDataValue( int bandNo, double noDataValue );
 
-    /**Returns the formats supported by create()*/
-    QStringList createFormats() const;
-
     /**Remove dataset*/
     bool remove();
 
     QString validateCreationOptions( const QStringList& createOptions, QString format );
-    QString validatePyramidsCreationOptions( RasterPyramidsFormat pyramidsFormat,
+    QString validatePyramidsCreationOptions( QgsRaster::RasterPyramidsFormat pyramidsFormat,
         const QStringList & theConfigOptions, const QString & fileFormat );
 
   signals:

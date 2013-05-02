@@ -155,7 +155,7 @@ class CORE_EXPORT QgsMapLayer : public QObject
     virtual bool isEditable() const;
 
     /** sets state from Dom document
-       @param layer_node is Dom node corresponding to ``maplayer'' tag
+       @param layerElement The Dom element corresponding to ``maplayer'' tag
        @note
 
        The Dom node corresponds to a Dom document project file XML element read
@@ -168,12 +168,12 @@ class CORE_EXPORT QgsMapLayer : public QObject
 
        @returns true if successful
      */
-    bool readXML( const QDomNode& layer_node );
+    bool readLayerXML( const QDomElement& layerElement );
 
 
     /** stores state in Dom node
-       @param layer_node is Dom node corresponding to ``projectlayers'' tag
-       @param document is Dom document
+       @param layerElement is a Dom element corresponding to ``maplayer'' tag
+       @param document is a the dom document being written
        @note
 
        The Dom node corresponds to a Dom document project file XML element to be
@@ -186,7 +186,7 @@ class CORE_EXPORT QgsMapLayer : public QObject
 
        @returns true if successful
     */
-    bool writeXML( QDomNode & layer_node, QDomDocument & document );
+    bool writeLayerXML( QDomElement& layerElement, QDomDocument& document );
 
     /** Set a custom property for layer. Properties are stored in a map and saved in project file.
      *  @note Added in v1.4 */
@@ -275,6 +275,24 @@ class CORE_EXPORT QgsMapLayer : public QObject
     virtual QString loadNamedStyle( const QString theURI, bool & theResultFlag );
 
     virtual bool loadNamedStyleFromDb( const QString db, const QString theURI, QString &qml );
+
+    //TODO edit infos
+    /**
+     * Export the properties of this layer as named style in a QDomDocument
+     * @param doc the target QDomDocument
+     * @param errorMsg this QString will be initialized on error
+     * during the execution of writeSymbology
+     */
+    virtual void exportNamedStyle( QDomDocument &doc, QString &errorMsg );
+
+
+    /**
+     * Export the properties of this layer as SLD style in a QDomDocument
+     * @param doc the target QDomDocument
+     * @param errorMsg this QString will be initialized on error
+     * during the execution of writeSymbology
+     */
+    virtual void exportSldStyle( QDomDocument &doc, QString &errorMsg );
 
     /** Save the properties of this layer as the default style
      * (either as a .qml file on disk or as a
@@ -406,12 +424,12 @@ class CORE_EXPORT QgsMapLayer : public QObject
         \note added in v1.5 */
     void setValid( bool valid );
 
-    /** called by readXML(), used by children to read state specific to them from
+    /** called by readLayerXML(), used by children to read state specific to them from
         project files.
     */
     virtual bool readXml( const QDomNode& layer_node );
 
-    /** called by writeXML(), used by children to write state specific to them to
+    /** called by writeLayerXML(), used by children to write state specific to them to
         project files.
     */
     virtual bool writeXml( QDomNode & layer_node, QDomDocument & document );

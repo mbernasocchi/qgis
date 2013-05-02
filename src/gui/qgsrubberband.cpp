@@ -163,7 +163,7 @@ void QgsRubberBand::removePoint( int index, bool doUpdate/* = true*/, int geomet
     {
       index = mPoints[geometryIndex].size() + index;
     }
-    mPoints[geometryIndex].removeAt(index);
+    mPoints[geometryIndex].removeAt( index );
   }
 
   if ( doUpdate )
@@ -175,7 +175,7 @@ void QgsRubberBand::removePoint( int index, bool doUpdate/* = true*/, int geomet
 
 void QgsRubberBand::removeLastPoint( int geometryIndex )
 {
-  removePoint(-1, true, geometryIndex);
+  removePoint( -1, true, geometryIndex );
 }
 
 /*!
@@ -298,7 +298,6 @@ void QgsRubberBand::addGeometry( QgsGeometry* geom, QgsVectorLayer* layer )
     case QGis::WKBMultiLineString:
     case QGis::WKBMultiLineString25D:
     {
-      mPoints.clear();
 
       QgsMultiPolyline mline = geom->asMultiPolyline();
       for ( int i = 0; i < mline.size(); ++i, ++idx )
@@ -347,7 +346,6 @@ void QgsRubberBand::addGeometry( QgsGeometry* geom, QgsVectorLayer* layer )
     case QGis::WKBMultiPolygon:
     case QGis::WKBMultiPolygon25D:
     {
-      mPoints.clear();
 
       QgsMultiPolygon multipoly = geom->asMultiPolygon();
       for ( int i = 0; i < multipoly.size(); ++i, ++idx )
@@ -486,16 +484,17 @@ void QgsRubberBand::updateRect()
     {
       return;
     }
-    QgsRectangle r( it->x() + mTranslationOffsetX, it->y() + mTranslationOffsetY,
-                    it->x() + mTranslationOffsetX, it->y() + mTranslationOffsetY );
+    qreal s = ( mIconSize - 1 ) / 2;
+    qreal p = mWidth;
+
+    QgsRectangle r( it->x() + mTranslationOffsetX - s - p, it->y() + mTranslationOffsetY - s - p,
+                    it->x() + mTranslationOffsetX + s + p, it->y() + mTranslationOffsetY + s + p );
 
     for ( int i = 0; i < mPoints.size(); ++i )
     {
       QList<QgsPoint>::const_iterator it = mPoints.at( i ).constBegin();
       for ( ; it != mPoints.at( i ).constEnd(); ++it )
       {
-        qreal s = ( mIconSize - 1 ) / 2;
-        qreal p = mWidth;
         QgsRectangle rect = QgsRectangle( it->x() + mTranslationOffsetX - s - p, it->y() + mTranslationOffsetY - s - p,
                                           it->x() + mTranslationOffsetX + s + p, it->y() + mTranslationOffsetY + s + p );
         r.combineExtentWith( &rect );

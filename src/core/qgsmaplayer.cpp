@@ -39,6 +39,7 @@
 #include "qgsprojectfiletransform.h"
 #include "qgsdatasourceuri.h"
 #include "qgsvectorlayer.h"
+#include "qgsproviderregistry.h"
 
 QgsMapLayer::QgsMapLayer( QgsMapLayer::LayerType type,
                           QString lyrname,
@@ -157,25 +158,23 @@ void QgsMapLayer::drawLabels( QgsRenderContext& rendererContext )
   // QgsDebugMsg("entered.");
 }
 
-bool QgsMapLayer::readXML( const QDomNode& layer_node )
+bool QgsMapLayer::readLayerXML( const QDomElement& layerElement )
 {
   QgsCoordinateReferenceSystem savedCRS;
   CUSTOM_CRS_VALIDATION savedValidation;
   bool layerError;
-
-  QDomElement element = layer_node.toElement();
 
   QDomNode mnl;
   QDomElement mne;
 
   // read provider
   QString provider;
-  mnl = layer_node.namedItem( "provider" );
+  mnl = layerElement.namedItem( "provider" );
   mne = mnl.toElement();
   provider = mne.text();
 
   // set data source
-  mnl = layer_node.namedItem( "datasource" );
+  mnl = layerElement.namedItem( "datasource" );
   mne = mnl.toElement();
   mDataSource = mne.text();
 
@@ -292,10 +291,10 @@ bool QgsMapLayer::readXML( const QDomNode& layer_node )
   // Make it the saved CRS to have WMS layer projected correctly.
   // We will still overwrite whatever GDAL etc picks up anyway
   // further down this function.
-  mnl = layer_node.namedItem( "layername" );
+  mnl = layerElement.namedItem( "layername" );
   mne = mnl.toElement();
 
-  QDomNode srsNode = layer_node.namedItem( "srs" );
+  QDomNode srsNode = layerElement.namedItem( "srs" );
   mCRS->readXML( srsNode );
   mCRS->setValidationHint( tr( "Specify CRS for layer %1" ).arg( mne.text() ) );
   mCRS->validate();
@@ -307,7 +306,7 @@ bool QgsMapLayer::readXML( const QDomNode& layer_node )
   QgsCoordinateReferenceSystem::setCustomSrsValidation( NULL );
 
   // now let the children grab what they need from the Dom node.
-  layerError = !readXml( layer_node );
+  layerError = !readXml( layerElement );
 
   // overwrite CRS with what we read from project file before the raster/vector
   // file readnig functions changed it. They will if projections is specfied in the file.
@@ -326,7 +325,7 @@ bool QgsMapLayer::readXML( const QDomNode& layer_node )
   //internalName = dataSourceFileInfo.baseName();
 
   // set ID
-  mnl = layer_node.namedItem( "id" );
+  mnl = layerElement.namedItem( "id" );
   if ( ! mnl.isNull() )
   {
     mne = mnl.toElement();
@@ -337,24 +336,24 @@ bool QgsMapLayer::readXML( const QDomNode& layer_node )
   }
 
   // use scale dependent visibility flag
-  toggleScaleBasedVisibility( element.attribute( "hasScaleBasedVisibilityFlag" ).toInt() == 1 );
-  setMinimumScale( element.attribute( "minimumScale" ).toFloat() );
-  setMaximumScale( element.attribute( "maximumScale" ).toFloat() );
+  toggleScaleBasedVisibility( layerElement.attribute( "hasScaleBasedVisibilityFlag" ).toInt() == 1 );
+  setMinimumScale( layerElement.attribute( "minimumScale" ).toFloat() );
+  setMaximumScale( layerElement.attribute( "maximumScale" ).toFloat() );
 
   // set name
-  mnl = layer_node.namedItem( "layername" );
+  mnl = layerElement.namedItem( "layername" );
   mne = mnl.toElement();
   setLayerName( mne.text() );
 
   //title
-  QDomElement titleElem = layer_node.firstChildElement( "title" );
+  QDomElement titleElem = layerElement.firstChildElement( "title" );
   if ( !titleElem.isNull() )
   {
     mTitle = titleElem.text();
   }
 
   //abstract
-  QDomElement abstractElem = layer_node.firstChildElement( "abstract" );
+  QDomElement abstractElem = layerElement.firstChildElement( "abstract" );
   if ( !abstractElem.isNull() )
   {
     mAbstract = abstractElem.text();
@@ -372,7 +371,7 @@ bool QgsMapLayer::readXML( const QDomNode& layer_node )
   }
 #endif
 
-  readCustomProperties( layer_node );
+  readCustomProperties( layerElement );
 
   return true;
 } // void QgsMapLayer::readXML
@@ -388,22 +387,19 @@ bool QgsMapLayer::readXml( const QDomNode& layer_node )
 
 
 
-bool QgsMapLayer::writeXML( QDomNode & layer_node, QDomDocument & document )
+bool QgsMapLayer::writeLayerXML( QDomElement& layerElement, QDomDocument& document )
 {
-  // general layer metadata
-  QDomElement maplayer = document.createElement( "maplayer" );
-
   // use scale dependent visibility flag
-  maplayer.setAttribute( "hasScaleBasedVisibilityFlag", hasScaleBasedVisibility() ? 1 : 0 );
-  maplayer.setAttribute( "minimumScale", QString::number( minimumScale() ) );
-  maplayer.setAttribute( "maximumScale", QString::number( maximumScale() ) );
+  layerElement.setAttribute( "hasScaleBasedVisibilityFlag", hasScaleBasedVisibility() ? 1 : 0 );
+  layerElement.setAttribute( "minimumScale", QString::number( minimumScale() ) );
+  layerElement.setAttribute( "maximumScale", QString::number( maximumScale() ) );
 
   // ID
   QDomElement layerId = document.createElement( "id" );
   QDomText layerIdText = document.createTextNode( id() );
   layerId.appendChild( layerIdText );
 
-  maplayer.appendChild( layerId );
+  layerElement.appendChild( layerId );
 
   // data source
   QDomElement dataSource = document.createElement( "datasource" );
@@ -440,7 +436,7 @@ bool QgsMapLayer::writeXML( QDomNode & layer_node, QDomDocument & document )
   QDomText dataSourceText = document.createTextNode( src );
   dataSource.appendChild( dataSourceText );
 
-  maplayer.appendChild( dataSource );
+  layerElement.appendChild( dataSource );
 
 
   // layer name
@@ -458,9 +454,9 @@ bool QgsMapLayer::writeXML( QDomNode & layer_node, QDomDocument & document )
   QDomText layerAbstractText = document.createTextNode( abstract() );
   layerAbstract.appendChild( layerAbstractText );
 
-  maplayer.appendChild( layerName );
-  maplayer.appendChild( layerTitle );
-  maplayer.appendChild( layerAbstract );
+  layerElement.appendChild( layerName );
+  layerElement.appendChild( layerTitle );
+  layerElement.appendChild( layerAbstract );
 
   // timestamp if supported
   if ( timestamp() > QDateTime() )
@@ -468,10 +464,10 @@ bool QgsMapLayer::writeXML( QDomNode & layer_node, QDomDocument & document )
     QDomElement stamp = document.createElement( "timestamp" );
     QDomText stampText = document.createTextNode( timestamp().toString( Qt::ISODate ) );
     stamp.appendChild( stampText );
-    maplayer.appendChild( stamp );
+    layerElement.appendChild( stamp );
   }
 
-  maplayer.appendChild( layerName );
+  layerElement.appendChild( layerName );
 
   // zorder
   // This is no longer stored in the project file. It is superfluous since the layers
@@ -480,7 +476,7 @@ bool QgsMapLayer::writeXML( QDomNode & layer_node, QDomDocument & document )
   // spatial reference system id
   QDomElement mySrsElement = document.createElement( "srs" );
   mCRS->writeXML( mySrsElement, document );
-  maplayer.appendChild( mySrsElement );
+  layerElement.appendChild( mySrsElement );
 
 #if 0
   // <transparencyLevelInt>
@@ -492,14 +488,11 @@ bool QgsMapLayer::writeXML( QDomNode & layer_node, QDomDocument & document )
 
   // now append layer node to map layer node
 
-  layer_node.appendChild( maplayer );
+  writeCustomProperties( layerElement, document );
 
-  writeCustomProperties( maplayer, document );
-
-  return writeXml( maplayer, document );
+  return writeXml( layerElement, document );
 
 } // bool QgsMapLayer::writeXML
-
 
 
 bool QgsMapLayer::writeXml( QDomNode & layer_node, QDomDocument & document )
@@ -847,6 +840,36 @@ QString QgsMapLayer::loadNamedStyle( const QString theURI, bool &theResultFlag )
   return "";
 }
 
+void QgsMapLayer::exportNamedStyle(QDomDocument &doc, QString &errorMsg)
+{
+    QDomImplementation DomImplementation;
+    QDomDocumentType documentType = DomImplementation.createDocumentType( "qgis", "http://mrcc.com/qgis.dtd", "SYSTEM" );
+    QDomDocument myDocument( documentType );
+
+    QDomElement myRootNode = myDocument.createElement( "qgis" );
+    myRootNode.setAttribute( "version", QString( "%1" ).arg( QGis::QGIS_VERSION ) );
+    myDocument.appendChild( myRootNode );
+
+    myRootNode.setAttribute( "hasScaleBasedVisibilityFlag", hasScaleBasedVisibility() ? 1 : 0 );
+    myRootNode.setAttribute( "minimumScale", QString::number( minimumScale() ) );
+    myRootNode.setAttribute( "maximumScale", QString::number( maximumScale() ) );
+
+    #if 0
+      // <transparencyLevelInt>
+      QDomElement transparencyLevelIntElement = myDocument.createElement( "transparencyLevelInt" );
+      QDomText    transparencyLevelIntText    = myDocument.createTextNode( QString::number( getTransparency() ) );
+      transparencyLevelIntElement.appendChild( transparencyLevelIntText );
+      myRootNode.appendChild( transparencyLevelIntElement );
+    #endif
+
+    if ( !writeSymbology( myRootNode, myDocument, errorMsg ) )
+    {
+      errorMsg = QObject::tr( "Could not save symbology because:\n%1" ).arg( errorMsg );
+      return;
+    }
+    doc = myDocument;
+}
+
 QString QgsMapLayer::saveDefaultStyle( bool & theResultFlag )
 {
   return saveNamedStyle( styleURI(), theResultFlag );
@@ -855,36 +878,8 @@ QString QgsMapLayer::saveDefaultStyle( bool & theResultFlag )
 QString QgsMapLayer::saveNamedStyle( const QString theURI, bool & theResultFlag )
 {
   QString myErrorMessage;
-
-  QDomImplementation DomImplementation;
-  QDomDocumentType documentType =
-    DomImplementation.createDocumentType(
-      "qgis", "http://mrcc.com/qgis.dtd", "SYSTEM" );
-  QDomDocument myDocument( documentType );
-  QDomElement myRootNode = myDocument.createElement( "qgis" );
-  myRootNode.setAttribute( "version", QString( "%1" ).arg( QGis::QGIS_VERSION ) );
-  myDocument.appendChild( myRootNode );
-
-  // use scale dependent visibility flag
-  myRootNode.setAttribute( "hasScaleBasedVisibilityFlag", hasScaleBasedVisibility() ? 1 : 0 );
-  myRootNode.setAttribute( "minimumScale", QString::number( minimumScale() ) );
-  myRootNode.setAttribute( "maximumScale", QString::number( maximumScale() ) );
-
-#if 0
-  // <transparencyLevelInt>
-  QDomElement transparencyLevelIntElement = myDocument.createElement( "transparencyLevelInt" );
-  QDomText    transparencyLevelIntText    = myDocument.createTextNode( QString::number( getTransparency() ) );
-  transparencyLevelIntElement.appendChild( transparencyLevelIntText );
-  myRootNode.appendChild( transparencyLevelIntElement );
-#endif
-
-  // now append layer node to map layer node
-
-  QString errorMsg;
-  if ( !writeSymbology( myRootNode, myDocument, errorMsg ) )
-  {
-    return tr( "Could not save symbology because:\n%1" ).arg( errorMsg );
-  }
+  QDomDocument myDocument;
+  exportNamedStyle( myDocument, myErrorMessage );
 
   // check if the uri is a file or ends with .qml,
   // which indicates that it should become one
@@ -1017,40 +1012,54 @@ QString QgsMapLayer::saveNamedStyle( const QString theURI, bool & theResultFlag 
   return myErrorMessage;
 }
 
+void QgsMapLayer::exportSldStyle( QDomDocument &doc, QString &errorMsg ){
+    QDomDocument myDocument = QDomDocument();
+
+    QDomNode header = myDocument.createProcessingInstruction( "xml", "version=\"1.0\" encoding=\"UTF-8\"" );
+    myDocument.appendChild( header );
+
+    // Create the root element
+    QDomElement root = myDocument.createElementNS( "http://www.opengis.net/sld", "StyledLayerDescriptor" );
+    root.setAttribute( "version", "1.1.0" );
+    root.setAttribute( "xsi:schemaLocation", "http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/StyledLayerDescriptor.xsd" );
+    root.setAttribute( "xmlns:ogc", "http://www.opengis.net/ogc" );
+    root.setAttribute( "xmlns:se", "http://www.opengis.net/se" );
+    root.setAttribute( "xmlns:xlink", "http://www.w3.org/1999/xlink" );
+    root.setAttribute( "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
+    myDocument.appendChild( root );
+
+    // Create the NamedLayer element
+    QDomElement namedLayerNode = myDocument.createElement( "NamedLayer" );
+    root.appendChild( namedLayerNode );
+
+    QgsVectorLayer *vlayer = qobject_cast<QgsVectorLayer *>( this );
+    if ( !vlayer )
+    {
+      errorMsg = tr( "Could not save symbology because:\n%1" )
+                    .arg( "Non-vector layers not supported yet" );
+      return;
+    }
+
+    if ( !vlayer->writeSld( namedLayerNode, myDocument, errorMsg ) )
+    {
+      errorMsg = tr( "Could not save symbology because:\n%1" ).arg( errorMsg );
+      return;
+    }
+
+    doc = myDocument;
+}
+
 QString QgsMapLayer::saveSldStyle( const QString theURI, bool & theResultFlag )
 {
-  QDomDocument myDocument = QDomDocument();
-
-  QDomNode header = myDocument.createProcessingInstruction( "xml", "version=\"1.0\" encoding=\"UTF-8\"" );
-  myDocument.appendChild( header );
-
-  // Create the root element
-  QDomElement root = myDocument.createElementNS( "http://www.opengis.net/sld", "StyledLayerDescriptor" );
-  root.setAttribute( "version", "1.1.0" );
-  root.setAttribute( "xsi:schemaLocation", "http://www.opengis.net/sld http://schemas.opengis.net/sld/1.1.0/StyledLayerDescriptor.xsd" );
-  root.setAttribute( "xmlns:ogc", "http://www.opengis.net/ogc" );
-  root.setAttribute( "xmlns:se", "http://www.opengis.net/se" );
-  root.setAttribute( "xmlns:xlink", "http://www.w3.org/1999/xlink" );
-  root.setAttribute( "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance" );
-  myDocument.appendChild( root );
-
-  // Create the NamedLayer element
-  QDomElement namedLayerNode = myDocument.createElement( "NamedLayer" );
-  root.appendChild( namedLayerNode );
-
   QString errorMsg;
+  QDomDocument myDocument;
+  exportSldStyle( myDocument, errorMsg );
+  if( !errorMsg.isNull() )
+  {
+    theResultFlag = false;
+    return errorMsg;
+  }
   QgsVectorLayer *vlayer = qobject_cast<QgsVectorLayer *>( this );
-  if ( !vlayer )
-  {
-    theResultFlag = false;
-    return tr( "Could not save symbology because:\n%1" ).arg( "Non-vector layers not supported yet" );
-  }
-
-  if ( !vlayer->writeSld( namedLayerNode, myDocument, errorMsg ) )
-  {
-    theResultFlag = false;
-    return tr( "Could not save symbology because:\n%1" ).arg( errorMsg );
-  }
 
   // check if the uri is a file or ends with .sld,
   // which indicates that it should become one

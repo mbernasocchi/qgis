@@ -35,6 +35,7 @@
 #include "qgshuesaturationfilter.h"
 #include "qgsmaplayer.h"
 #include "qgspoint.h"
+#include "qgsraster.h"
 #include "qgsrasterdataprovider.h"
 #include "qgsrasterinterface.h"
 #include "qgsrasterpipe.h"
@@ -243,15 +244,6 @@ class CORE_EXPORT QgsRasterLayer : public QgsMapLayer
       ColorLayer
     };
 
-    /** \brief Contrast enhancement limits */
-    enum ContrastEnhancementLimits
-    {
-      ContrastEnhancementNone,
-      ContrastEnhancementMinMax,
-      ContrastEnhancementStdDev,
-      ContrastEnhancementCumulativeCut
-    };
-
     static void buildSupportedRasterFileFilter( QString & fileFilters );
 
     /** This helper checks to see whether the file name appears to be a valid
@@ -344,10 +336,8 @@ class CORE_EXPORT QgsRasterLayer : public QgsMapLayer
     QString providerType() const;
 
     /** \brief Returns the number of raster units per each raster pixel. In a world file, this is normally the first row (without the sign) */
-    double rasterUnitsPerPixel();
-
-    static QString contrastEnhancementLimitsAsString( QgsRasterLayer::ContrastEnhancementLimits theLimits );
-    static ContrastEnhancementLimits contrastEnhancementLimitsFromString( QString theLimits );
+    double rasterUnitsPerPixelX();
+    double rasterUnitsPerPixelY();
 
     /** \brief Set contrast enhancement algorithm
      *  @param theAlgorithm Contrast enhancement algorithm
@@ -357,11 +347,11 @@ class CORE_EXPORT QgsRasterLayer : public QgsMapLayer
      *  @param theGenerateLookupTableFlag Generate llokup table. */
 
 
-    void setContrastEnhancementAlgorithm( QgsContrastEnhancement::ContrastEnhancementAlgorithm theAlgorithm,
-                                          ContrastEnhancementLimits theLimits = ContrastEnhancementMinMax,
-                                          QgsRectangle theExtent = QgsRectangle(),
-                                          int theSampleSize = SAMPLE_SIZE,
-                                          bool theGenerateLookupTableFlag = true );
+    void setContrastEnhancement( QgsContrastEnhancement::ContrastEnhancementAlgorithm theAlgorithm,
+                                 QgsRaster::ContrastEnhancementLimits theLimits = QgsRaster::ContrastEnhancementMinMax,
+                                 QgsRectangle theExtent = QgsRectangle(),
+                                 int theSampleSize = SAMPLE_SIZE,
+                                 bool theGenerateLookupTableFlag = true );
 
     /** \brief Set default contrast enhancement */
     void setDefaultContrastEnhancement();

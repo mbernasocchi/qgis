@@ -51,8 +51,8 @@ class TestZipLayer: public QObject
     // test item(s) in zip item (supply name or test all)
     bool testZipItem( QString myFileName, QString myChildName = "", QString myDriverName = "" );
     // get layer transparency to test for .qml loading
-    // int getLayerTransparency( QString myFileName, QString myProviderKey, QString myScanZipSetting = "basic" );
-    // bool testZipItemTransparency( QString myFileName, QString myProviderKey, int myTarget );
+    int getLayerTransparency( QString myFileName, QString myProviderKey, QString myScanZipSetting = "basic" );
+    bool testZipItemTransparency( QString myFileName, QString myProviderKey, int myTarget );
 
   private slots:
 
@@ -77,15 +77,16 @@ class TestZipLayer: public QObject
     void testTarItemVector();
     void testZipItemAll();
     void testTarItemAll();
-#if 0
     // test that styles are loaded from .qml files outside zip files
+#if 0
+    // TODO - find a simple way to test vector style loading
     void testZipItemVectorTransparency();
     void testTarItemVectorTransparency();
     void testGzipItemVectorTransparency();
+#endif
     void testZipItemRasterTransparency();
     void testTarItemRasterTransparency();
     void testGzipItemRasterTransparency();
-#endif
     //make sure items inside subfolders can be read
     void testZipItemSubfolder();
     void testTarItemSubfolder();
@@ -213,7 +214,6 @@ bool TestZipLayer::testZipItem( QString myFileName, QString myChildName, QString
   return ok;
 }
 
-#if 0
 int TestZipLayer::getLayerTransparency( QString myFileName, QString myProviderKey, QString myScanZipSetting )
 {
   int myTransparency = -1;
@@ -228,7 +228,17 @@ int TestZipLayer::getLayerTransparency( QString myFileName, QString myProviderKe
   else
     myLayer = getZipLayer( myFileName, "" );
   if ( myLayer && myLayer->isValid() )
-    myTransparency = myLayer->getTransparency();
+  {
+    // myTransparency = myLayer->getTransparency();
+    if ( myLayer->type() == QgsMapLayer::RasterLayer )
+    {
+      QgsRasterLayer* layer = dynamic_cast<QgsRasterLayer*>( myLayer );
+      if ( layer && layer->renderer() )
+      {
+        myTransparency = ceil( layer->renderer()->opacity() * 255 );
+      }
+    }
+  }
   else
     QWARN( QString( "Could not open filename %1 using %2 provider" ).arg( myFileName ).arg( myProviderKey ).toLocal8Bit().data() );
   if ( myLayer )
@@ -250,7 +260,6 @@ bool TestZipLayer::testZipItemTransparency( QString myFileName, QString myProvid
   }
   return true;
 }
-#endif
 
 
 // slots
@@ -421,10 +430,10 @@ void TestZipLayer::testTarItemVector()
 
 void TestZipLayer::testZipItemAll()
 {
-  // test file contains invalid items (tmp1.tif, tmp1.txt and tmp1.xml)
   // test for all items inside zip, using zipSetting 3 (Full Scan) which will ignore invalid items
   // using zipSetting 2 (Basic Scan) would raise errors, because QgsZipItem would not test for valid items
   // and return child names of the invalid items
+  // test file does not contain invalid items (some of dash tests failed because of them)
   QSettings settings;
   settings.setValue( mSettingsKey, "full" );
   QVERIFY( "full" == settings.value( mSettingsKey ).toString() );
@@ -466,6 +475,7 @@ void TestZipLayer::testGzipItemVectorTransparency()
 #endif
   QVERIFY( testZipItemTransparency( mDataDir + "points3.geojson.gz", "ogr", 250 ) );
 }
+#endif
 
 void TestZipLayer::testZipItemRasterTransparency()
 {
@@ -484,7 +494,6 @@ void TestZipLayer::testGzipItemRasterTransparency()
 {
   QVERIFY( testZipItemTransparency( mDataDir + "landsat_b1.tif.gz", "gdal", 250 ) );
 }
-#endif
 
 void TestZipLayer::testZipItemSubfolder()
 {
@@ -522,7 +531,7 @@ void TestZipLayer::testZipItemVRT()
   {
     settings.setValue( mSettingsKey, s );
     QVERIFY( s == settings.value( mSettingsKey ).toString() );
-    QVERIFY( testZipItem( QDir::tempPath() + "/testzip.zip", "landsat.vrt", "gdal" ) );
+    QVERIFY( testZipItem( QDir::tempPath() + "/testzip.zip", "landsat_b1.vrt", "gdal" ) );
     // this file is buggy with gdal svn - skip for now
     // QVERIFY( testZipItem( QDir::tempPath() + "/testzip.zip", "points.vrt", "ogr" ) );
   }
