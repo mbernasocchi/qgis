@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 """
 /***************************************************************************
-Python Conosle for QGIS
+Python Console for QGIS
                              -------------------
 begin                : 2012-09-10
 copyright            : (C) 2012 by Salvatore Larosa
@@ -47,10 +47,11 @@ class writeOut:
             self.sO.SendScintilla(QsciScintilla.SCI_SETSTYLING, len(m), 1)
         else:
             self.sO.append(m)
-        self.move_cursor_to_end()
 
         if self.out:
             self.out.write(m)
+
+        self.move_cursor_to_end()
 
     def move_cursor_to_end(self):
         """Move cursor to end of text"""

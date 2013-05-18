@@ -24,6 +24,8 @@
 #include <qgsrectangle.h>
 #include <qgscoordinatereferencesystem.h>
 
+#include <QMessageBox>
+
 #include "qgsvectorlayerimport.h"
 #include "qgsprovidercountcalcevent.h"
 #include "qgsproviderextentcalcevent.h"
@@ -140,6 +142,7 @@ QgsPostgresProvider::QgsPostgresProvider( QString const & uri )
   // set the primary key
   if ( !determinePrimaryKey() )
   {
+    QgsMessageLog::logMessage( tr( "PostgreSQL layer has no primary key." ), tr( "PostGIS" ) );
     mValid = false;
     disconnectDb();
     return;
@@ -198,6 +201,7 @@ QgsPostgresProvider::QgsPostgresProvider( QString const & uri )
     }
     break;
     case pktUnknown:
+      QgsMessageLog::logMessage( tr( "PostgreSQL layer has unknown primary key type." ), tr( "PostGIS" ) );
       mValid = false;
       break;
   }
@@ -2638,8 +2642,13 @@ bool QgsPostgresProvider::getGeometryDetails()
     }
   }
 
-  if ( QgsPostgresConn::wkbTypeFromPostgis( detectedType ) == QGis::WKBUnknown )
+  mDetectedGeomType = QgsPostgresConn::wkbTypeFromPostgis( detectedType );
+  mDetectedSrid     = detectedSrid;
+
+  if ( mDetectedGeomType == QGis::WKBUnknown )
   {
+    mDetectedSrid = "";
+
     QgsPostgresLayerProperty layerProperty;
     if ( !mIsQuery )
     {
@@ -2664,62 +2673,45 @@ bool QgsPostgresProvider::getGeometryDetails()
 
     mConnectionRO->retrieveLayerTypes( layerProperty, mUseEstimatedMetadata );
 
-    QStringList typeList = layerProperty.type.split( ",", QString::SkipEmptyParts );
-    QStringList sridList = layerProperty.srid.split( ",", QString::SkipEmptyParts );
-    Q_ASSERT( typeList.size() == sridList.size() );
     mSpatialColType = layerProperty.geometryColType;
 
-    if ( typeList.size() == 0 )
+    if ( layerProperty.size() == 0 )
     {
       // no data - so take what's requested
       if ( mRequestedGeomType == QGis::WKBUnknown || mRequestedSrid.isEmpty() )
       {
         QgsMessageLog::logMessage( tr( "Geometry type and srid for empty column %1 of %2 undefined." ).arg( mGeometryColumn ).arg( mQuery ) );
       }
-
-      detectedType = "";
-      detectedSrid = "";
     }
     else
     {
       int i;
-      for ( i = 0; i < typeList.size(); i++ )
+      for ( i = 0; i < layerProperty.size(); i++ )
       {
-        QGis::WkbType wkbType = QgsPostgresConn::wkbTypeFromPostgis( typeList.at( i ) );
+        QGis::WkbType wkbType = layerProperty.types[ i ];
 
         if (( wkbType != QGis::WKBUnknown && ( mRequestedGeomType == QGis::WKBUnknown || mRequestedGeomType == wkbType ) ) &&
-            ( mRequestedSrid.isEmpty() || sridList.at( i ) == mRequestedSrid ) )
+            ( mRequestedSrid.isEmpty() || layerProperty.srids[ i ] == mRequestedSrid.toInt() ) )
           break;
       }
 
       // requested type && srid is available
-      if ( i < typeList.size() )
+      if ( i < layerProperty.size() )
       {
-        if ( typeList.size() == 1 )
+        if ( layerProperty.size() == 1 )
         {
           // only what we requested is available
-          detectedType = typeList.at( 0 );
-          detectedSrid = sridList.at( 0 );
-        }
-        else
-        {
-          // we need to filter
-          detectedType = "";
-          detectedSrid = "";
+          mDetectedGeomType = layerProperty.types[ 0 ];
+          mDetectedSrid     = QString::number( layerProperty.srids[ 0 ] );
         }
       }
       else
       {
         // geometry type undetermined or not unrequested
         QgsMessageLog::logMessage( tr( "Feature type or srid for %1 of %2 could not be determined or was not requested." ).arg( mGeometryColumn ).arg( mQuery ) );
-        detectedType = "";
-        detectedSrid = "";
       }
     }
   }
-
-  mDetectedGeomType = QgsPostgresConn::wkbTypeFromPostgis( detectedType );
-  mDetectedSrid     = detectedSrid;
 
   QgsDebugMsg( QString( "Detected SRID is %1" ).arg( mDetectedSrid ) );
   QgsDebugMsg( QString( "Requested SRID is %1" ).arg( mRequestedSrid ) );
@@ -3169,7 +3161,7 @@ QGISEXTERN bool deleteLayer( const QString& uri, QString& errCause )
   }
   schemaTableName += QgsPostgresConn::quotedIdentifier( tableName );
 
-  QgsPostgresConn* conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
+  QgsPostgresConn *conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
   if ( !conn )
   {
     errCause = QObject::tr( "Connection to database failed" );
@@ -3231,251 +3223,262 @@ QGISEXTERN bool saveStyle( const QString& uri, const QString& qmlStyle, const QS
                            const QString& uiFileContent, bool useAsDefault, QString& errCause )
 {
   QgsDataSourceURI dsUri( uri );
-  QString f_table_catalog, f_table_schema, f_table_name, f_geometry_column, owner, isdef, name, desc;
-  QString styleTableName = QObject::tr( "layer_styles" );
-  QgsPostgresResult res;
 
-  QgsPostgresConn* conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
+  QgsPostgresConn *conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
   if ( !conn )
   {
     errCause = QObject::tr( "Connection to database failed" );
     return false;
   }
 
-    QString checkExitingTableQuery = QObject::tr( "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='%1'" ).arg( styleTableName );
-
-    PGresult* result = conn->PQexec( checkExitingTableQuery );
-    char* c = PQgetvalue( result, 0, 0 );
-    if( *c == '0' )
+  QgsPostgresResult res = conn->PQexec( "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='layer_styles'" );
+  if ( res.PQgetvalue( 0, 0 ).toInt() == 0 )
+  {
+    res = conn->PQexec( "CREATE TABLE layer_styles("
+                        "id SERIAL PRIMARY KEY"
+                        ",f_table_catalog varchar(256)"
+                        ",f_table_schema varchar(256)"
+                        ",f_table_name varchar(256)"
+                        ",f_geometry_column varchar(256)"
+                        ",styleName varchar(30)"
+                        ",styleQML xml"
+                        ",styleSLD xml"
+                        ",useAsDefault boolean"
+                        ",description text"
+                        ",owner varchar(30)"
+                        ",ui xml"
+                        ",update_time timestamp DEFAULT CURRENT_TIMESTAMP"
+                        ")" );
+    if ( res.PQresultStatus() != PGRES_COMMAND_OK )
     {
-        QString createTabeQuery = QObject::tr( "CREATE TABLE public.%1 (id SERIAL PRIMARY KEY,  f_table_catalog varchar(256),  f_table_schema varchar(256),  f_table_name varchar(256),  f_geometry_column varchar(256),  styleName varchar(30),  styleQML xml,  styleSLD xml,  useAsDefault boolean,  description text,  owner varchar(30),  ui xml,  update_time timestamp DEFAULT CURRENT_TIMESTAMP );" ).arg( styleTableName );
+      errCause = QObject::tr( "Unable to save layer style. It's not possible to create the destination table on the database. Maybe this is due to table permissions (user=%1). Please contact your database admin" ).arg( dsUri.username() );
+      conn->disconnect();
+      return false;
+    }
+  }
 
-       res = conn->PQexec( createTabeQuery );
-       if ( res.PQresultStatus() != PGRES_COMMAND_OK )
-       {
-         errCause = QObject::tr( "Unable to save layer style. It's not possible to create the destination table on the database. Maybe this is due to table permissions (user=%1). Please contact your database admin" ).arg( dsUri.username() );
-         conn->disconnect();
-         return false;
-       }
+  QString uiFileColumn;
+  QString uiFileValue;
+  if ( !uiFileContent.isEmpty() )
+  {
+    uiFileColumn = ",ui";
+    uiFileValue = QString( ",XMLPARSE(DOCUMENT %1)" ).arg( QgsPostgresConn::quotedValue( uiFileContent ) );
+  }
+
+  QString sql = QString( "INSERT INTO layer_styles("
+                         "f_table_catalog,f_table_schema,f_table_name,f_geometry_column,styleName,styleQML,styleSLD,useAsDefault,description,owner%11"
+                         ") VALUES ("
+                         "%1,%2,%3,%4,%5,XMLPARSE(DOCUMENT %6),XMLPARSE(DOCUMENT %7),%8,%9,%10%12"
+                         ")" )
+                .arg( QgsPostgresConn::quotedValue( dsUri.database() ) )
+                .arg( QgsPostgresConn::quotedValue( dsUri.schema() ) )
+                .arg( QgsPostgresConn::quotedValue( dsUri.table() ) )
+                .arg( QgsPostgresConn::quotedValue( dsUri.geometryColumn() ) )
+                .arg( QgsPostgresConn::quotedValue( styleName.isEmpty() ? dsUri.table() : styleName ) )
+                .arg( QgsPostgresConn::quotedValue( qmlStyle ) )
+                .arg( QgsPostgresConn::quotedValue( sldStyle ) )
+                .arg( useAsDefault ? "true" : "false" )
+                .arg( QgsPostgresConn::quotedValue( styleDescription.isEmpty() ? QDateTime::currentDateTime().toString() : styleDescription ) )
+                .arg( QgsPostgresConn::quotedValue( dsUri.username() ) )
+                .arg( uiFileColumn )
+                .arg( uiFileValue );
+
+  QString checkQuery = QString( "SELECT styleName"
+                                " FROM layer_styles"
+                                " WHERE f_table_catalog=%1"
+                                " AND f_table_schema=%2"
+                                " AND f_table_name=%3"
+                                " AND f_geometry_column=%4"
+                                " AND styleName=%5" )
+                       .arg( QgsPostgresConn::quotedValue( dsUri.database() ) )
+                       .arg( QgsPostgresConn::quotedValue( dsUri.schema() ) )
+                       .arg( QgsPostgresConn::quotedValue( dsUri.table() ) )
+                       .arg( QgsPostgresConn::quotedValue( dsUri.geometryColumn() ) )
+                       .arg( QgsPostgresConn::quotedValue( styleName.isEmpty() ? dsUri.table() : styleName ) );
+
+  res = conn->PQexec( checkQuery );
+  if ( res.PQntuples() > 0 )
+  {
+    if ( QMessageBox::question( 0, QObject::tr( "Save style in database" ),
+                                QObject::tr( "A style named \"%1\" already exists in the database for this layer. Do you want to overwrite it?" )
+                                .arg( styleName.isEmpty() ? dsUri.table() : styleName ),
+                                QMessageBox::Yes | QMessageBox::No ) == QMessageBox::No )
+    {
+      errCause = QObject::tr( "Operation aborted. No changes were made in the database" );
+      return false;
     }
 
-  f_table_catalog = dsUri.database();
-  f_table_schema = dsUri.schema();
-  f_table_name = dsUri.table();
-  f_geometry_column = dsUri.geometryColumn();
-  owner = dsUri.username();
-  isdef = (useAsDefault) ? QObject::tr( "true" ) : QObject::tr( "false" );
-  name = ( styleName.isEmpty() ) ? dsUri.table() : styleName;
-  desc = ( styleDescription.isEmpty() ) ? QDateTime::currentDateTime().toString() : styleDescription;
-
-  QString uiFileColumn( "" );
-  QString uiFileValue( "" );
-  if( !uiFileContent.isEmpty() )
-  {
-      uiFileColumn.append( QObject::tr( ", ui" ) );
-      uiFileValue.append( QObject::tr( ",XMLPARSE(DOCUMENT %1)" ).arg( QgsPostgresConn::quotedValue( uiFileContent ) ) );
+    sql = QString( "UPDATE layer_styles"
+                   " SET useAsDefault=%1"
+                   ",styleQML=XMLPARSE(DOCUMENT %2)"
+                   ",styleSLD=XMLPARSE(DOCUMENT %3)"
+                   ",description=%4"
+                   ",owner=%5"
+                   " WHERE f_table_catalog=%6"
+                   " AND f_table_schema=%7"
+                   " AND f_table_name=%8"
+                   " AND f_geometry_column=%9"
+                   " AND styleName=%10" )
+          .arg( useAsDefault ? "true" : "false" )
+          .arg( QgsPostgresConn::quotedValue( qmlStyle ) )
+          .arg( QgsPostgresConn::quotedValue( sldStyle ) )
+          .arg( QgsPostgresConn::quotedValue( styleDescription.isEmpty() ? QDateTime::currentDateTime().toString() : styleDescription ) )
+          .arg( QgsPostgresConn::quotedValue( dsUri.username() ) )
+          .arg( QgsPostgresConn::quotedValue( dsUri.database() ) )
+          .arg( QgsPostgresConn::quotedValue( dsUri.schema() ) )
+          .arg( QgsPostgresConn::quotedValue( dsUri.table() ) )
+          .arg( QgsPostgresConn::quotedValue( dsUri.geometryColumn() ) )
+          .arg( QgsPostgresConn::quotedValue( styleName.isEmpty() ? dsUri.table() : styleName ) );
   }
 
-  QString sql = QObject::tr( "INSERT INTO %1 ( f_table_catalog, "
-                             "f_table_schema, f_table_name, f_geometry_column, "
-                             "styleName, styleQML, styleSLD, useAsDefault, "
-                             "description, owner %12) "
-                             "VALUES(%2,%3,%4,%5,%6,XMLPARSE(DOCUMENT %7),"
-                             "XMLPARSE(DOCUMENT %8),%9,%10,%11 %13);" )
-                         .arg( styleTableName )
-                         .arg( QgsPostgresConn::quotedValue( f_table_catalog ) )
-                         .arg( QgsPostgresConn::quotedValue( f_table_schema ) )
-                         .arg( QgsPostgresConn::quotedValue( f_table_name ) )
-                         .arg( QgsPostgresConn::quotedValue( f_geometry_column ) )
-                         .arg( QgsPostgresConn::quotedValue( name ) )
-                         .arg( QgsPostgresConn::quotedValue( qmlStyle ) )
-                         .arg( QgsPostgresConn::quotedValue( sldStyle ) )
-                         .arg( isdef )
-                         .arg( QgsPostgresConn::quotedValue( desc ) )
-                         .arg( QgsPostgresConn::quotedValue( owner ) )
-                         .arg( uiFileColumn )
-                         .arg( uiFileValue );
-
-  QString checkQuery = QObject::tr( "SELECT styleName FROM %1 WHERE f_table_catalog=%2 AND f_table_schema=%3 AND f_table_name=%4 AND f_geometry_column=%5 AND styleName=%6" )
-          .arg( styleTableName )
-          .arg( QgsPostgresConn::quotedValue( f_table_catalog ) )
-          .arg( QgsPostgresConn::quotedValue( f_table_schema ) )
-          .arg( QgsPostgresConn::quotedValue(f_table_name ) )
-          .arg( QgsPostgresConn::quotedValue(f_geometry_column ) )
-          .arg( QgsPostgresConn::quotedValue( name ) );
-
-  result = conn->PQexec( checkQuery );
-  if( PQntuples( result ) > 0 )
+  if ( useAsDefault )
   {
-      sql = QObject::tr( "UPDATE %1 SET useAsDefault=%2, styleQML=XMLPARSE(DOCUMENT %3), styleSLD=XMLPARSE(DOCUMENT %4), description=%5, owner=%6 WHERE f_table_catalog=%7 AND f_table_schema=%8 AND f_table_name=%9 AND f_geometry_column=%10 AND styleName=%11;")
-              .arg( styleTableName )
-              .arg( isdef )
-              .arg( QgsPostgresConn::quotedValue( qmlStyle
-                                                  ) )
-              .arg( QgsPostgresConn::quotedValue( sldStyle ) )
-              .arg( QgsPostgresConn::quotedValue( desc ) )
-              .arg( QgsPostgresConn::quotedValue( owner ) )
-              .arg( QgsPostgresConn::quotedValue( f_table_catalog ) )
-              .arg( QgsPostgresConn::quotedValue( f_table_schema ) )
-              .arg( QgsPostgresConn::quotedValue( f_table_name ) )
-              .arg( QgsPostgresConn::quotedValue( f_geometry_column ) )
-              .arg( QgsPostgresConn::quotedValue( name ) );
-  }
-
-  if( useAsDefault )
-  {
-      QString removeDefaultSql = QObject::tr( "UPDATE %1 SET useAsDefault=false WHERE f_table_catalog=%2 AND f_table_schema=%3 AND f_table_name=%4 AND f_geometry_column=%5;")
-              .arg( styleTableName )
-              .arg( QgsPostgresConn::quotedValue( f_table_catalog ) )
-              .arg( QgsPostgresConn::quotedValue( f_table_schema ) )
-              .arg( QgsPostgresConn::quotedValue(f_table_name ) )
-              .arg( QgsPostgresConn::quotedValue(f_geometry_column ) );
-      sql = QObject::tr("BEGIN; %1 %2 COMMIT;")
-              .arg( removeDefaultSql ).arg( sql );
+    QString removeDefaultSql = QString( "UPDATE layer_styles"
+                                        " SET useAsDefault=false"
+                                        " WHERE f_table_catalog=%1"
+                                        " AND f_table_schema=%2"
+                                        " AND f_table_name=%3"
+                                        " AND f_geometry_column=%4" )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.database() ) )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.schema() ) )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.table() ) )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.geometryColumn() ) );
+    sql = QString( "BEGIN; %1; %2; COMMIT;" ).arg( removeDefaultSql ).arg( sql );
   }
 
   res = conn->PQexec( sql );
   conn->disconnect();
   if ( res.PQresultStatus() != PGRES_COMMAND_OK )
   {
-    errCause = QObject::tr( "Unable to save layer style. It's not possible to insert a new record in style table. Maybe this is due to table permissions (user=%1). Please contact your database admin" ).arg( owner );
+    errCause = QObject::tr( "Unable to save layer style. It's not possible to insert a new record into the style table. Maybe this is due to table permissions (user=%1). Please contact your database administrator." ).arg( dsUri.username() );
     return false;
   }
+
   return true;
 }
 
 
 QGISEXTERN QString loadStyle( const QString& uri, QString& errCause )
 {
-    QgsDataSourceURI dsUri( uri );
-    QString styleTableName = QObject::tr( "layer_styles" );
-    QString f_table_catalog, f_table_schema, f_table_name, f_geometry_column;
+  QgsDataSourceURI dsUri( uri );
 
-    QgsPostgresConn* conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
-    if ( !conn )
-    {
-        errCause = QObject::tr( "Connection to database failed" );
-        return QObject::tr( "" );
-    }
+  QgsPostgresConn *conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
+  if ( !conn )
+  {
+    errCause = QObject::tr( "Connection to database failed" );
+    return "";
+  }
 
-    f_table_catalog = dsUri.database();
-    f_table_schema = dsUri.schema();
-    f_table_name = dsUri.table();
-    f_geometry_column = dsUri.geometryColumn();
+  QString selectQmlQuery = QString( "SELECT styleQML"
+                                    " FROM layer_styles"
+                                    " WHERE f_table_catalog=%1"
+                                    " AND f_table_schema=%2"
+                                    " AND f_table_name=%3"
+                                    " AND f_geometry_column=%4"
+                                    " ORDER BY CASE WHEN useAsDefault THEN 1 ELSE 2 END"
+                                    ",update_time DESC LIMIT 1" )
+                           .arg( QgsPostgresConn::quotedValue( dsUri.database() ) )
+                           .arg( QgsPostgresConn::quotedValue( dsUri.schema() ) )
+                           .arg( QgsPostgresConn::quotedValue( dsUri.table() ) )
+                           .arg( QgsPostgresConn::quotedValue( dsUri.geometryColumn() ) );
 
-    QString selectQmlQuery = QObject::tr( "SELECT styleQML FROM %1 WHERE f_table_catalog=%2 AND f_table_schema=%3 AND f_table_name=%4 AND f_geometry_column=%5 ORDER BY (CASE WHEN useAsDefault THEN 1 ELSE 2 END), update_time DESC LIMIT 1;")
-            .arg( styleTableName )
-            .arg( QgsPostgresConn::quotedValue( f_table_catalog ) )
-            .arg( QgsPostgresConn::quotedValue( f_table_schema ) )
-            .arg( QgsPostgresConn::quotedValue( f_table_name ) )
-            .arg( QgsPostgresConn::quotedValue( f_geometry_column ) );
+  QgsPostgresResult result = conn->PQexec( selectQmlQuery, false );
 
-    PGresult* result = conn->PQexec( selectQmlQuery );
-    if( PQntuples(result) == 1 )
-    {
-        char* c = PQgetvalue( result, 0, 0 );
-        return QObject::tr( c );;
-    }
+  return result.PQntuples() == 1 ? result.PQgetvalue( 0, 0 ) : "";
+}
 
+QGISEXTERN int listStyles( const QString &uri, QStringList &ids, QStringList &names,
+                           QStringList &descriptions, QString& errCause )
+{
+  QgsDataSourceURI dsUri( uri );
+
+  QgsPostgresConn *conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
+  if ( !conn )
+  {
+    errCause = QObject::tr( "Connection to database failed using username: %1" ).arg( dsUri.username() );
+    return -1;
+  }
+
+  QString selectRelatedQuery = QString( "SELECT id,styleName,description"
+                                        " FROM layer_styles"
+                                        " WHERE f_table_catalog=%1"
+                                        " AND f_table_schema=%2"
+                                        " AND f_table_name=%3"
+                                        " AND f_geometry_column=%4" )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.database() ) )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.schema() ) )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.table() ) )
+                               .arg( QgsPostgresConn::quotedValue( dsUri.geometryColumn() ) );
+
+  QgsPostgresResult result = conn->PQexec( selectRelatedQuery );
+  if ( result.PQresultStatus() != PGRES_TUPLES_OK )
+  {
+    QgsMessageLog::logMessage( QObject::tr( "Error executing query: %1" ).arg( selectRelatedQuery ) );
+    errCause = QObject::tr( "Error executing the select query for related styles. The query was logged" );
+    return -1;
+  }
+
+  int numberOfRelatedStyles = result.PQntuples();
+  for ( int i = 0; i < numberOfRelatedStyles; i++ )
+  {
+    ids.append( result.PQgetvalue( i, 0 ) );
+    names.append( result.PQgetvalue( i, 1 ) );
+    descriptions.append( result.PQgetvalue( i, 2 ) );
+  }
+
+  QString selectOthersQuery = QString( "SELECT id,styleName,description"
+                                       " FROM layer_styles"
+                                       " WHERE NOT (f_table_catalog=%1 AND f_table_schema=%2 AND f_table_name=%3 AND f_geometry_column=%4)"
+                                       " ORDER BY update_time DESC" )
+                              .arg( QgsPostgresConn::quotedValue( dsUri.database() ) )
+                              .arg( QgsPostgresConn::quotedValue( dsUri.schema() ) )
+                              .arg( QgsPostgresConn::quotedValue( dsUri.table() ) )
+                              .arg( QgsPostgresConn::quotedValue( dsUri.geometryColumn() ) );
+
+  result = conn->PQexec( selectOthersQuery );
+  if ( result.PQresultStatus() != PGRES_TUPLES_OK )
+  {
+    QgsMessageLog::logMessage( QObject::tr( "Error executing query: %1" ).arg( selectOthersQuery ) );
+    errCause = QObject::tr( "Error executing the select query for unrelated styles. The query was logged" );
+    return -1;
+  }
+  for ( int i = 0; i < result.PQntuples(); i++ )
+  {
+    ids.append( result.PQgetvalue( i, 0 ) );
+    names.append( result.PQgetvalue( i, 1 ) );
+    descriptions.append( result.PQgetvalue( i, 2 ) );
+  }
+
+  return numberOfRelatedStyles;
+}
+
+QGISEXTERN QString getStyleById( const QString& uri, QString styleId, QString& errCause )
+{
+  QgsDataSourceURI dsUri( uri );
+
+  QgsPostgresConn *conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
+  if ( !conn )
+  {
+    errCause = QObject::tr( "Connection to database failed using username: %1" ).arg( dsUri.username() );
     return QObject::tr( "" );
-}
+  }
 
-QGISEXTERN int listStyles( const QString& uri,  QVector<QString> &ids, QVector<QString> &names,
-                            QVector<QString> &descriptions, QString& errCause )
-{
-    QgsDataSourceURI dsUri( uri );
-    QString styleTableName = QObject::tr( "layer_styles" );
-    QString f_table_catalog, f_table_schema, f_table_name, f_geometry_column;
+  QString selectQmlQuery = QString( "SELECT styleQml FROM layer_styles WHERE id=%1" ).arg( QgsPostgresConn::quotedValue( styleId ) );
+  QgsPostgresResult result = conn->PQexec( selectQmlQuery );
+  if ( result.PQresultStatus() != PGRES_TUPLES_OK )
+  {
+    QgsMessageLog::logMessage( QObject::tr( "Error executing query: %1" ).arg( selectQmlQuery ) );
+    errCause = QObject::tr( "Error executing the select query. The query was logged" );
+    return "";
+  }
 
-    QgsPostgresConn* conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
-    if ( !conn )
-    {
-        errCause = QObject::tr( "Connection to database failed using username: %1" ).arg( dsUri.username() );
-        return -1;
-    }
-
-    f_table_catalog = dsUri.database();
-    f_table_schema = dsUri.schema();
-    f_table_name = dsUri.table();
-    f_geometry_column = dsUri.geometryColumn();
-
-    // ORDER BY (CASE WHEN useAsDefault THEN 1 ELSE 2 END), update_time DESC;")
-    QString selectRelatedQuery = QObject::tr( "SELECT id, styleName, description FROM %1 WHERE f_table_catalog=%2 AND f_table_schema=%3 AND f_table_name=%4 AND f_geometry_column=%5;" )
-            .arg( styleTableName )
-            .arg( QgsPostgresConn::quotedValue( f_table_catalog ) )
-            .arg( QgsPostgresConn::quotedValue( f_table_schema ) )
-            .arg( QgsPostgresConn::quotedValue( f_table_name ) )
-            .arg( QgsPostgresConn::quotedValue( f_geometry_column ) );
-
-    PGresult* result = conn->PQexec( selectRelatedQuery );
-    if ( PQresultStatus( result ) != PGRES_TUPLES_OK )
-    {
-        QgsMessageLog::logMessage( QObject::tr( "Error executing query: %1" ).arg( selectRelatedQuery ) );
-        errCause = QObject::tr( "Error executing the select query for related styles. The query was logged" );
-        return -1;
-    }
-    int numberOfRelatedStyles = PQntuples( result );
-    for( int i=0; i<numberOfRelatedStyles; i++ )
-    {
-        ids.append( QObject::tr( PQgetvalue( result, i, 0 ) ) );
-        names.append( QObject::tr( PQgetvalue( result, i, 1 ) ) );
-        descriptions.append( QObject::tr( PQgetvalue( result, i, 2 ) ) );
-    }
-
-    QString selectOthersQuery = QObject::tr( "SELECT id, styleName, description FROM %1 WHERE NOT(f_table_catalog=%2 AND f_table_schema=%3 AND f_table_name=%4 AND f_geometry_column=%5) ORDER BY update_time DESC;")
-            .arg( styleTableName )
-            .arg( QgsPostgresConn::quotedValue( f_table_catalog ) )
-            .arg( QgsPostgresConn::quotedValue( f_table_schema ) )
-            .arg( QgsPostgresConn::quotedValue( f_table_name ) )
-            .arg( QgsPostgresConn::quotedValue( f_geometry_column ) );
-
-    result = conn->PQexec( selectOthersQuery );
-    if ( PQresultStatus( result ) != PGRES_TUPLES_OK )
-    {
-        QgsMessageLog::logMessage( QObject::tr( "Error executing query: %1" ).arg( selectOthersQuery ) );
-        errCause = QObject::tr( "Error executing the select query for unrelated styles. The query was logged" );
-        return -1;
-    }
-    for( int i=0; i<PQntuples( result ); i++ )
-    {
-        ids.append( QObject::tr( PQgetvalue( result, i, 0 ) ) );
-        names.append( QObject::tr( PQgetvalue( result, i, 1 ) ) );
-        descriptions.append( QObject::tr( PQgetvalue( result, i, 2 ) ) );
-    }
-
-    return numberOfRelatedStyles;
-}
-
-QGISEXTERN QString getStyleById(const QString& uri, QString styleId, QString& errCause )
-{
-    QgsDataSourceURI dsUri( uri );
-    QString styleTableName = QObject::tr( "layer_styles" );
-
-    QgsPostgresConn* conn = QgsPostgresConn::connectDb( dsUri.connectionInfo(), false );
-    if ( !conn )
-    {
-        errCause = QObject::tr( "Connection to database failed using username: %1" ).arg( dsUri.username() );
-        return QObject::tr( "" );
-    }
-
-    QString selectQmlQuery = QObject::tr( "SELECT styleQml FROM %1 WHERE id=%2")
-                                         .arg( styleTableName )
-                                         .arg( styleId );
-    PGresult* result = conn->PQexec( selectQmlQuery );
-    if ( PQresultStatus( result ) != PGRES_TUPLES_OK )
-    {
-        QgsMessageLog::logMessage( QObject::tr( "Error executing query: %1" ).arg( selectQmlQuery ) );
-        errCause = QObject::tr( "Error executing the select query. The query was logged" );
-        return QObject::tr( "" );
-    }
-    if( PQntuples( result ) == 1)
-    {
-        return PQgetvalue( result, 0, 0 );
-    }
-    else
-    {
-        errCause = QObject::tr( "Consistence error in table '%1'. Style id should be unique" ).arg( styleTableName );
-        return QObject::tr( "" );
-    }
-
+  if ( result.PQntuples() == 1 )
+  {
+    return result.PQgetvalue( 0, 0 );
+  }
+  else
+  {
+    errCause = QObject::tr( "Consistency error in table '%1'. Style id should be unique" ).arg( "layer_styles" );
+    return "";
+  }
 }

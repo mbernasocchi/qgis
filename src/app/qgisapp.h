@@ -115,7 +115,7 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
      */
     QgsVectorLayer* addVectorLayer( QString vectorLayerPath, QString baseName, QString providerKey );
 
-    /** \brief overloaded vesion of the privat addLayer method that takes a list of
+    /** \brief overloaded version of the private addLayer method that takes a list of
      * file names instead of prompting user with a dialog.
      @param enc encoding type for the layer
     @param dataSourceType type of ogr datasource
@@ -301,6 +301,7 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
     /** @note added in 1.9 */
     QAction *actionPasteLayerStyle() { return mActionPasteStyle; }
     QAction *actionOpenTable() { return mActionOpenTable; }
+    QAction *actionOpenFieldCalculator() { return mActionOpenFieldCalc; }
     QAction *actionToggleEditing() { return mActionToggleEditing; }
     /** @note added in 1.9 */
     QAction *actionSaveActiveLayerEdits() { return mActionSaveLayerEdits; }
@@ -447,6 +448,8 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
 
     //! show the attribute table for the currently selected layer
     void attributeTable();
+
+    void fieldCalculator();
 
     //! mark project dirty
     void markDirty();
@@ -623,6 +626,10 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
     void addDatabaseLayers( QStringList const & layerPathList, QString const & providerKey );
     //! Add a SpatiaLite layer to the map
     void addSpatiaLiteLayer();
+    //! Add a Delimited Text layer to the map
+    void addDelimitedTextLayer();
+    //! Add a vector layer defined by uri, layer name, data source uri
+    void addSelectedVectorLayer( QString uri, QString layerName, QString provider );
     //#ifdef HAVE_MSSQL
     //! Add a MSSQL layer to the map
     void addMssqlLayer();
@@ -851,6 +858,8 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
     void helpContents();
     //! Open the API documentation in a browser
     void apiDocumentation();
+    //! Open the QGIS support page
+    void supportProviders();
     //! Open the QGIS homepage in users browser
     void helpQgisHomePage();
     //! Open a url in the users configured browser

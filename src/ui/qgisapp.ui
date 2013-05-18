@@ -160,6 +160,7 @@
     <addaction name="mActionAddLayerSeparator"/>
     <addaction name="mActionAddWcsLayer"/>
     <addaction name="mActionAddWfsLayer"/>
+    <addaction name="mActionAddDelimitedText"/>
     <addaction name="separator"/>
     <addaction name="mActionCopyStyle"/>
     <addaction name="mActionPasteStyle"/>
@@ -200,6 +201,7 @@
     </property>
     <addaction name="mActionHelpContents"/>
     <addaction name="mActionHelpAPI"/>
+    <addaction name="mActionNeedSupport"/>
     <addaction name="separator"/>
     <addaction name="mActionQgisHomePage"/>
     <addaction name="mActionCheckQgisVersion"/>
@@ -286,6 +288,7 @@
    <addaction name="mActionAddWmsLayer"/>
    <addaction name="mActionAddWcsLayer"/>
    <addaction name="mActionAddWfsLayer"/>
+   <addaction name="mActionAddDelimitedText"/>
    <addaction name="mActionNewVectorLayer"/>
    <addaction name="mActionRemoveLayer"/>
   </widget>
@@ -372,6 +375,7 @@
    <addaction name="mActionDeselectAll"/>
    <addaction name="mActionSelectByExpression"/>
    <addaction name="mActionOpenTable"/>
+   <addaction name="mActionOpenFieldCalc"/>
    <addaction name="mActionMapTips"/>
    <addaction name="mActionNewBookmark"/>
    <addaction name="mActionShowBookmarks"/>
@@ -2066,6 +2070,35 @@ Acts on currently active editable layer</string>
    </property>
    <property name="toolTip">
     <string>Select features using an expression</string>
+   </property>
+  </action>
+  <action name="mActionNeedSupport">
+   <property name="text">
+    <string>Need Support?</string>
+   </property>
+  </action>
+  <action name="mActionOpenFieldCalc">
+   <property name="icon">
+    <iconset resource="../../images/images.qrc">
+     <normaloff>:/images/themes/default/mActionCalculateField.png</normaloff>:/images/themes/default/mActionCalculateField.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open Field Calculator</string>
+   </property>
+   <property name="toolTip">
+    <string>Open Field Calculator</string>
+   </property>
+  </action>
+  <action name="mActionAddDelimitedText">
+   <property name="icon">
+    <iconset resource="../../images/images.qrc">
+     <normaloff>:/images/themes/default/mActionAddDelimitedTextLayer.png</normaloff>:/images/themes/default/mActionAddDelimitedTextLayer.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add Delimited Text Layer...</string>
+   </property>
+   <property name="toolTip">
+    <string>Add Delimited Text Layer</string>
    </property>
   </action>
  </widget>

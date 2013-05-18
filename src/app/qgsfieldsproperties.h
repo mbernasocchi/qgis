@@ -24,20 +24,6 @@
 #include "qgsvectorlayer.h"
 #include "ui_qgsfieldspropertiesbase.h"
 
-class QgsAttributesList : public QTableWidget
-{
-    Q_OBJECT
-  public:
-    QgsAttributesList( QWidget* parent = 0 )
-        : QTableWidget( parent )
-    {}
-
-  protected:
-    // virtual void dragMoveEvent( QDragMoveEvent *event );
-    // QMimeData *mimeData( const QList<QTableWidgetItem *> items ) const;
-    // Qt::DropActions supportedDropActions() const;
-};
-
 class QgsAttributesTree : public QTreeWidget
 {
     Q_OBJECT
@@ -63,15 +49,12 @@ class QgsFieldsProperties : public QWidget, private Ui_QgsFieldsPropertiesBase
   public:
     QgsFieldsProperties( QgsVectorLayer *layer, QWidget* parent = 0 );
 
+    ~QgsFieldsProperties();
+
     /**Adds an attribute to the table (but does not commit it yet)
     @param field the field to add
     @return false in case of a name conflict, true in case of success */
     bool addAttribute( const QgsField &field );
-
-    /**Deletes an attribute (but does not commit it)
-      @param name attribute name
-      @return false in case of a non-existing attribute.*/
-    bool deleteAttribute( int attr );
 
     /**Creates the a proper item to save from the tree
      * @param item The tree widget item to process
@@ -101,7 +84,6 @@ class QgsFieldsProperties : public QWidget, private Ui_QgsFieldsPropertiesBase
     void on_mEditorLayoutComboBox_currentIndexChanged( int index );
 
     void addAttribute();
-    void deleteAttribute();
     void attributeAdded( int idx );
     void attributeDeleted( int idx );
     void attributeTypeDialog();
@@ -121,7 +103,7 @@ class QgsFieldsProperties : public QWidget, private Ui_QgsFieldsPropertiesBase
   protected:
     QgsVectorLayer* mLayer;
     QgsAttributesTree* mAttributesTree;
-    QgsAttributesList* mAttributesList;
+    QTableWidget* mAttributesList;
 
     QMap<int, bool> mFieldEditables;
     QMap<int, QgsVectorLayer::ValueRelationData> mValueRelationData;

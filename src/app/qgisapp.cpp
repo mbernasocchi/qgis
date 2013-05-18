@@ -129,6 +129,7 @@
 #include "qgsexpressionselectiondialog.h"
 #include "qgsfeature.h"
 #include "qgsformannotationitem.h"
+#include "qgsfieldcalculator.h"
 #include "qgshtmlannotationitem.h"
 #include "qgsgenericprojectionselector.h"
 #include "qgsgpsinformationwidget.h"
@@ -618,14 +619,14 @@ QgisApp::QgisApp( QSplashScreen *splash, bool restorePlugins, QWidget * parent, 
     // Restoring of plugins can be disabled with --noplugins command line option
     // because some plugins may cause QGIS to crash during startup
     QgsPluginRegistry::instance()->restoreSessionPlugins( QgsApplication::pluginPath() );
-  }
 
-  // Also restore plugins from user specified plugin directories - added for 1.7
-  QString myPaths = settings.value( "plugins/searchPathsForPlugins", "" ).toString();
-  if ( !myPaths.isEmpty() )
-  {
-    QStringList myPathList = myPaths.split( "|" );
-    QgsPluginRegistry::instance()->restoreSessionPlugins( myPathList );
+    // Also restore plugins from user specified plugin directories - added for 1.7
+    QString myPaths = settings.value( "plugins/searchPathsForPlugins", "" ).toString();
+    if ( !myPaths.isEmpty() )
+    {
+      QStringList myPathList = myPaths.split( "|" );
+      QgsPluginRegistry::instance()->restoreSessionPlugins( myPathList );
+    }
   }
 
   mSplash->showMessage( tr( "Initializing file filters" ), Qt::AlignHCenter | Qt::AlignBottom );
@@ -980,7 +981,9 @@ void QgisApp::createActions()
   connect( mActionAddWmsLayer, SIGNAL( triggered() ), this, SLOT( addWmsLayer() ) );
   connect( mActionAddWcsLayer, SIGNAL( triggered() ), this, SLOT( addWcsLayer() ) );
   connect( mActionAddWfsLayer, SIGNAL( triggered() ), this, SLOT( addWfsLayer() ) );
+  connect( mActionAddDelimitedText, SIGNAL( triggered() ), this, SLOT( addDelimitedTextLayer() ) );
   connect( mActionOpenTable, SIGNAL( triggered() ), this, SLOT( attributeTable() ) );
+  connect( mActionOpenFieldCalc, SIGNAL( triggered() ), this, SLOT( fieldCalculator() ) );
   connect( mActionToggleEditing, SIGNAL( triggered() ), this, SLOT( toggleEditing() ) );
   connect( mActionSaveLayerEdits, SIGNAL( triggered() ), this, SLOT( saveActiveLayerEdits() ) );
   connect( mActionSaveEdits, SIGNAL( triggered() ), this, SLOT( saveEdits() ) );
@@ -1075,6 +1078,7 @@ void QgisApp::createActions()
 
   connect( mActionHelpContents, SIGNAL( triggered() ), this, SLOT( helpContents() ) );
   connect( mActionHelpAPI, SIGNAL( triggered() ), this, SLOT( apiDocumentation() ) );
+  connect( mActionNeedSupport, SIGNAL( triggered() ), this, SLOT( supportProviders() ) );
   connect( mActionQgisHomePage, SIGNAL( triggered() ), this, SLOT( helpQgisHomePage() ) );
   connect( mActionCheckQgisVersion, SIGNAL( triggered() ), this, SLOT( checkQgisVersion() ) );
   connect( mActionAbout, SIGNAL( triggered() ), this, SLOT( about() ) );
@@ -1737,6 +1741,7 @@ void QgisApp::setTheme( QString theThemeName )
   mActionDeselectAll->setIcon( QgsApplication::getThemeIcon( "/mActionDeselectAll.png" ) );
   mActionSelectByExpression->setIcon( QgsApplication::getThemeIcon( "/mIconExpressionSelect.svg" ) );
   mActionOpenTable->setIcon( QgsApplication::getThemeIcon( "/mActionOpenTable.png" ) );
+  mActionOpenFieldCalc->setIcon( QgsApplication::getThemeIcon( "/mActionCalculateField.png" ) );
   mActionMeasure->setIcon( QgsApplication::getThemeIcon( "/mActionMeasure.png" ) );
   mActionMeasureArea->setIcon( QgsApplication::getThemeIcon( "/mActionMeasureArea.png" ) );
   mActionMeasureAngle->setIcon( QgsApplication::getThemeIcon( "/mActionMeasureAngle.png" ) );
@@ -2335,7 +2340,10 @@ static const unsigned char defaultUIgeometry[] =
 
 static const unsigned char defaultUIstate[] =
 {
-  0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0xfd, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x87, 0xfc, 0x02, 0x00, 0x00, 0x00, 0x03, 0xfb, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x4c, 0x00, 0x65, 0x00, 0x67, 0x00, 0x65, 0x00, 0x6e, 0x00, 0x64, 0x01, 0x00, 0x00, 0x00, 0x68, 0x00, 0x00, 0x02, 0x87, 0x00, 0x00, 0x00, 0x72, 0x00, 0xff, 0xff, 0xff, 0xfb, 0x00, 0x00, 0x00, 0x10, 0x00, 0x4f, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, 0x76, 0x00, 0x69, 0x00, 0x65, 0x00, 0x77, 0x00, 0x00, 0x00, 0x01, 0xf4, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x14, 0x00, 0xff, 0xff, 0xff, 0xfb, 0x00, 0x00, 0x00, 0x22, 0x00, 0x43, 0x00, 0x6f, 0x00, 0x6f, 0x00, 0x72, 0x00, 0x64, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x61, 0x00, 0x74, 0x00, 0x65, 0x00, 0x43, 0x00, 0x61, 0x00, 0x70, 0x00, 0x74, 0x00, 0x75, 0x00, 0x72, 0x00, 0x65, 0x00, 0x00, 0x00, 0x01, 0x7e, 0x00, 0x00, 0x00, 0xa0, 0x00, 0x00, 0x00, 0x7e, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x03, 0xaf, 0x00, 0x00, 0x02, 0x87, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0xfc, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x16, 0x00, 0x46, 0x00, 0x69, 0x00, 0x6c, 0x00, 0x65, 0x00, 0x54, 0x00, 0x6f, 0x00, 0x6f, 0x00, 0x6c, 0x00, 0x42, 0x00, 0x61, 0x00, 0x72, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x4c, 0x00, 0x61, 0x00, 0x79, 0x00, 0x65, 0x00, 0x72, 0x00, 0x54, 0x00, 0x6f, 0x00, 0x6f, 0x00, 0x6c, 0x00, 0x42, 0x00, 0x61, 0x00, 0x72, 0x01, 0x00, 0x00, 0x01, 0x90, 0x00, 0x00, 0x00, 0xbe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x41, 0x00, 0x74, 0x00, 0x74, 0x00, 0x72, 0x00, 0x69, 0x00, 0x62, 0x00, 0x75, 0x00, 0x74, 0x00, 0x65, 0x00, 0x73, 0x01, 0x00, 0x00, 0x02, 0x4e, 0x00, 0x00, 0x01, 0x27, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x48, 0x00, 0x65, 0x00, 0x6c, 0x00, 0x70, 0x00, 0x00, 0x00, 0x03, 0xd9, 0x00, 0x00, 0x00, 0xdd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0e, 0x00, 0x50, 0x00, 0x6c, 0x00, 0x75, 0x00, 0x67, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x73, 0x01, 0x00, 0x00, 0x03, 0x75, 0x00, 0x00, 0x01, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x14, 0x00, 0x44, 0x00, 0x69, 0x00, 0x67, 0x00, 0x69, 0x00, 0x74, 0x00, 0x69, 0x00, 0x7a, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x67, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x4d, 0x00, 0x61, 0x00, 0x70, 0x00, 0x20, 0x00, 0x4e, 0x00, 0x61, 0x00, 0x76, 0x00, 0x69, 0x00, 0x67, 0x00, 0x61, 0x00, 0x74, 0x00, 0x69, 0x00, 0x6f, 0x00, 0x6e, 0x01, 0x00, 0x00, 0x02, 0x1c, 0x00, 0x00, 0x02, 0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00
+  0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0xfd, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x87, 0xfc, 0x02, 0x00, 0x00, 0x00, 0x03, 0xfb, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x4c, 0x00, 0x65, 0x00, 0x67, 0x00, 0x65, 0x00, 0x6e, 0x00, 0x64, 0x01, 0x00, 0x00, 0x00, 0x68, 0x00, 0x00, 0x02, 0x87, 0x00, 0x00, 0x00, 0x72, 0x00, 0xff, 0xff, 0xff, 0xfb, 0x00, 0x00, 0x00, 0x10, 0x00, 0x4f, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, 0x76, 0x00, 0x69, 0x00, 0x65, 0x00, 0x77, 0x00, 0x00, 0x00, 0x01, 0xf4, 0x00, 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x14, 0x00, 0xff, 0xff, 0xff, 0xfb, 0x00, 0x00, 0x00, 0x22, 0x00, 0x43, 0x00, 0x6f, 0x00, 0x6f, 0x00, 0x72, 0x00, 0x64, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x61, 0x00, 0x74, 0x00, 0x65, 0x00, 0x43,
+  0x00, 0x61, 0x00, 0x70, 0x00, 0x74, 0x00, 0x75, 0x00, 0x72, 0x00, 0x65, 0x00, 0x00, 0x00, 0x01, 0x7e, 0x00, 0x00, 0x00, 0xa0, 0x00, 0x00, 0x00, 0x7e, 0x00, 0xff, 0xff, 0xff, 0x00, 0x00, 0x03, 0xaf, 0x00, 0x00, 0x02, 0x87, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0xfc, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x16, 0x00, 0x46, 0x00, 0x69, 0x00, 0x6c, 0x00, 0x65, 0x00, 0x54, 0x00, 0x6f, 0x00, 0x6f, 0x00, 0x6c, 0x00, 0x42, 0x00, 0x61, 0x00, 0x72, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x4c, 0x00, 0x61, 0x00, 0x79, 0x00, 0x65, 0x00,
+  0x72, 0x00, 0x54, 0x00, 0x6f, 0x00, 0x6f, 0x00, 0x6c, 0x00, 0x42, 0x00, 0x61, 0x00, 0x72, 0x01, 0x00, 0x00, 0x01, 0x90, 0x00, 0x00, 0x00, 0xbe, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x41, 0x00, 0x74, 0x00, 0x74, 0x00, 0x72, 0x00, 0x69, 0x00, 0x62, 0x00, 0x75, 0x00, 0x74, 0x00, 0x65, 0x00, 0x73, 0x01, 0x00, 0x00, 0x02, 0x4e, 0x00, 0x00, 0x01, 0x27, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x48, 0x00, 0x65, 0x00, 0x6c, 0x00, 0x70, 0x00, 0x00, 0x00, 0x03, 0xd9, 0x00, 0x00, 0x00, 0xdd, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0e, 0x00, 0x50, 0x00, 0x6c, 0x00, 0x75, 0x00, 0x67, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x73, 0x01, 0x00, 0x00, 0x03, 0x75, 0x00, 0x00, 0x01, 0x40, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x14, 0x00, 0x44, 0x00, 0x69, 0x00, 0x67, 0x00, 0x69, 0x00, 0x74, 0x00, 0x69, 0x00, 0x7a, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x67, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x4d, 0x00, 0x61, 0x00, 0x70, 0x00, 0x20, 0x00, 0x4e, 0x00, 0x61, 0x00, 0x76, 0x00, 0x69, 0x00, 0x67, 0x00, 0x61, 0x00, 0x74, 0x00, 0x69, 0x00, 0x6f, 0x00, 0x6e, 0x01, 0x00, 0x00, 0x02, 0x1c, 0x00, 0x00, 0x02, 0x99, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00
 };
 
 
@@ -2536,14 +2544,14 @@ bool QgisApp::addVectorLayers( QStringList const & theLayerQStringList, const QS
       else
       {
         QString msg = tr( "%1 doesn't have any layers" ).arg( src );
-        QMessageBox::critical( this, tr( "Invalid Data Source" ), msg );
+        messageBar()->pushMessage( tr( "Invalid Data Source" ), msg, QgsMessageBar::CRITICAL, messageTimeout() );
         delete layer;
       }
     }
     else
     {
       QString msg = tr( "%1 is not a valid or recognized data source" ).arg( src );
-      QMessageBox::critical( this, tr( "Invalid Data Source" ), msg );
+      messageBar()->pushMessage( tr( "Invalid Data Source" ), msg, QgsMessageBar::CRITICAL, messageTimeout() );
 
       // since the layer is bad, stomp on it
       delete layer;
@@ -2862,16 +2870,20 @@ void QgisApp::addDatabaseLayer()
   QgsDebugMsg( "about to addRasterLayer" );
 
   // TODO: QDialog for now, switch to QWidget in future
-  QDialog *pgs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( QString( "postgres" ), this ) );
-  if ( !pgs )
+  QDialog *dbs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( "postgres", this ) );
+  if ( !dbs )
   {
     QMessageBox::warning( this, tr( "PostgreSQL" ), tr( "Cannot get PostgreSQL select dialog from provider." ) );
     return;
   }
-  connect( pgs , SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
-           this , SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
-  pgs->exec();
-  delete pgs;
+  connect( dbs, SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
+           this, SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
+  connect( dbs, SIGNAL( progress( int, int ) ),
+           this, SLOT( showProgress( int, int ) ) );
+  connect( dbs, SIGNAL( progressMessage( QString ) ),
+           this, SLOT( showStatusMessage( QString ) ) );
+  dbs->exec();
+  delete dbs;
 #endif
 } // QgisApp::addDatabaseLayer()
 
@@ -2922,7 +2934,11 @@ void QgisApp::addDatabaseLayers( QStringList const & layerPathList, QString cons
     else
     {
       QgsMessageLog::logMessage( tr( "%1 is an invalid layer - not loaded" ).arg( layerPath ) );
-      QMessageBox::critical( this, tr( "Invalid Layer" ), tr( "%1 is an invalid layer and cannot be loaded." ).arg( layerPath ) );
+      QLabel *msgLabel = new QLabel( tr( "%1 is an invalid layer and cannot be loaded. Please check the <a href=\"#messageLog\">message log</a> for further info." ).arg( layerPath ), messageBar() );
+      msgLabel->setWordWrap( true );
+      connect( msgLabel, SIGNAL( linkActivated( QString ) ), mLogDock, SLOT( show() ) );
+      messageBar()->pushWidget( msgLabel,
+                                QgsMessageBar::WARNING );
       delete layer;
     }
     //qWarning("incrementing iterator");
@@ -2950,17 +2966,42 @@ void QgisApp::addSpatiaLiteLayer()
   }
 
   // show the SpatiaLite dialog
-  QDialog *dbs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( QString( "spatialite" ), this ) );
+  QDialog *dbs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( "spatialite", this ) );
   if ( !dbs )
   {
     QMessageBox::warning( this, tr( "SpatiaLite" ), tr( "Cannot get SpatiaLite select dialog from provider." ) );
     return;
   }
-  connect( dbs , SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
-           this , SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
+  connect( dbs, SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
+           this, SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
   dbs->exec();
   delete dbs;
 } // QgisApp::addSpatiaLiteLayer()
+
+void QgisApp::addDelimitedTextLayer()
+{
+  if ( mMapCanvas && mMapCanvas->isDrawing() )
+  {
+    return;
+  }
+
+  // show the Delimited text dialog
+  QDialog *dts = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( "delimitedtext", this ) );
+  if ( !dts )
+  {
+    QMessageBox::warning( this, tr( "Delimited Text" ), tr( "Cannot get Delimited Text select dialog from provider." ) );
+    return;
+  }
+  connect( dts, SIGNAL( addVectorLayer( QString, QString, QString ) ),
+           this, SLOT( addSelectedVectorLayer( QString, QString, QString ) ) );
+  dts->exec();
+  delete dts;
+} // QgisApp::addDelimitedTextLayer()
+
+void QgisApp::addSelectedVectorLayer( QString uri, QString layerName, QString provider )
+{
+  addVectorLayer( uri, layerName, provider );
+} // QgisApp:addSelectedVectorLayer
 
 void QgisApp::addMssqlLayer()
 {
@@ -2971,14 +3012,14 @@ void QgisApp::addMssqlLayer()
   }
 
   // show the MSSQL dialog
-  QDialog *dbs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( QString( "mssql" ), this ) );
+  QDialog *dbs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( "mssql", this ) );
   if ( !dbs )
   {
     QMessageBox::warning( this, tr( "MSSQL" ), tr( "Cannot get MSSQL select dialog from provider." ) );
     return;
   }
-  connect( dbs , SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
-           this , SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
+  connect( dbs, SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
+           this, SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
   dbs->exec();
   delete dbs;
 #endif
@@ -2993,14 +3034,18 @@ void QgisApp::addOracleLayer()
   }
 
   // show the Oracle dialog
-  QDialog *dbs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( QString( "oracle" ), this ) );
+  QDialog *dbs = dynamic_cast<QDialog*>( QgsProviderRegistry::instance()->selectWidget( "oracle", this ) );
   if ( !dbs )
   {
     QMessageBox::warning( this, tr( "Oracle" ), tr( "Cannot get Oracle select dialog from provider." ) );
     return;
   }
-  connect( dbs , SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
-           this , SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
+  connect( dbs, SIGNAL( addDatabaseLayers( QStringList const &, QString const & ) ),
+           this, SLOT( addDatabaseLayers( QStringList const &, QString const & ) ) );
+  connect( dbs, SIGNAL( progress( int, int ) ),
+           this, SLOT( showProgress( int, int ) ) );
+  connect( dbs, SIGNAL( progressMessage( QString ) ),
+           this, SLOT( showStatusMessage( QString ) ) );
   dbs->exec();
   delete dbs;
 #endif
@@ -3022,8 +3067,8 @@ void QgisApp::addWmsLayer()
     QMessageBox::warning( this, tr( "WMS" ), tr( "Cannot get WMS select dialog from provider." ) );
     return;
   }
-  connect( wmss , SIGNAL( addRasterLayer( QString const &, QString const &, QString const & ) ),
-           this , SLOT( addRasterLayer( QString const &, QString const &, QString const & ) ) );
+  connect( wmss, SIGNAL( addRasterLayer( QString const &, QString const &, QString const & ) ),
+           this, SLOT( addRasterLayer( QString const &, QString const &, QString const & ) ) );
   wmss->exec();
   delete wmss;
 }
@@ -3043,8 +3088,8 @@ void QgisApp::addWcsLayer()
     QMessageBox::warning( this, tr( "WCS" ), tr( "Cannot get WCS select dialog from provider." ) );
     return;
   }
-  connect( wcss , SIGNAL( addRasterLayer( QString const &, QString const &, QString const & ) ),
-           this , SLOT( addRasterLayer( QString const &, QString const &, QString const & ) ) );
+  connect( wcss, SIGNAL( addRasterLayer( QString const &, QString const &, QString const & ) ),
+           this, SLOT( addRasterLayer( QString const &, QString const &, QString const & ) ) );
   wcss->exec();
   delete wcss;
 }
@@ -3070,8 +3115,8 @@ void QgisApp::addWfsLayer()
     QMessageBox::warning( this, tr( "WFS" ), tr( "Cannot get WFS select dialog from provider." ) );
     return;
   }
-  connect( wfss , SIGNAL( addWfsLayer( QString, QString ) ),
-           this , SLOT( addWfsLayer( QString, QString ) ) );
+  connect( wfss, SIGNAL( addWfsLayer( QString, QString ) ),
+           this, SLOT( addWfsLayer( QString, QString ) ) );
 
   //re-enable wfs with extent setting: pass canvas info to source select
   wfss->setProperty( "MapExtent", mMapCanvas->extent().toString() );
@@ -4230,6 +4275,26 @@ void QgisApp::labeling()
   delete dlg;
 
   activateDeactivateLayerRelatedActions( layer );
+}
+
+void QgisApp::fieldCalculator()
+{
+  if ( mMapCanvas && mMapCanvas->isDrawing() )
+  {
+    return;
+  }
+
+  QgsVectorLayer *myLayer = qobject_cast<QgsVectorLayer *>( activeLayer() );
+  if ( !myLayer )
+  {
+    return;
+  }
+
+  QgsFieldCalculator calc( myLayer );
+  if ( calc.exec() )
+  {
+    mMapCanvas->refresh();
+  }
 }
 
 void QgisApp::attributeTable()
@@ -6556,7 +6621,12 @@ void QgisApp::adjustBrightnessContrast( int delta, bool updateBrightness )
 
 void QgisApp::helpContents()
 {
-  openURL( "index.html" );
+  // We should really ship the HTML version of the docs local too.
+  openURL( QString( "http://docs.qgis.org/%1.%2/html/%3/docs/user_manual/" )
+           .arg( QGis::QGIS_VERSION_INT / 10000 )
+           .arg( QGis::QGIS_VERSION_INT / 100 % 100 )
+           .arg( tr( "en", "documentation language" ) ),
+           false );
 }
 
 void QgisApp::apiDocumentation()
@@ -6569,6 +6639,11 @@ void QgisApp::apiDocumentation()
   {
     openURL( "http://qgis.org/api/", false );
   }
+}
+
+void QgisApp::supportProviders()
+{
+  openURL( tr( "http://www.qgis.org/en/commercial-support.html" ), false );
 }
 
 void QgisApp::helpQgisHomePage()
@@ -7806,6 +7881,7 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
     mActionSelectRadius->setEnabled( false );
     mActionIdentify->setEnabled( QSettings().value( "/Map/identifyMode", 0 ).toInt() != 0 );
     mActionOpenTable->setEnabled( false );
+    mActionOpenFieldCalc->setEnabled( false );
     mActionToggleEditing->setEnabled( false );
     mActionToggleEditing->setChecked( false );
     mActionSaveLayerEdits->setEnabled( false );
@@ -7867,8 +7943,17 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
   {
     QgsVectorLayer* vlayer = qobject_cast<QgsVectorLayer *>( layer );
     QgsVectorDataProvider* dprovider = vlayer->dataProvider();
+    bool isEditable = vlayer->isEditable();
     bool layerHasSelection = vlayer->selectedFeatureCount() != 0;
     bool layerHasActions = vlayer->actions()->size() > 0;
+
+    bool canChangeAttributes = dprovider->capabilities() & QgsVectorDataProvider::ChangeAttributeValues;
+    bool canDeleteFeatures = dprovider->capabilities() & QgsVectorDataProvider::DeleteFeatures;
+    bool canAddAttributes = dprovider->capabilities() & QgsVectorDataProvider::AddAttributes;
+    bool canDeleteAttributes = dprovider->capabilities() & QgsVectorDataProvider::DeleteAttributes;
+    bool canAddFeatures = dprovider->capabilities() & QgsVectorDataProvider::AddFeatures;
+    bool canSupportEditing = dprovider->capabilities() & QgsVectorDataProvider::EditingCapabilities;
+    bool canChangeGeometry = dprovider->capabilities() & QgsVectorDataProvider::ChangeGeometries;
 
     mActionLocalHistogramStretch->setEnabled( false );
     mActionFullHistogramStretch->setEnabled( false );
@@ -7886,7 +7971,7 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
     mActionCopyFeatures->setEnabled( layerHasSelection );
     mActionFeatureAction->setEnabled( layerHasActions );
 
-    if ( !vlayer->isEditable() && mMapCanvas->mapTool()
+    if ( !isEditable && mMapCanvas->mapTool()
          && mMapCanvas->mapTool()->isEditTool() && !mSaveRollbackInProgress )
     {
       mMapCanvas->setMapTool( mNonEditMapTool );
@@ -7894,56 +7979,34 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
 
     if ( dprovider )
     {
-      mActionLayerSubsetString->setEnabled( dprovider->supportsSubsetString() && !vlayer->isEditable() );
+      mActionLayerSubsetString->setEnabled( dprovider->supportsSubsetString() && !isEditable );
+
+      mActionToggleEditing->setEnabled( canSupportEditing && !vlayer->isReadOnly() );
+      mActionToggleEditing->setChecked( canSupportEditing && isEditable );
+      mActionSaveLayerEdits->setEnabled( canSupportEditing && isEditable && vlayer->isModified() );
+      mUndoWidget->dockContents()->setEnabled( canSupportEditing && isEditable );
+      mActionUndo->setEnabled( canSupportEditing );
+      mActionRedo->setEnabled( canSupportEditing );
 
       //start editing/stop editing
-      if ( dprovider->capabilities() & QgsVectorDataProvider::EditingCapabilities )
+      if ( canSupportEditing )
       {
-        mActionToggleEditing->setEnabled( !vlayer->isReadOnly() );
-        mActionToggleEditing->setChecked( vlayer->isEditable() );
-        mActionSaveLayerEdits->setEnabled( vlayer->isEditable() && vlayer->isModified() );
-        mUndoWidget->dockContents()->setEnabled( vlayer->isEditable() );
         updateUndoActions();
       }
-      else
-      {
-        mActionToggleEditing->setEnabled( false );
-        mActionToggleEditing->setChecked( false );
-        mActionSaveLayerEdits->setEnabled( false );
-        mUndoWidget->dockContents()->setEnabled( false );
-        mActionUndo->setEnabled( false );
-        mActionRedo->setEnabled( false );
-      }
 
-      if ( dprovider->capabilities() & QgsVectorDataProvider::AddFeatures )
-      {
-        mActionPasteFeatures->setEnabled( vlayer->isEditable() && !clipboard()->empty() );
-        mActionAddFeature->setEnabled( vlayer->isEditable() );
-      }
-      else
-      {
-        mActionPasteFeatures->setEnabled( false );
-        mActionAddFeature->setEnabled( false );
-      }
+      mActionPasteFeatures->setEnabled( canAddAttributes && isEditable && !clipboard()->empty() );
+      mActionAddFeature->setEnabled( canAddAttributes && isEditable );
 
       //does provider allow deleting of features?
-      if ( vlayer->isEditable() && dprovider->capabilities() & QgsVectorDataProvider::DeleteFeatures )
-      {
-        mActionDeleteSelected->setEnabled( layerHasSelection );
-        mActionCutFeatures->setEnabled( layerHasSelection );
-      }
-      else
-      {
-        mActionDeleteSelected->setEnabled( false );
-        mActionCutFeatures->setEnabled( false );
-      }
+      mActionDeleteSelected->setEnabled( isEditable && canDeleteFeatures && layerHasSelection );
+      mActionCutFeatures->setEnabled( isEditable && canDeleteFeatures && layerHasSelection );
 
       //merge tool needs editable layer and provider with the capability of adding and deleting features
-      if ( vlayer->isEditable() && dprovider->capabilities() & QgsVectorDataProvider::ChangeAttributeValues )
+      if ( isEditable && canChangeAttributes )
       {
         mActionMergeFeatures->setEnabled( layerHasSelection &&
-                                          dprovider->capabilities() & QgsVectorDataProvider::DeleteFeatures &&
-                                          dprovider->capabilities() & QgsVectorDataProvider::AddFeatures );
+                                          canDeleteFeatures &&
+                                          canAddAttributes );
 
         mActionMergeFeatureAttributes->setEnabled( layerHasSelection );
       }
@@ -7954,23 +8017,13 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
       }
 
       // moving enabled if geometry changes are supported
-      if ( vlayer->isEditable() && dprovider->capabilities() & QgsVectorDataProvider::ChangeGeometries )
-      {
-        mActionAddPart->setEnabled( true );
-        mActionDeletePart->setEnabled( true );
-        mActionMoveFeature->setEnabled( true );
-        mActionRotateFeature->setEnabled( true );
-        mActionNodeTool->setEnabled( true );
-      }
-      else
-      {
-        mActionAddPart->setEnabled( false );
-        mActionDeletePart->setEnabled( false );
-        mActionMoveFeature->setEnabled( false );
-        mActionRotateFeature->setEnabled( false );
-        mActionOffsetCurve->setEnabled( false );
-        mActionNodeTool->setEnabled( false );
-      }
+      mActionAddPart->setEnabled( isEditable && canChangeGeometry );
+      mActionDeletePart->setEnabled( isEditable && canChangeGeometry );
+      mActionMoveFeature->setEnabled( isEditable && canChangeGeometry );
+      mActionRotateFeature->setEnabled( isEditable && canChangeGeometry );
+      mActionNodeTool->setEnabled( isEditable && canChangeGeometry );
+
+      mActionOffsetCurve->setEnabled( false );
 
       if ( vlayer->geometryType() == QGis::Point )
       {
@@ -7983,7 +8036,7 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
         mActionDeleteRing->setEnabled( false );
         mActionRotatePointSymbols->setEnabled( false );
 
-        if ( vlayer->isEditable() && dprovider->capabilities() & QgsVectorDataProvider::ChangeAttributeValues )
+        if ( isEditable && canChangeAttributes )
         {
           if ( QgsMapToolRotatePointSymbols::layerIsRotatable( vlayer ) )
           {
@@ -7996,19 +8049,10 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
       {
         mActionAddFeature->setIcon( QgsApplication::getThemeIcon( "/mActionCaptureLine.png" ) );
 
-        if ( vlayer->isEditable() && dprovider->capabilities() & QgsVectorDataProvider::AddFeatures )
-        {
-          mActionReshapeFeatures->setEnabled( true );
-          mActionSplitFeatures->setEnabled( true );
-          mActionSimplifyFeature->setEnabled( true );
-          mActionOffsetCurve->setEnabled( dprovider->capabilities() & QgsVectorDataProvider::ChangeAttributeValues );
-        }
-        else
-        {
-          mActionReshapeFeatures->setEnabled( false );
-          mActionSplitFeatures->setEnabled( false );
-          mActionSimplifyFeature->setEnabled( false );
-        }
+        mActionReshapeFeatures->setEnabled( isEditable && canAddFeatures );
+        mActionSplitFeatures->setEnabled( isEditable && canAddFeatures );
+        mActionSimplifyFeature->setEnabled( isEditable && canAddFeatures );
+        mActionOffsetCurve->setEnabled( isEditable && canAddFeatures && canChangeAttributes );
 
         mActionAddRing->setEnabled( false );
         mActionDeleteRing->setEnabled( false );
@@ -8017,23 +8061,14 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
       {
         mActionAddFeature->setIcon( QgsApplication::getThemeIcon( "/mActionCapturePolygon.png" ) );
 
-        if ( vlayer->isEditable() && dprovider->capabilities() & QgsVectorDataProvider::AddFeatures )
-        {
-          mActionAddRing->setEnabled( true );
-          mActionReshapeFeatures->setEnabled( true );
-          mActionSplitFeatures->setEnabled( true );
-          mActionSimplifyFeature->setEnabled( true );
-          mActionDeleteRing->setEnabled( true );
-        }
-        else
-        {
-          mActionAddRing->setEnabled( false );
-          mActionReshapeFeatures->setEnabled( false );
-          mActionSplitFeatures->setEnabled( false );
-          mActionSimplifyFeature->setEnabled( false );
-          mActionDeleteRing->setEnabled( false );
-        }
+        mActionAddRing->setEnabled( isEditable && canAddFeatures );
+        mActionReshapeFeatures->setEnabled( isEditable && canAddFeatures );
+        mActionSplitFeatures->setEnabled( isEditable && canAddFeatures );
+        mActionSimplifyFeature->setEnabled( isEditable && canAddFeatures );
+        mActionDeleteRing->setEnabled( isEditable && canAddFeatures );
       }
+
+      mActionOpenFieldCalc->setEnabled(( canChangeAttributes || canAddAttributes ) && isEditable );
 
       return;
     }
@@ -8043,6 +8078,8 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
       mActionUndo->setEnabled( false );
       mActionRedo->setEnabled( false );
     }
+
+
 
     mActionLayerSubsetString->setEnabled( false );
   }//end vector layer block
@@ -8078,6 +8115,7 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
     mActionSelectRadius->setEnabled( false );
     mActionZoomActualSize->setEnabled( true );
     mActionOpenTable->setEnabled( false );
+    mActionOpenFieldCalc->setEnabled( false );
     mActionToggleEditing->setEnabled( false );
     mActionToggleEditing->setChecked( false );
     mActionSaveLayerEdits->setEnabled( false );

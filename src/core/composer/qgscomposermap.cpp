@@ -27,6 +27,7 @@
 #include "qgsrendercontext.h"
 #include "qgsscalecalculator.h"
 #include "qgsvectorlayer.h"
+#include "qgspallabeling.h"
 
 #include "qgslabel.h"
 #include "qgslabelattributes.h"
@@ -41,10 +42,12 @@
 QgsComposerMap::QgsComposerMap( QgsComposition *composition, int x, int y, int width, int height )
     : QgsComposerItem( x, y, width, height, composition ), mKeepLayerSet( false ),
     mOverviewFrameMapId( -1 ), mOverviewBlendMode( QPainter::CompositionMode_SourceOver ), mOverviewInverted( false ), mGridEnabled( false ), mGridStyle( Solid ),
-    mGridIntervalX( 0.0 ), mGridIntervalY( 0.0 ), mGridOffsetX( 0.0 ), mGridOffsetY( 0.0 ), mGridAnnotationPrecision( 3 ), mShowGridAnnotation( false ),
-    mLeftGridAnnotationPosition( OutsideMapFrame ), mRightGridAnnotationPosition( OutsideMapFrame ), mTopGridAnnotationPosition( OutsideMapFrame ),
-    mBottomGridAnnotationPosition( OutsideMapFrame ), mAnnotationFrameDistance( 1.0 ), mLeftGridAnnotationDirection( Horizontal ), mRightGridAnnotationDirection( Horizontal ),
-    mTopGridAnnotationDirection( Horizontal ), mBottomGridAnnotationDirection( Horizontal ), mGridFrameStyle( NoGridFrame ), mGridFrameWidth( 2.0 ),
+    mGridIntervalX( 0.0 ), mGridIntervalY( 0.0 ), mGridOffsetX( 0.0 ), mGridOffsetY( 0.0 ), mGridAnnotationFontColor( QColor( 0, 0, 0 ) ),
+    mGridAnnotationPrecision( 3 ), mShowGridAnnotation( false ), mGridBlendMode( QPainter::CompositionMode_SourceOver ),
+    mLeftGridAnnotationPosition( OutsideMapFrame ), mRightGridAnnotationPosition( OutsideMapFrame ),
+    mTopGridAnnotationPosition( OutsideMapFrame ), mBottomGridAnnotationPosition( OutsideMapFrame ), mAnnotationFrameDistance( 1.0 ),
+    mLeftGridAnnotationDirection( Horizontal ), mRightGridAnnotationDirection( Horizontal ), mTopGridAnnotationDirection( Horizontal ),
+    mBottomGridAnnotationDirection( Horizontal ), mGridFrameStyle( NoGridFrame ),  mGridFrameWidth( 2.0 ),
     mCrossLength( 3 ), mMapCanvas( 0 ), mDrawCanvasItems( true )
 {
   mComposition = composition;
@@ -84,10 +87,12 @@ QgsComposerMap::QgsComposerMap( QgsComposition *composition, int x, int y, int w
 QgsComposerMap::QgsComposerMap( QgsComposition *composition )
     : QgsComposerItem( 0, 0, 10, 10, composition ), mKeepLayerSet( false ), mOverviewFrameMapId( -1 ),
     mOverviewBlendMode( QPainter::CompositionMode_SourceOver ), mOverviewInverted( false ), mGridEnabled( false ), mGridStyle( Solid ),
-    mGridIntervalX( 0.0 ), mGridIntervalY( 0.0 ), mGridOffsetX( 0.0 ), mGridOffsetY( 0.0 ), mGridAnnotationPrecision( 3 ), mShowGridAnnotation( false ),
-    mLeftGridAnnotationPosition( OutsideMapFrame ), mRightGridAnnotationPosition( OutsideMapFrame ), mTopGridAnnotationPosition( OutsideMapFrame ),
-    mBottomGridAnnotationPosition( OutsideMapFrame ), mAnnotationFrameDistance( 1.0 ), mLeftGridAnnotationDirection( Horizontal ), mRightGridAnnotationDirection( Horizontal ),
-    mTopGridAnnotationDirection( Horizontal ), mBottomGridAnnotationDirection( Horizontal ), mGridFrameStyle( NoGridFrame ), mGridFrameWidth( 2.0 ), mCrossLength( 3 ),
+    mGridIntervalX( 0.0 ), mGridIntervalY( 0.0 ), mGridOffsetX( 0.0 ), mGridOffsetY( 0.0 ), mGridAnnotationFontColor( QColor( 0, 0, 0 ) ),
+    mGridAnnotationPrecision( 3 ), mShowGridAnnotation( false ), mGridBlendMode( QPainter::CompositionMode_SourceOver ),
+    mLeftGridAnnotationPosition( OutsideMapFrame ), mRightGridAnnotationPosition( OutsideMapFrame ),
+    mTopGridAnnotationPosition( OutsideMapFrame ), mBottomGridAnnotationPosition( OutsideMapFrame ), mAnnotationFrameDistance( 1.0 ),
+    mLeftGridAnnotationDirection( Horizontal ), mRightGridAnnotationDirection( Horizontal ), mTopGridAnnotationDirection( Horizontal ),
+    mBottomGridAnnotationDirection( Horizontal ), mGridFrameStyle( NoGridFrame ), mGridFrameWidth( 2.0 ), mCrossLength( 3 ),
     mMapCanvas( 0 ), mDrawCanvasItems( true )
 {
   mOverviewFrameMapSymbol = 0;
@@ -166,6 +171,9 @@ void QgsComposerMap::draw( QPainter *painter, const QgsRectangle& extent, const 
 
   // force vector output (no caching of marker images etc.)
   theRendererContext->setForceVectorOutput( true );
+
+  // make the renderer respect the composition's useAdvancedEffects flag
+  theRendererContext->setUseAdvancedEffects( mComposition->useAdvancedEffects() );
 
   //force composer map scale for scale dependent visibility
   double bk_scale = theMapRenderer.scale();
@@ -627,6 +635,63 @@ bool QgsComposerMap::containsWMSLayer() const
   return false;
 }
 
+bool QgsComposerMap::containsAdvancedEffects() const
+{
+  // check if map contains advanced effects like blend modes, or flattened layers for transparency
+  if ( !mMapRenderer )
+  {
+    return false;
+  }
+
+  QStringList layers = mMapRenderer->layerSet();
+
+  //Also need to check PAL labeling for blend modes
+  QgsPalLabeling* lbl = dynamic_cast<QgsPalLabeling*>( mMapRenderer->labelingEngine() );
+
+  QStringList::const_iterator layer_it = layers.constBegin();
+  QgsMapLayer* currentLayer = 0;
+
+  for ( ; layer_it != layers.constEnd(); ++layer_it )
+  {
+    currentLayer = QgsMapLayerRegistry::instance()->mapLayer( *layer_it );
+    if ( currentLayer )
+    {
+      if ( currentLayer->blendMode() != QPainter::CompositionMode_SourceOver )
+      {
+        return true;
+      }
+      // if vector layer, check labels and feature blend mode
+      QgsVectorLayer* currentVectorLayer = qobject_cast<QgsVectorLayer *>( currentLayer );
+      if ( currentVectorLayer )
+      {
+        if ( currentVectorLayer->layerTransparency() != 0 )
+        {
+          return true;
+        }
+        if ( currentVectorLayer->featureBlendMode() != QPainter::CompositionMode_SourceOver )
+        {
+          return true;
+        }
+        // check label blend modes
+        if ( lbl->willUseLayer( currentVectorLayer ) )
+        {
+          // Check all label blending properties
+          QgsPalLayerSettings& layerSettings = lbl->layer( currentVectorLayer->id() );
+          if (( layerSettings.blendMode != QPainter::CompositionMode_SourceOver ) ||
+              ( layerSettings.bufferSize != 0 && layerSettings.bufferBlendMode != QPainter::CompositionMode_SourceOver ) ||
+              ( layerSettings.shadowDraw && layerSettings.shadowBlendMode != QPainter::CompositionMode_SourceOver ) ||
+              ( layerSettings.shapeDraw && layerSettings.shapeBlendMode != QPainter::CompositionMode_SourceOver ) )
+          {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
 void QgsComposerMap::connectUpdateSlot()
 {
   //connect signal from layer registry to update in case of new or deleted layers
@@ -731,6 +796,7 @@ bool QgsComposerMap::writeXML( QDomElement& elem, QDomDocument & doc ) const
   gridElem.setAttribute( "crossLength",  QString::number( mCrossLength ) );
   gridElem.setAttribute( "gridFrameStyle", mGridFrameStyle );
   gridElem.setAttribute( "gridFrameWidth", QString::number( mGridFrameWidth ) );
+  gridElem.setAttribute( "gridBlendMode", QgsMapRenderer::getBlendModeEnum( mGridBlendMode ) );
   QDomElement gridLineStyleElem = QgsSymbolLayerV2Utils::saveSymbol( QString(), mGridLineSymbol, doc );
   gridElem.appendChild( gridLineStyleElem );
 
@@ -749,6 +815,12 @@ bool QgsComposerMap::writeXML( QDomElement& elem, QDomDocument & doc ) const
   annotationElem.setAttribute( "frameDistance",  QString::number( mAnnotationFrameDistance ) );
   annotationElem.setAttribute( "font", mGridAnnotationFont.toString() );
   annotationElem.setAttribute( "precision", mGridAnnotationPrecision );
+  //annotation font color
+  QDomElement annotationFontColorElem = doc.createElement( "fontColor" );
+  annotationFontColorElem.setAttribute( "red", mGridAnnotationFontColor.red() );
+  annotationFontColorElem.setAttribute( "green", mGridAnnotationFontColor.green() );
+  annotationFontColorElem.setAttribute( "blue", mGridAnnotationFontColor.blue() );
+  annotationElem.appendChild( annotationFontColorElem );
 
   gridElem.appendChild( annotationElem );
   composerMapElem.appendChild( gridElem );
@@ -877,6 +949,7 @@ bool QgsComposerMap::readXML( const QDomElement& itemElem, const QDomDocument& d
     mCrossLength = gridElem.attribute( "crossLength", "3" ).toDouble();
     mGridFrameStyle = ( QgsComposerMap::GridFrameStyle )gridElem.attribute( "gridFrameStyle", "0" ).toInt();
     mGridFrameWidth = gridElem.attribute( "gridFrameWidth", "2.0" ).toDouble();
+    setGridBlendMode( QgsMapRenderer::getCompositionMode(( QgsMapRenderer::BlendMode ) gridElem.attribute( "gridBlendMode", "0" ).toUInt() ) );
 
     QDomElement gridSymbolElem = gridElem.firstChildElement( "symbol" );
     delete mGridLineSymbol;
@@ -910,6 +983,22 @@ bool QgsComposerMap::readXML( const QDomElement& itemElem, const QDomDocument& d
       mBottomGridAnnotationDirection = QgsComposerMap::GridAnnotationDirection( annotationElem.attribute( "bottomDirection", "0" ).toInt() );
       mAnnotationFrameDistance = annotationElem.attribute( "frameDistance", "0" ).toDouble();
       mGridAnnotationFont.fromString( annotationElem.attribute( "font", "" ) );
+
+      //annotation font color
+      QDomNodeList annotationFontColorList = annotationElem.elementsByTagName( "fontColor" );
+      if ( annotationFontColorList.size() > 0 )
+      {
+        QDomElement fontColorElem = annotationFontColorList.at( 0 ).toElement();
+        int red = fontColorElem.attribute( "red", "0" ).toInt();
+        int green = fontColorElem.attribute( "green", "0" ).toInt();
+        int blue = fontColorElem.attribute( "blue", "0" ).toInt();
+        mGridAnnotationFontColor = QColor( red, green, blue );
+      }
+      else
+      {
+        mGridAnnotationFontColor = QColor( 0, 0, 0 );
+      }
+
       mGridAnnotationPrecision = annotationElem.attribute( "precision", "3" ).toInt();
     }
   }
@@ -974,6 +1063,10 @@ void QgsComposerMap::drawGrid( QPainter* p )
   QRectF thisPaintRect = QRectF( 0, 0, QGraphicsRectItem::rect().width(), QGraphicsRectItem::rect().height() );
   p->setClipRect( thisPaintRect );
 
+  // set the blend mode for drawing grid lines
+  p->save();
+  p->setCompositionMode( mGridBlendMode );
+
   //simpler approach: draw vertical lines first, then horizontal ones
   if ( mGridStyle == QgsComposerMap::Solid )
   {
@@ -1034,6 +1127,8 @@ void QgsComposerMap::drawGrid( QPainter* p )
       drawGridLine( QLineF( hIt->second.p2(), crossEnd1 ), p );
     }
   }
+  // reset composition mode
+  p->restore();
 
   p->setClipRect( thisPaintRect , Qt::NoClip );
 
@@ -1046,6 +1141,7 @@ void QgsComposerMap::drawGrid( QPainter* p )
   {
     drawCoordinateAnnotations( p, horizontalLines, verticalLines );
   }
+
 }
 
 void QgsComposerMap::drawGridFrame( QPainter* p, const QList< QPair< double, QLineF > >& hLines, const QList< QPair< double, QLineF > >& vLines )
@@ -1326,7 +1422,7 @@ void QgsComposerMap::drawAnnotation( QPainter* p, const QPointF& pos, int rotati
   p->save();
   p->translate( pos );
   p->rotate( rotation );
-  p->setPen( QColor( 0, 0, 0 ) );
+  p->setPen( QPen( QColor( mGridAnnotationFontColor ) ) );
   drawText( p, 0, 0, annotationText, mGridAnnotationFont );
   p->restore();
 }
@@ -1534,6 +1630,12 @@ QPen QgsComposerMap::gridPen() const
     p.setCapStyle( Qt::FlatCap );
   }
   return p;
+}
+
+void QgsComposerMap::setGridBlendMode( QPainter::CompositionMode blendMode )
+{
+  mGridBlendMode = blendMode;
+  update();
 }
 
 QRectF QgsComposerMap::boundingRect() const

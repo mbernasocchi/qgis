@@ -171,7 +171,7 @@ QDomDocument QgsWMSServer::getCapabilities( QString version, bool fullProjectInf
 
   //wms:GetMap
   elem = doc.createElement( "GetMap"/*wms:GetMap*/ );
-  appendFormats( doc, elem, QStringList() << "image/jpeg" << "image/png" << "image/png; mode=8bit" << "image/png; mode=1bit" );
+  appendFormats( doc, elem, QStringList() << "image/jpeg" << "image/png" << "image/png; mode=16bit" << "image/png; mode=8bit" << "image/png; mode=1bit" );
   elem.appendChild( dcpTypeElement.cloneNode().toElement() ); //this is the same as for 'GetCapabilities'
   requestElement.appendChild( elem );
 
@@ -183,7 +183,7 @@ QDomDocument QgsWMSServer::getCapabilities( QString version, bool fullProjectInf
 
   //wms:GetLegendGraphic
   elem = doc.createElement( "GetLegendGraphic"/*wms:GetLegendGraphic*/ );
-  appendFormats( doc, elem, QStringList() << "jpeg" << "image/jpeg" << "image/png" );
+  appendFormats( doc, elem, QStringList() << "image/jpeg" << "image/png" );
   elem.appendChild( dcpTypeElement.cloneNode().toElement() ); // this is the same as for 'GetCapabilities'
   requestElement.appendChild( elem );
 
@@ -373,7 +373,7 @@ QImage* QgsWMSServer::getLegendGraphics()
     currentY += layerSpace;
   }
 
-  QgsMapLayerRegistry::instance()->mapLayers().clear();
+  QgsMapLayerRegistry::instance()->removeAllMapLayers();
   delete theImage;
   return paintImage;
 }
@@ -649,7 +649,7 @@ QImage* QgsWMSServer::getMap()
   clearFeatureSelections( selectedLayerIdList );
 
   QgsDebugMsg( "clearing filters" );
-  QgsMapLayerRegistry::instance()->mapLayers().clear();
+  QgsMapLayerRegistry::instance()->removeAllMapLayers();
 
 #ifdef QGISDEBUG
   theImage->save( QDir::tempPath() + QDir::separator() + "lastrender.png" );
@@ -1138,10 +1138,10 @@ int QgsWMSServer::configureMapRender( const QPaintDevice* paintDevice ) const
 int QgsWMSServer::readLayersAndStyles( QStringList& layersList, QStringList& stylesList ) const
 {
   //get layer and style lists from the parameters trying LAYERS and LAYER as well as STYLE and STYLES for GetLegendGraphic compatibility
-  layersList = mParameterMap.value( "LAYER" ).split( "," );
-  layersList = layersList + mParameterMap.value( "LAYERS" ).split( "," );
-  stylesList = mParameterMap.value( "STYLE" ).split( "," );
-  stylesList = stylesList + mParameterMap.value( "STYLES" ).split( "," );
+  layersList = mParameterMap.value( "LAYER" ).split( ",", QString::SkipEmptyParts );
+  layersList = layersList + mParameterMap.value( "LAYERS" ).split( ",", QString::SkipEmptyParts );
+  stylesList = mParameterMap.value( "STYLE" ).split( ",", QString::SkipEmptyParts );
+  stylesList = stylesList + mParameterMap.value( "STYLES" ).split( ",", QString::SkipEmptyParts );
 
   return 0;
 }
@@ -1309,7 +1309,7 @@ int QgsWMSServer::featureInfoFromVectorLayer( QgsVectorLayer* layer,
     featureAttributes = feature.attributes();
     for ( int i = 0; i < featureAttributes.count(); ++i )
     {
-      //skip attribute if it is explicitely excluded from WMS publication
+      //skip attribute if it is explicitly excluded from WMS publication
       if ( excludedAttributes.contains( fields[i].name() ) )
       {
         continue;
@@ -1926,7 +1926,7 @@ QStringList QgsWMSServer::applyFeatureSelections( const QStringList& layerList )
 
 void QgsWMSServer::clearFeatureSelections( const QStringList& layerIds ) const
 {
-  QMap<QString, QgsMapLayer*>& layerMap = QgsMapLayerRegistry::instance()->mapLayers();
+  const QMap<QString, QgsMapLayer*>& layerMap = QgsMapLayerRegistry::instance()->mapLayers();
 
   foreach ( QString id, layerIds )
   {

@@ -99,6 +99,10 @@
         <file>themes/default/console/iconMethodTreeWidgetConsole.png</file>
         <file>themes/default/console/iconFunctionTreeWidgetConsole.png</file>
         <file>themes/default/console/iconClassBrowserConsole.png</file>
+        <file>themes/default/console/iconSearchEditorConsole.png</file>
+        <file>themes/default/console/iconSearchNextEditorConsole.png</file>
+        <file>themes/default/console/iconSearchPrevEditorConsole.png</file>
+        <file>themes/default/console/iconSyntaxErrorConsole.png</file>
         <file>themes/default/extents.png</file>
         <file>themes/default/favourites.png</file>
         <file>themes/default/geographic.png</file>
@@ -118,6 +122,7 @@
         <file>themes/default/mActionAddArrow.png</file>
         <file>themes/default/mActionAddBasicShape.png</file>
         <file>themes/default/mActionAddGPSLayer.png</file>
+        <file>themes/default/mActionAddGroup.png</file>
         <file>themes/default/mActionAddHtml.png</file>
         <file>themes/default/mActionAddImage.png</file>
         <file>themes/default/mActionAddLayer.png</file>
@@ -135,6 +140,7 @@
         <file>themes/default/mActionAddWcsLayer.png</file>
         <file>themes/default/mActionAddWfsLayer.png</file>
         <file>themes/default/mActionAddWmsLayer.png</file>
+        <file>themes/default/mActionAddDelimitedTextLayer.png</file>
         <file>themes/default/mActionAlignBottom.png</file>
         <file>themes/default/mActionAlignHCenter.png</file>
         <file>themes/default/mActionAlignLeft.png</file>
@@ -355,7 +361,6 @@
         <file>themes/default/plugin.png</file>
         <file>themes/default/plugins/coordinate_capture/coordinate_capture.png</file>
         <file>themes/default/plugins/copyright_label.png</file>
-        <file>themes/default/plugins/delimited_text.png</file>
         <file>themes/default/plugins/dxf2shp_converter.png</file>
         <file>themes/default/plugins/gps_importer.png</file>
         <file>themes/default/plugins/gps_importer/create_gpx.png</file>

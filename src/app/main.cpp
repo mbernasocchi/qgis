@@ -47,6 +47,7 @@
 #include <fcntl.h> /*  _O_BINARY */
 #include <windows.h>
 #include <dbghelp.h>
+#include <time.h>
 #ifdef MSVC
 #undef _fmode
 int _fmode = _O_BINARY;
@@ -81,6 +82,7 @@ typedef SInt32 SRefCon;
 #if defined(linux) && !defined(ANDROID)
 #include <unistd.h>
 #include <execinfo.h>
+#include <signal.h>
 #endif
 
 // (if Windows/Mac, use icon from resource)
@@ -193,6 +195,13 @@ LONG WINAPI qgisCrashDump( struct _EXCEPTION_POINTERS *ExceptionInfo )
 }
 #endif
 
+#ifdef Q_OS_UNIX
+void qgisCrash( int signal )
+{
+  qFatal( "QGIS died on signal %d", signal );
+}
+#endif
+
 /*
  * Hook into the qWarning/qFatal mechanism so that we can channel messages
  * from libpng to the user.
@@ -270,11 +279,24 @@ int main( int argc, char *argv[] )
 #if !defined(ANDROID) && !defined(_MSC_VER)
   // Set up the custom qWarning/qDebug custom handler
   qInstallMsgHandler( myMessageOutput );
+
+  signal( SIGQUIT, qgisCrash );
+  signal( SIGILL, qgisCrash );
+  signal( SIGFPE, qgisCrash );
+  signal( SIGSEGV, qgisCrash );
+  signal( SIGBUS, qgisCrash );
+  signal( SIGSYS, qgisCrash );
+  signal( SIGTRAP, qgisCrash );
+  signal( SIGXCPU, qgisCrash );
+  signal( SIGXFSZ, qgisCrash );
 #endif
 
 #ifdef Q_OS_WIN
   SetUnhandledExceptionFilter( qgisCrashDump );
 #endif
+
+  // initialize random number seed
+  srand( time( NULL ) );
 
   /////////////////////////////////////////////////////////////////
   // Command line options 'behaviour' flag setup

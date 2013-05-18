@@ -76,7 +76,7 @@ class CORE_EXPORT QgsDataItem : public QObject
     // remove and delete child item, signals to browser are emitted
     virtual void deleteChildItem( QgsDataItem * child );
 
-    // remove child item but don't delete it, signals to browser are emited
+    // remove child item but don't delete it, signals to browser are emitted
     // returns pointer to the removed item or null if no such item was found
     virtual QgsDataItem * removeChildItem( QgsDataItem * child );
 
@@ -241,7 +241,7 @@ class CORE_EXPORT QgsDirectoryItem : public QgsDataCollectionItem
 
     virtual bool equal( const QgsDataItem *other );
 
-    virtual QWidget * paramWidget();
+    virtual QWidget *paramWidget();
 
     /* static QVector<QgsDataProvider*> mProviders; */
     //! @note not available via python bindings
@@ -289,6 +289,9 @@ class CORE_EXPORT QgsFavouritesItem : public QgsDataCollectionItem
     ~QgsFavouritesItem();
 
     QVector<QgsDataItem*> createChildren();
+
+    void addDirectory( QString favIcon );
+    void removeDirectory( QgsDirectoryItem *item );
 
     static const QIcon &iconFavourites();
 };

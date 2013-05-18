@@ -13,6 +13,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "qgsapplication.h"
 #include "qgsattributetablemodel.h"
 #include "qgsattributetablefiltermodel.h"
 
@@ -58,13 +59,7 @@ QgsAttributeTableModel::QgsAttributeTableModel( QgsVectorLayerCache *layerCache,
 
 QgsAttributeTableModel::~QgsAttributeTableModel()
 {
-  const QMap<QString, QVariant> *item;
-  foreach ( item, mValueMaps )
-  {
-    delete item;
-  }
-
-  mValueMaps.clear();
+  qDeleteAll( mValueMaps );
 }
 
 bool QgsAttributeTableModel::loadFeatureAtId( QgsFeatureId fid ) const
@@ -201,7 +196,7 @@ void QgsAttributeTableModel::loadAttributes()
         continue;
 
       case QgsVectorLayer::ValueMap:
-        mValueMaps.insert( idx, &layer()->valueMap( idx ) );
+        mValueMaps.insert( idx, new QMap< QString, QVariant >( layer()->valueMap( idx ) ) );
         break;
 
       case QgsVectorLayer::ValueRelation:
@@ -268,15 +263,15 @@ void QgsAttributeTableModel::loadAttributes()
     attributes << idx;
   }
 
-  if ( columnCount() < attributes.size() )
+  if ( mFieldCount < attributes.size() )
   {
     ins = true;
-    beginInsertColumns( QModelIndex(), columnCount(), attributes.size() - 1 );
+    beginInsertColumns( QModelIndex(), mFieldCount, attributes.size() - 1 );
   }
-  else if ( attributes.size() < columnCount() )
+  else if ( attributes.size() < mFieldCount )
   {
     rm = true;
-    beginRemoveColumns( QModelIndex(), attributes.size(), columnCount() - 1 );
+    beginRemoveColumns( QModelIndex(), attributes.size(), mFieldCount - 1 );
   }
 
   mFieldCount = attributes.size();

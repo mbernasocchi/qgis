@@ -142,11 +142,13 @@ void Heatmap::run()
 
     float* line = ( float * ) CPLMalloc( sizeof( float ) * columns );
     for ( int i = 0; i < columns ; i++ )
+    {
       line[i] = NO_DATA;
+    }
     // Write the empty raster
     for ( int i = 0; i < rows ; i++ )
     {
-      poBand->RasterIO( GF_Write, 0, 0, columns, 1, line, columns, 1, GDT_Float32, 0, 0 );
+      poBand->RasterIO( GF_Write, 0, i, columns, 1, line, columns, 1, GDT_Float32, 0, 0 );
     }
 
     CPLFree( line );
@@ -201,8 +203,9 @@ void Heatmap::run()
     int totalFeatures = inputLayer->featureCount();
     int counter = 0;
 
-    QProgressDialog p( "Creating Heatmap ... ", "Abort", 0, totalFeatures );
-    p.setWindowModality( Qt::WindowModal );
+    QProgressDialog p( tr( "Creating heatmap" ), tr( "Abort" ), 0, totalFeatures, mQGisIface->mainWindow() );
+    p.setWindowModality( Qt::ApplicationModal );
+    p.show();
 
     QgsFeature myFeature;
 
@@ -210,6 +213,7 @@ void Heatmap::run()
     {
       counter++;
       p.setValue( counter );
+      QApplication::processEvents();
       if ( p.wasCanceled() )
       {
         QMessageBox::information( 0, tr( "Heatmap generation aborted" ), tr( "QGIS will now load the partially-computed raster." ) );
@@ -222,7 +226,8 @@ void Heatmap::run()
       QgsPoint myPoint;
       myPoint = myPointGeometry->asPoint();
       // avoiding any empty points or out of extent points
-      if (( myPoint.x() < myBBox.xMinimum() ) || ( myPoint.y() < myBBox.yMinimum() ) )
+      if (( myPoint.x() < myBBox.xMinimum() ) || ( myPoint.y() < myBBox.yMinimum() )
+          || ( myPoint.x() > myBBox.xMaximum() ) || ( myPoint.y() > myBBox.yMaximum() ) )
       {
         continue;
       }
@@ -407,10 +412,18 @@ double Heatmap::triangularKernel( double distance, int bandwidth )
   // Normalizing constant. In this case it's calculated a little different
   // due to the inclusion of the non-standard "decay" parameter
 
-  double k = 3. / (( 1. + 2. * mDecay ) * M_PI * pow(( double )bandwidth, 2 ) );
+  if ( mDecay >= 0 )
+  {
+    double k = 3. / (( 1. + 2. * mDecay ) * M_PI * pow(( double )bandwidth, 2 ) );
 
-  // Derived from Wand and Jones (1995), p. 175 (with addition of decay parameter)
-  return k * ( 1. - ( 1. - mDecay ) * ( distance / ( double )bandwidth ) );
+    // Derived from Wand and Jones (1995), p. 175 (with addition of decay parameter)
+    return k * ( 1. - ( 1. - mDecay ) * ( distance / ( double )bandwidth ) );
+  }
+  else
+  {
+    // Non-standard or mathematically valid negative decay ("coolmap")
+    return ( 1. - ( 1. - mDecay ) * ( distance / ( double )bandwidth ) );
+  }
 }
 
 // Unload the plugin by cleaning up the GUI

@@ -166,6 +166,8 @@ QgsFieldsProperties::QgsFieldsProperties( QgsVectorLayer *layer, QWidget* parent
   setupUi( this );
   setupEditTypes();
 
+  mSplitter->restoreState( QSettings().value( "/Windows/VectorLayerProperties/FieldsProperties/SplitState" ).toByteArray() );
+
   // Init as hidden by default, it will be enabled if project is set to
   mAttributeEditorOptionsWidget->setVisible( false );
 
@@ -189,7 +191,7 @@ QgsFieldsProperties::QgsFieldsProperties( QgsVectorLayer *layer, QWidget* parent
   attrTreeLayout->setMargin( 0 );
   attrListLayout->setMargin( 0 );
   mAttributesTree = new QgsAttributesTree( mAttributesTreeFrame );
-  mAttributesList = new QgsAttributesList( mAttributesListFrame );
+  mAttributesList = new QTableWidget( mAttributesListFrame );
   attrTreeLayout->addWidget( mAttributesTree );
   attrListLayout->addWidget( mAttributesList );
   mAttributesTreeFrame->setLayout( attrTreeLayout );
@@ -204,6 +206,11 @@ QgsFieldsProperties::QgsFieldsProperties( QgsVectorLayer *layer, QWidget* parent
   leEditFormInit->setText( layer->editFormInit() );
 
   updateButtons();
+}
+
+QgsFieldsProperties::~QgsFieldsProperties()
+{
+  QSettings().setValue( "/Windows/VectorLayerProperties/FieldsProperties/SplitState", mSplitter->saveState() );
 }
 
 void QgsFieldsProperties::init()
@@ -529,14 +536,7 @@ void QgsFieldsProperties::attributeAdded( int idx )
 
 void QgsFieldsProperties::attributeDeleted( int idx )
 {
-  for ( int i = 0; i < mAttributesList->rowCount(); i++ )
-  {
-    if ( mAttributesList->item( i, 0 )->text().toInt() == idx )
-    {
-      mAttributesList->removeRow( i );
-      break;
-    }
-  }
+  mAttributesList->removeRow( idx );
 }
 
 void QgsFieldsProperties::addAttribute()
@@ -573,24 +573,6 @@ bool QgsFieldsProperties::addAttribute( const QgsField &field )
   }
 }
 
-void QgsFieldsProperties::deleteAttribute()
-{
-  QList<QTableWidgetItem*> items = mAttributesList->selectedItems();
-  QList<int> idxs;
-
-  for ( QList<QTableWidgetItem*>::const_iterator it = items.begin(); it != items.end(); it++ )
-  {
-    if (( *it )->column() == 0 )
-      idxs << ( *it )->text().toInt();
-  }
-  for ( QList<int>::const_iterator it = idxs.begin(); it != idxs.end(); it++ )
-  {
-    mLayer->beginEditCommand( tr( "Deleted attribute" ) );
-    mLayer->deleteAttribute( *it );
-    mLayer->endEditCommand();
-  }
-}
-
 void QgsFieldsProperties::editingToggled()
 {
   if ( !mLayer->isEditable() )
@@ -619,20 +601,15 @@ void QgsFieldsProperties::on_mAddAttributeButton_clicked()
 
 void QgsFieldsProperties::on_mDeleteAttributeButton_clicked()
 {
-  QList<QTableWidgetItem*> items = mAttributesList->selectedItems();
-  QList<int> idxs;
+  QSet<int> attrs;
+  foreach ( QTableWidgetItem* item, mAttributesList->selectedItems() )
+  {
+    attrs << mAttributesList->row( item );
+  }
 
-  for ( QList<QTableWidgetItem*>::const_iterator it = items.begin(); it != items.end(); it++ )
-  {
-    if (( *it )->column() == 0 )
-      idxs << ( *it )->text().toInt();
-  }
-  for ( QList<int>::const_iterator it = idxs.begin(); it != idxs.end(); it++ )
-  {
-    mLayer->beginEditCommand( tr( "Deleted attribute" ) );
-    mLayer->deleteAttribute( *it );
-    mLayer->endEditCommand();
-  }
+  mLayer->beginEditCommand( tr( "Deleted attribute" ) );
+  mLayer->deleteAttributes( attrs.toList() );
+  mLayer->endEditCommand();
 }
 
 void QgsFieldsProperties::updateButtons()

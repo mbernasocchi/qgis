@@ -29,6 +29,7 @@ class QgsDataItem : QObject
 
     // Populate children using children vector created by createChildren()
     virtual void populate();
+    bool isPopulated();
 
     // Insert new child using alphabetical order based on mName, emits necessary signal to model before and after, sets parent and connects signals
     // refresh - refresh populated item, emit signals to model
@@ -37,7 +38,7 @@ class QgsDataItem : QObject
     // remove and delete child item, signals to browser are emitted
     virtual void deleteChildItem( QgsDataItem * child );
 
-    // remove child item but don't delete it, signals to browser are emited
+    // remove child item but don't delete it, signals to browser are emitted
     // returns pointer to the removed item or null if no such item was found
     virtual QgsDataItem *removeChildItem( QgsDataItem * child ) /TransferBack/;
 
@@ -212,6 +213,23 @@ class QgsErrorItem : QgsDataItem
 };
 
 
+// ---------
+
+class QgsDirectoryParamWidget : QTreeWidget
+{
+%TypeHeaderCode
+#include <qgsdataitem.h>
+%End
+  public:
+    QgsDirectoryParamWidget( QString path, QWidget* parent = NULL );
+
+  protected:
+    void mousePressEvent( QMouseEvent* event );
+
+  public slots:
+    void showHideColumn();
+};
+
 /** Contains various Favourites directories */
 class QgsFavouritesItem : QgsDataCollectionItem
 {
@@ -223,6 +241,9 @@ class QgsFavouritesItem : QgsDataCollectionItem
     ~QgsFavouritesItem();
 
     QVector<QgsDataItem*> createChildren();
+
+    void addDirectory( QString favIcon );
+    void removeDirectory( QgsDirectoryItem *item );
 
     static const QIcon &iconFavourites();
 };

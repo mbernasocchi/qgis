@@ -57,11 +57,12 @@ class QgsComposerMapWidget: public QWidget, private Ui::QgsComposerMapWidgetBase
     void on_mIntervalYSpinBox_editingFinished();
     void on_mOffsetXSpinBox_editingFinished();
     void on_mOffsetYSpinBox_editingFinished();
-    void on_mLineWidthSpinBox_valueChanged( double d );
     void on_mGridLineStyleButton_clicked();
     void on_mGridTypeComboBox_currentIndexChanged( const QString& text );
     void on_mCrossWidthSpinBox_valueChanged( double d );
+    void on_mGridBlendComboBox_currentIndexChanged( int index );
     void on_mAnnotationFontButton_clicked();
+    void on_mAnnotationFontColorButton_colorChanged( const QColor& newFontColor );
     void on_mDistanceToMapFrameSpinBox_valueChanged( double d );
 
     void on_mAnnotationFormatComboBox_currentIndexChanged( int index );

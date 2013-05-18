@@ -216,13 +216,18 @@ class CORE_EXPORT QgsVectorLayerCache : public QObject
   signals:
 
     /**
-     * When filling the cache, this signal gets emited periodically to notify about the progress
+     * When filling the cache, this signal gets emitted periodically to notify about the progress
      * and to be able to cancel an operation.
      *
      * @param i       The number of already fetched features
      * @param cancel  A reference to a boolean variable. Set to true and the operation will be canceled.
      */
     void progress( int i, bool& cancel );
+
+    /**
+     * When filling the cache, this signal gets emitted once the cache is fully initialized.
+     */
+    void finished();
 
     /**
      * @brief Is emitted when the cached layer is deleted. Is emitted when the cached layers layerDelete()

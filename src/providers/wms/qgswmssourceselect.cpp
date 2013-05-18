@@ -370,7 +370,7 @@ bool QgsWMSSourceSelect::populateLayerList( QgsWmsProvider *wmsProvider )
 
     lstTilesets->clearContents();
     lstTilesets->setRowCount( rows );
-    lstTilesets->setSortingEnabled( true );
+    lstTilesets->setSortingEnabled( false );
 
     int row = 0;
     foreach ( const QgsWmtsTileLayer &l, mTileLayers )
@@ -383,7 +383,6 @@ bool QgsWMSSourceSelect::populateLayerList( QgsWmsProvider *wmsProvider )
           {
             QTableWidgetItem *item = new QTableWidgetItem( l.identifier );
             item->setData( Qt::UserRole + 0, l.identifier );
-
             item->setData( Qt::UserRole + 1, format );
             item->setData( Qt::UserRole + 2, style.identifier );
             item->setData( Qt::UserRole + 3, setLink.tileMatrixSet );
@@ -416,7 +415,12 @@ bool QgsWMSSourceSelect::populateLayerList( QgsWmsProvider *wmsProvider )
     }
 
     lstTilesets->resizeColumnsToContents();
+    lstTilesets->setSortingEnabled( true );
     lstTilesets->sortByColumn( 0, Qt::AscendingOrder );
+  }
+  else
+  {
+    lstTilesets->setRowCount( 0 );
   }
 
   // If we got some layers, let the user add them to the map
@@ -890,7 +894,7 @@ void QgsWMSSourceSelect::updateButtons()
     //   disable tilesets, when layer are selected or no tilesets available
     lstLayers->setEnabled( true );
     tabServers->setTabEnabled( tabServers->indexOf( tabLayerOrder ), mLayerOrderTreeWidget->topLevelItemCount() > 0 );
-    tabServers->setTabEnabled( tabServers->indexOf( tabTilesets ),  mLayerOrderTreeWidget->topLevelItemCount() == 0  && lstTilesets->rowCount() );
+    tabServers->setTabEnabled( tabServers->indexOf( tabTilesets ),  mLayerOrderTreeWidget->topLevelItemCount() == 0  && lstTilesets->rowCount() > 0 );
     btnGrpImageEncoding->setEnabled( true );
   }
 

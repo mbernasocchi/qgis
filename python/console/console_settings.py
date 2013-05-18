@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 """
 /***************************************************************************
-Python Conosle for QGIS
+Python Console for QGIS
                              -------------------
 begin                : 2012-09-10
 copyright            : (C) 2012 by Salvatore Larosa
@@ -118,10 +118,6 @@ class optionsDialog(QDialog, Ui_SettingsDialogPythonConsole):
         apiNameItem = QTableWidgetItem(apiName)
         self.tableWidget.setItem(count, 0, apiNameItem)
         self.tableWidget.setItem(count, 1, pathItem)
-        self.tableWidget.setHorizontalHeaderLabels([self.tr("API"), self.tr("PATH")])
-        self.tableWidget.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-        self.tableWidget.horizontalHeader().show()
-        self.tableWidget.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
 
     def removeAPI(self):
         listItemSel = self.tableWidget.selectionModel().selectedRows()
@@ -179,12 +175,13 @@ class optionsDialog(QDialog, Ui_SettingsDialogPythonConsole):
 
         settings.setValue("pythonConsole/autoCompleteEnabledEditor", QVariant(self.autoCompleteEnabledEditor.isChecked()))
         settings.setValue("pythonConsole/autoCompleteEnabled", QVariant(self.autoCompleteEnabled.isChecked()))
+        settings.setValue("pythonConsole/enableObjectInsp", QVariant(self.enableObjectInspector.isChecked()))
 
     def restoreSettings(self):
         settings = QSettings()
         self.spinBox.setValue(settings.value("pythonConsole/fontsize", 10).toInt()[0])
         self.spinBoxEditor.setValue(settings.value("pythonConsole/fontsizeEditor", 10).toInt()[0])
-        self.preloadAPI.setChecked(settings.value("pythonConsole/preloadAPI").toBool())
+        self.preloadAPI.setChecked(settings.value("pythonConsole/preloadAPI", True).toBool())
         itemTable = settings.value("pythonConsole/userAPI").toStringList()
         for i in range(len(itemTable)):
             self.tableWidget.insertRow(i)
@@ -193,10 +190,6 @@ class optionsDialog(QDialog, Ui_SettingsDialogPythonConsole):
             apiName = pathSplit[-1][0:-4]
             self.tableWidget.setItem(i, 0, QTableWidgetItem(apiName))
             self.tableWidget.setItem(i, 1, QTableWidgetItem(itemTable[i]))
-            self.tableWidget.setHorizontalHeaderLabels([self.tr("API"), self.tr("PATH")])
-            self.tableWidget.horizontalHeader().setResizeMode(0, QHeaderView.ResizeToContents)
-            self.tableWidget.horizontalHeader().show()
-            self.tableWidget.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
         self.autoSaveScript.setChecked(settings.value("pythonConsole/autoSaveScript", False).toBool())
 
         self.autoCompThreshold.setValue(settings.value("pythonConsole/autoCompThreshold", 2).toInt()[0])
@@ -204,6 +197,7 @@ class optionsDialog(QDialog, Ui_SettingsDialogPythonConsole):
 
         self.autoCompleteEnabledEditor.setChecked(settings.value("pythonConsole/autoCompleteEnabledEditor", True).toBool())
         self.autoCompleteEnabled.setChecked(settings.value("pythonConsole/autoCompleteEnabled", True).toBool())
+        self.enableObjectInspector.setChecked(settings.value("pythonConsole/enableObjectInsp", False).toBool())
 
         if settings.value("pythonConsole/autoCompleteSource") == 'fromDoc':
             self.autoCompFromDoc.setChecked(True)
