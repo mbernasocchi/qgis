@@ -40,6 +40,9 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     QgsVectorLayer* modelLayer();
     QString modelPath() { return modelPathLineEdit->text(); }
 
+    float scrollSensitivity();
+    bool invertScrollWheel();
+
   private:
     QString openRasterFile();
     void updateStereoDialog();
@@ -56,6 +59,8 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void loadStereoConfig();
     //! Save settings
     void saveStereoConfig();
+    void loadNavigationSettings();
+    void saveNavigationSettings();
     //! Handle stereoMode
     void setStereoMode();
     void loadVideoSettings();
@@ -81,6 +86,10 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
 
     //MODEL
     void on_modelBrowse_clicked();
+
+    // NAVIGATION
+    void on_mScrollSensitivitySlider_valueChanged( int value );
+    void on_mInvertScrollWheel_stateChanged( int state );
 
     //ELEVATION
     void on_elevationCombo_currentIndexChanged( QString type );
