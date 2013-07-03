@@ -44,7 +44,11 @@ using namespace osgEarth;
 using namespace osgEarth::Drivers;
 
 
-QgsOsgEarthTileSource::QgsOsgEarthTileSource( QgisInterface* theQgisInterface, const TileSourceOptions& options ) : TileSource( options ), mQGisIface( theQgisInterface ), mCoordTranform( 0 )
+QgsOsgEarthTileSource::QgsOsgEarthTileSource( QStringList mapLayers, QgsMapCanvas* canvas, const TileSourceOptions& options )
+    : TileSource( options )
+    , mMapLayers( mapLayers )
+    , mCanvas( canvas )
+    , mCoordTranform( 0 )
 {
 }
 
@@ -54,7 +58,7 @@ void QgsOsgEarthTileSource::initialize( const std::string& referenceURI, const P
   Q_UNUSED( overrideProfile );
 
   setProfile( osgEarth::Registry::instance()->getGlobalGeodeticProfile() );
-  QgsMapRenderer* mainRenderer = mQGisIface->mapCanvas()->mapRenderer();
+  QgsMapRenderer* mainRenderer = mCanvas->mapRenderer();
   mMapRenderer = new QgsMapRenderer();
 
   long epsgGlobe = 4326;
@@ -103,7 +107,7 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
       return 0;
     }
 
-    QgsMapRenderer* mainRenderer = mQGisIface->mapCanvas()->mapRenderer();
+    QgsMapRenderer* mainRenderer = mCanvas->mapRenderer();
     mMapRenderer->setLayerSet( mainRenderer->layerSet() );
 
     mMapRenderer->setOutputSize( QSize( qImage->width(), qImage->height() ), qImage->logicalDpiX() );
@@ -133,6 +137,15 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
     return ImageUtils::createEmptyImage();
   }
   return image.release();
+}
+
+void QgsOsgEarthTileSource::addLayers( QSet<QgsMapLayer*> layers )
+{
+  Q_FOREACH( QgsMapLayer* layer, layers )
+  {
+    mMapLayers << layer->id();
+  }
+  mMapRenderer->setLayerSet( mMapLayers );
 }
 
 QImage* QgsOsgEarthTileSource::createQImage( int width, int height ) const
@@ -180,7 +193,7 @@ bool QgsOsgEarthTileSource::intersects( const TileKey* key )
   //Get the native extents of the tile
   double xmin, ymin, xmax, ymax;
   key->getExtent().getBounds( xmin, ymin, xmax, ymax );
-  QgsRectangle extent = mQGisIface->mapCanvas()->fullExtent();
+  QgsRectangle extent = mCanvas->fullExtent();
   if ( mCoordTranform ) extent = mCoordTranform->transformBoundingBox( extent );
   return !( xmin >= extent.xMaximum() || xmax <= extent.xMinimum() || ymin >= extent.yMaximum() || ymax <= extent.yMinimum() );
 }

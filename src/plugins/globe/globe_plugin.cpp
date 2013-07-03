@@ -19,6 +19,7 @@
 #include "globe_plugin.h"
 #include "globe_plugin_dialog.h"
 #include "qgsosgearthtilesource.h"
+#include "qgsosgearthfeaturesource.h"
 #ifdef HAVE_OSGEARTHQT
 #include <osgEarthQt/ViewerWidget>
 #else
@@ -32,10 +33,13 @@
 #include <qgslogger.h>
 #include <qgsapplication.h>
 #include <qgsmapcanvas.h>
+#include <qgsmaplayerregistry.h>
 #include <qgsfeature.h>
 #include <qgsgeometry.h>
 #include <qgspoint.h>
 #include <qgsdistancearea.h>
+#include <symbology-ng/qgsrendererv2.h>
+#include <symbology-ng/qgssymbolv2.h>
 
 #include <QAction>
 #include <QDir>
@@ -65,6 +69,9 @@
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 2, 0 )
 #include <osgEarthDrivers/cache_filesystem/FileSystemCache>
 #endif
+#include <osgEarthDrivers/model_feature_geom/FeatureGeomModelOptions>
+#include <osgEarth/MapInfo>
+
 using namespace osgEarth::Drivers;
 using namespace osgEarth::Util;
 
@@ -190,7 +197,7 @@ struct RefreshControlHandler : public ControlEventHandler
   RefreshControlHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
   virtual void onClick( Control* /*control*/, int /*mouseButtonMask*/ )
   {
-    mGlobe->imageLayersChanged();
+    mGlobe->canvasLayersChanged();
   }
 private:
   GlobePlugin* mGlobe;
@@ -232,10 +239,12 @@ void GlobePlugin::initGui()
   mQGisIface->addPluginToMenu( tr( "&Globe" ), mQActionSettingsPointer );
   mQGisIface->addPluginToMenu( tr( "&Globe" ), mQActionUnload );
 
-  connect( mQGisIface->mapCanvas() , SIGNAL( extentsChanged() ),
-           this, SLOT( extentsChanged() ) );
-  connect( mQGisIface->mapCanvas(), SIGNAL( layersChanged() ),
-           this, SLOT( imageLayersChanged() ) );
+  QgsMapLayerRegistry* layerRegistry = QgsMapLayerRegistry::instance();
+
+  connect( layerRegistry , SIGNAL( layersAdded( QList<QgsMapLayer*> ) ),
+           this, SLOT( layersAdded( QList<QgsMapLayer*> ) ) );
+  connect( layerRegistry , SIGNAL( layersRemoved( QStringList ) ),
+           this, SLOT( layersRemoved( QStringList ) ) );
   connect( mSettingsDialog, SIGNAL( elevationDatasourcesChanged() ),
            this, SLOT( elevationLayersChanged() ) );
   connect( mQGisIface->mainWindow(), SIGNAL( projectRead() ), this,
@@ -421,7 +430,7 @@ void GlobePlugin::setupMap()
   mRootNode->addChild( mMapNode );
 
   // Add layers to the map
-  imageLayersChanged();
+  layersAdded( mQGisIface->mapCanvas()->layers() );
   elevationLayersChanged();
 
   // model placement utils
@@ -737,8 +746,9 @@ void GlobePlugin::extentsChanged()
   QgsDebugMsg( "extentsChanged: " + mQGisIface->mapCanvas()->extent().toString() );
 }
 
-void GlobePlugin::imageLayersChanged()
+void GlobePlugin::canvasLayersChanged()
 {
+#if 0
   if ( mIsGlobeRunning )
   {
     QgsDebugMsg( "imageLayersChanged: Globe Running, executing" );
@@ -757,8 +767,7 @@ void GlobePlugin::imageLayersChanged()
     }
 
     //add QGIS layer
-    QgsDebugMsg( "addMapLayer" );
-    mTileSource = new QgsOsgEarthTileSource( mQGisIface );
+    mTileSource = new QgsOsgEarthTileSource( QStringList(), mQGisIface->mapCanvas() );
     mTileSource->initialize( "", 0 );
     ImageLayerOptions options( "QGIS" );
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 2, 0 )
@@ -771,6 +780,83 @@ void GlobePlugin::imageLayersChanged()
   {
     QgsDebugMsg( "layersChanged: Globe NOT running, skipping" );
     return;
+  }
+#endif
+}
+
+void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
+{
+  if ( mIsGlobeRunning )
+  {
+    QSet<QgsMapLayer*> tileLayers;
+
+    Q_FOREACH( QgsMapLayer* mapLayer, mapLayers )
+    {
+      if ( mapLayer->type() == QgsMapLayer::VectorLayer )
+      {
+        // Add a new feature source for vector layers
+
+        QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
+        Q_ASSERT( vLayer );
+
+        QGISFeatureOptions  featureOpt;
+        featureOpt.setLayer( vLayer );
+        Style style;
+
+        Q_FOREACH( QgsSymbolV2* sym, vLayer->rendererV2()->symbols() )
+        {
+          if ( sym->type() == QgsSymbolV2::Line )
+          {
+
+            LineSymbol* ls = style.getOrCreateSymbol<LineSymbol>();
+            QColor color = sym->color();
+            ls->stroke()->color() = osg::Vec4f( color.redF(), color.greenF(), color.blueF(), color.alphaF() );
+            ls->stroke()->width() = 1.0f;
+          }
+          else if ( sym->type() == QgsSymbolV2::Fill )
+          {
+            // TODO access border color, etc.
+            PolygonSymbol* poly = style.getOrCreateSymbol<PolygonSymbol>();
+            QColor color = sym->color();
+            poly->fill()->color() = osg::Vec4f( color.redF(), color.greenF(), color.blueF(), color.alphaF() );
+            style.addSymbol( poly );
+          }
+        }
+
+        FeatureGeomModelOptions geomOpt;
+        geomOpt.featureOptions() = featureOpt;
+        geomOpt.styles() = new StyleSheet();
+        geomOpt.styles()->addStyle( style );
+        // geomOpt.depthTestEnabled() = true;
+        // worldOpt.enableLighting() = true;
+
+        ModelLayerOptions modelOptions( "qgis features", geomOpt );
+        modelOptions.lightingEnabled() = true;
+        ModelLayer* nLayer = new ModelLayer( modelOptions );
+
+        osg::ref_ptr<Map> map = mMapNode->getMap();
+
+        map->addModelLayer( nLayer );
+      }
+      else
+      {
+        // Add to the draped image for non-vector layers
+        tileLayers << mapLayer;
+      }
+    }
+
+    if ( tileLayers.size() > 0 )
+    {
+      mTileSource->addLayers( tileLayers );
+    }
+  }
+}
+
+void GlobePlugin::layersRemoved( QStringList )
+{
+  if ( mIsGlobeRunning )
+  {
+    osg::ref_ptr<Map> map = mMapNode->getMap();
   }
 }
 

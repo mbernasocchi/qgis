@@ -17,6 +17,7 @@
 #define OSGEARTH_DRIVER_QGIS_DRIVEROPTIONS 1
 
 #include "qgsmaprenderer.h"
+#include "qgsmapcanvas.h"
 
 #include <QImage>
 class QgisInterface;
@@ -33,11 +34,13 @@ namespace osgEarth
     class QgsOsgEarthTileSource : public TileSource
     {
       public:
-        QgsOsgEarthTileSource( QgisInterface* theQgisInterface, const TileSourceOptions& options = TileSourceOptions() );
+        QgsOsgEarthTileSource( QStringList mapLayers, QgsMapCanvas* canvas, const TileSourceOptions& options = TileSourceOptions() );
 
         void initialize( const std::string& referenceURI, const Profile* overrideProfile = NULL );
 
         osg::Image* createImage( const TileKey& key, ProgressCallback* progress );
+
+        void addLayers( QSet<QgsMapLayer*> layers );
 
         virtual osg::HeightField* createHeightField( const TileKey &key, ProgressCallback* progress )
         {
@@ -65,10 +68,10 @@ namespace osgEarth
         bool intersects( const TileKey* key );
 
         //! Pointer to the QGIS interface object
-        QgisInterface *mQGisIface;
-        QgsCoordinateTransform *mCoordTranform;
+        QStringList mMapLayers;
         QgsMapRenderer* mMapRenderer;
-
+        QgsMapCanvas* mCanvas;
+        QgsCoordinateTransform *mCoordTranform;
     };
   }
 } // namespace osgEarth::Drivers

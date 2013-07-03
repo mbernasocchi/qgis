@@ -76,7 +76,11 @@ class GlobePlugin : public QObject, public QgisPlugin
     void help();
 
     //! Called when a new set of image layers has been received
-    void imageLayersChanged();
+    void canvasLayersChanged();
+
+    void layersAdded( QList<QgsMapLayer*> );
+    void layersRemoved( QStringList );
+
     //! Called when a new set of elevation layers has been received
     void elevationLayersChanged();
     //! Set a different base map (QString::NULL will disable the base map)
