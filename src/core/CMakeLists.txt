@@ -419,6 +419,7 @@ SET(QGIS_CORE_HDRS
   qgspallabeling.h
   qgspluginlayer.h
   qgspluginlayerregistry.h
+  qgsnumeric.h
   qgspoint.h
   qgsproject.h
   qgsprojectfiletransform.h

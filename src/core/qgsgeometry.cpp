@@ -4021,7 +4021,7 @@ QString QgsGeometry::exportToWkt() const
 
   QGis::WkbType wkbType;
   bool hasZValue = false;
-  double *x, *y;
+  double *x, *y, *z;
 
   QString mWkt; // TODO: rename
 
@@ -4032,14 +4032,21 @@ QString QgsGeometry::exportToWkt() const
   switch ( wkbType )
   {
     case QGis::WKBPoint25D:
+      hasZValue = true;
     case QGis::WKBPoint:
     {
       mWkt += "POINT(";
       x = ( double * )( mGeometry + 5 );
       mWkt += qgsDoubleToString( *x );
       mWkt += " ";
-      y = ( double * )( mGeometry + 5 + sizeof( double ) );
+      y = ( double * )( x + sizeof( double ) );
       mWkt += qgsDoubleToString( *y );
+      if ( hasZValue )
+      {
+        mWkt += " ";
+        z = ( double * )( y + sizeof( double ) );
+        mWkt += qgsDoubleToString( *z );
+      }
       mWkt += ")";
       return mWkt;
     }
@@ -4073,6 +4080,9 @@ QString QgsGeometry::exportToWkt() const
         ptr += sizeof( double );
         if ( hasZValue )
         {
+          mWkt += " ";
+          z = ( double * ) ptr;
+          mWkt += qgsDoubleToString( *z );
           ptr += sizeof( double );
         }
       }
@@ -4128,6 +4138,9 @@ QString QgsGeometry::exportToWkt() const
           ptr += sizeof( double );
           if ( hasZValue )
           {
+            mWkt += " ";
+            z = ( double * ) ptr;
+            mWkt += qgsDoubleToString( *z );
             ptr += sizeof( double );
           }
         }
@@ -4166,6 +4179,9 @@ QString QgsGeometry::exportToWkt() const
         ptr += sizeof( double );
         if ( hasZValue )
         {
+          mWkt += " ";
+          z = ( double * ) ptr;
+          mWkt += qgsDoubleToString( *z );
           ptr += sizeof( double );
         }
       }
@@ -4210,6 +4226,9 @@ QString QgsGeometry::exportToWkt() const
           ptr += sizeof( double );
           if ( hasZValue )
           {
+            mWkt += " ";
+            z = ( double * ) ptr;
+            mWkt += qgsDoubleToString( *z );
             ptr += sizeof( double );
           }
         }
@@ -4266,6 +4285,9 @@ QString QgsGeometry::exportToWkt() const
             ptr += sizeof( double );
             if ( hasZValue )
             {
+              mWkt += " ";
+              z = ( double * ) ptr;
+              mWkt += qgsDoubleToString( *z );
               ptr += sizeof( double );
             }
           }
@@ -4301,7 +4323,7 @@ QString QgsGeometry::exportToGeoJSON() const
 
   QGis::WkbType wkbType;
   bool hasZValue = false;
-  double *x, *y;
+  double *x, *y, *z;
 
   QString mWkt; // TODO: rename
 
@@ -4318,8 +4340,14 @@ QString QgsGeometry::exportToGeoJSON() const
       x = ( double * )( mGeometry + 5 );
       mWkt += qgsDoubleToString( *x );
       mWkt += ", ";
-      y = ( double * )( mGeometry + 5 + sizeof( double ) );
+      y = ( double * )( x + sizeof( double ) );
       mWkt += qgsDoubleToString( *y );
+      if ( hasZValue )
+      {
+        mWkt += ", ";
+        z = ( double * )( y + sizeof( double ) );
+        mWkt += qgsDoubleToString( *z );
+      }
       mWkt += "] }";
       return mWkt;
     }
@@ -4354,6 +4382,9 @@ QString QgsGeometry::exportToGeoJSON() const
         ptr += sizeof( double );
         if ( hasZValue )
         {
+          mWkt += ", ";
+          z = ( double * ) ptr;
+          mWkt += qgsDoubleToString( *z );
           ptr += sizeof( double );
         }
         mWkt += "]";
@@ -4409,10 +4440,13 @@ QString QgsGeometry::exportToGeoJSON() const
           y = ( double * ) ptr;
           mWkt += qgsDoubleToString( *y );
           ptr += sizeof( double );
-          if ( hasZValue )
-          {
-            ptr += sizeof( double );
-          }
+		      if ( hasZValue )
+		      {
+		        mWkt += ", ";
+		        z = ( double * ) ptr;
+		        mWkt += qgsDoubleToString( *z );
+		        ptr += sizeof( double );
+		      }
           mWkt += "]";
         }
         mWkt += " ]";
@@ -4451,6 +4485,9 @@ QString QgsGeometry::exportToGeoJSON() const
         ptr += sizeof( double );
         if ( hasZValue )
         {
+          mWkt += ", ";
+          z = ( double * ) ptr;
+          mWkt += qgsDoubleToString( *z );
           ptr += sizeof( double );
         }
         mWkt += "]";
@@ -4497,6 +4534,9 @@ QString QgsGeometry::exportToGeoJSON() const
           ptr += sizeof( double );
           if ( hasZValue )
           {
+            mWkt += ", ";
+            z = ( double * ) ptr;
+            mWkt += qgsDoubleToString( *z );
             ptr += sizeof( double );
           }
           mWkt += "]";
@@ -4555,6 +4595,9 @@ QString QgsGeometry::exportToGeoJSON() const
             ptr += sizeof( double );
             if ( hasZValue )
             {
+              mWkt += ", ";
+              z = ( double * ) ptr;
+              mWkt += qgsDoubleToString( *z );
               ptr += sizeof( double );
             }
             mWkt += "]";
@@ -6205,7 +6248,11 @@ QgsPoint QgsGeometry::asPoint( unsigned char*& ptr, bool hasZValue ) const
   ptr += 2 * sizeof( double );
 
   if ( hasZValue )
+  {
+    double *z = ( double * )( ptr );
     ptr += sizeof( double );
+    return QgsPoint( *x, *y, *z );
+  }
 
   return QgsPoint( *x, *y );
 }
@@ -6213,7 +6260,7 @@ QgsPoint QgsGeometry::asPoint( unsigned char*& ptr, bool hasZValue ) const
 
 QgsPolyline QgsGeometry::asPolyline( unsigned char*& ptr, bool hasZValue ) const
 {
-  double x, y;
+  double x, y, z;
   ptr += 5;
   unsigned int nPoints = *(( int* )ptr );
   ptr += 4;
@@ -6228,10 +6275,16 @@ QgsPolyline QgsGeometry::asPolyline( unsigned char*& ptr, bool hasZValue ) const
 
     ptr += 2 * sizeof( double );
 
-    line[i] = QgsPoint( x, y );
-
-    if ( hasZValue ) // ignore Z value
+    if ( hasZValue )
+    {
+      z = *(( double * ) ptr );
       ptr += sizeof( double );
+      line[i] = QgsPoint( x, y, z );
+    }
+    else
+    {
+      line[i] = QgsPoint( x, y );
+    }
   }
 
   return line;
@@ -6240,7 +6293,7 @@ QgsPolyline QgsGeometry::asPolyline( unsigned char*& ptr, bool hasZValue ) const
 
 QgsPolygon QgsGeometry::asPolygon( unsigned char*& ptr, bool hasZValue ) const
 {
-  double x, y;
+  double x, y, z;
 
   ptr += 5;
 
@@ -6268,9 +6321,15 @@ QgsPolygon QgsGeometry::asPolygon( unsigned char*& ptr, bool hasZValue ) const
       ptr += 2 * sizeof( double );
 
       if ( hasZValue )
+      {
+        z = *(( double * ) ptr );
+        ring[jdx] = QgsPoint( x, y, z );
         ptr += sizeof( double );
-
+      }
+      else
+      {
       ring[jdx] = QgsPoint( x, y );
+      }
     }
 
     rings[idx] = ring;
@@ -6426,6 +6485,7 @@ double QgsGeometry::distance( QgsGeometry& geom )
   {
     exportWkbToGeos();
   }
+
   if ( geom.mDirtyGeos )
   {
     geom.exportWkbToGeos();
