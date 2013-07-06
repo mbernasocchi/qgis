@@ -16,40 +16,46 @@ ENDIF(OSGEARTH_ELEVATION_QUERY)
 ########################################################
 # Files
 
-SET (globe_plugin_SRCS
+SET (GLOBE_PLUGIN_SRCS
      globe_plugin.cpp
      qgsosgearthtilesource.cpp
      globe_plugin_dialog.cpp
 )
 IF (NOT HAVE_OSGEARTHQT)
-    SET(globe_plugin_SRCS
-        ${globe_plugin_SRCS}
+    SET(GLOBE_PLUGIN_SRCS
+        ${GLOBE_PLUGIN_SRCS}
         osgEarthQt/ViewerWidget.cpp
         osgEarthUtil/Controls.cpp
         )
 ENDIF (NOT HAVE_OSGEARTHQT)
 
-SET (globe_plugin_UIS
+SET (GLOBE_PLUGIN_UIS
      globe_plugin_dialog_guibase.ui
      )
 
-SET (globe_plugin_MOC_HDRS
+SET (GLOBE_PLUGIN_MOC_HDRS
      globe_plugin.h
      globe_plugin_dialog.h
 )
 
-SET (globe_plugin_RCCS  globe_plugin.qrc)
+SET (GLOBE_PLUGIN_HDRS
+     qgsosgearthtilesource.h
+     qgsosgearthfeaturesource.h
+     qgsosgearthfeatureoptions.h
+)
+
+SET (GLOBE_PLUGIN_RCCS  globe_plugin.qrc)
 
 ########################################################
 # Build
 
-QT4_WRAP_UI (globe_plugin_UIS_H  ${globe_plugin_UIS})
+QT4_WRAP_UI (GLOBE_PLUGIN_UIS_H  ${GLOBE_PLUGIN_UIS})
 
-QT4_WRAP_CPP (globe_plugin_MOC_SRCS  ${globe_plugin_MOC_HDRS})
+QT4_WRAP_CPP (GLOBE_PLUGIN_MOC_SRCS  ${GLOBE_PLUGIN_MOC_HDRS})
 
-QT4_ADD_RESOURCES(globe_plugin_RCC_SRCS ${globe_plugin_RCCS})
+QT4_ADD_RESOURCES(GLOBE_PLUGIN_RCC_SRCS ${GLOBE_PLUGIN_RCCS})
 
-ADD_LIBRARY (globeplugin MODULE ${globe_plugin_SRCS} ${globe_plugin_MOC_SRCS} ${globe_plugin_RCC_SRCS} ${globe_plugin_UIS_H})
+ADD_LIBRARY (globeplugin MODULE ${GLOBE_PLUGIN_SRCS} ${GLOBE_PLUGIN_MOC_SRCS} ${GLOBE_PLUGIN_RCC_SRCS} ${GLOBE_PLUGIN_UIS_H} ${GLOBE_PLUGIN_HDRS})
 
 INCLUDE_DIRECTORIES(
      ${CMAKE_CURRENT_BINARY_DIR}
