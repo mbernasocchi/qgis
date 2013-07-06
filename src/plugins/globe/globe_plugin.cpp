@@ -350,12 +350,12 @@ void GlobePlugin::run()
       mViewerWidget->setFormat( glf );
     }
 
+    setupControls();
+
     // Set a home viewpoint
     manip->setHomeViewpoint(
       osgEarth::Util::Viewpoint( osg::Vec3d( -90, 0, 0 ), 0.0, -90.0, 2e7 ),
       1.0 );
-
-    setupControls();
 
     // add our handlers
     mOsgViewer->addEventHandler( new FlyToExtentHandler( this ) );
@@ -823,6 +823,13 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
           }
         }
 
+        AltitudeSymbol* altitudeSymbol = style.getOrCreateSymbol<AltitudeSymbol>();
+        altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_RELATIVE_TO_TERRAIN;
+        altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_MAP;
+        altitudeSymbol->binding() = osgEarth::Symbology::AltitudeSymbol::BINDING_VERTEX;
+
+        style.addSymbol( altitudeSymbol );
+
         FeatureGeomModelOptions geomOpt;
         geomOpt.featureOptions() = featureOpt;
         geomOpt.styles() = new StyleSheet();
@@ -830,7 +837,7 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         // geomOpt.depthTestEnabled() = true;
         // worldOpt.enableLighting() = true;
 
-        ModelLayerOptions modelOptions( "qgis features", geomOpt );
+        ModelLayerOptions modelOptions( "QgisFeatures", geomOpt );
         modelOptions.lightingEnabled() = true;
         ModelLayer* nLayer = new ModelLayer( modelOptions );
 
