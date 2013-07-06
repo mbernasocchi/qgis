@@ -3,8 +3,6 @@
 
 #include <osgEarthFeatures/FeatureSource>
 
-#include "qgsvectorlayer.h"
-
 #include "qgsosgearthfeatureoptions.h"
 
 class QgisInterface;

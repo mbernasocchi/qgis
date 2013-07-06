@@ -12,6 +12,7 @@
 #include <qgsmapcanvas.h>
 #include <qgsrectangle.h>
 #include <qgsvectordataprovider.h>
+#include "qgsvectorlayer.h"
 #include <qgsfeatureiterator.h>
 #include <qgsfeature.h>
 #include <qgsgeometry.h>
@@ -26,7 +27,41 @@ namespace osgEarth
     using namespace osgEarth::Symbology;
     using namespace osgEarth::Drivers;
 
-    Geometry* geometryFromQgsGeometry( const QgsGeometry& geom )
+    static inline osg::Vec3d pointFromQgsPoint( const QgsPoint& pt )
+    {
+      return osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 );
+    }
+
+    static inline Polygon* polygonFromQgsPolygon( const QgsPolygon& poly )
+    {
+      Q_ASSERT( poly.size() > 0 );
+
+      // a ring for osg earth is open (first point != last point)
+      // an outer ring is oriented CCW, an inner ring is oriented CW
+      Polygon* retPoly = new Polygon();
+
+      // the outer ring
+      Q_FOREACH( const QgsPoint& pt, poly[0] )
+      {
+        retPoly->push_back( pointFromQgsPoint( pt ) );
+      }
+      retPoly->rewind( Symbology::Ring::ORIENTATION_CCW );
+
+      size_t nRings = poly.size();
+      for ( size_t i = 1; i < nRings; ++i )
+      {
+        Ring* innerRing = new Ring();
+        Q_FOREACH( const QgsPoint& pt, poly[i] )
+        {
+          innerRing->push_back( pointFromQgsPoint( pt ) );
+        }
+        innerRing->rewind( Symbology::Ring::ORIENTATION_CW );
+        retPoly->getHoles().push_back( osg::ref_ptr<Ring>( innerRing ) );
+      }
+      return retPoly;
+    }
+
+    static inline Geometry* geometryFromQgsGeometry( const QgsGeometry& geom )
     {
 #if 0
       // test srid
@@ -37,159 +72,106 @@ namespace osgEarth
       std::cout << "srid = " << srid << std::endl;
 #endif
 
+      Geometry* retGeom = NULL;
+
       switch ( geom.wkbType() )
       {
         case QGis::WKBPoint:
         case QGis::WKBPoint25D:
         {
-          QgsPoint pt = geom.asPoint();
           PointSet* retPt = new PointSet();
-          retPt->push_back( osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 ) );
-          return retPt;
+          retPt->push_back( pointFromQgsPoint( geom.asPoint() ) );
+          retGeom = retPt;
         }
         break;
+
+
         case QGis::WKBLineString:
         case QGis::WKBLineString25D:
         {
-          QgsPolyline line = geom.asPolyline();
           LineString* retLs = new LineString();
 
-          size_t nPts = line.size();
-          for ( size_t i = 0; i < nPts; ++i )
+          Q_FOREACH( const QgsPoint& pt, geom.asPolyline() )
           {
-            retLs->push_back( osg::Vec3d( line[i].x(), line[i].y(), line[i].is3D() ? line[i].z() : 0.0 ) );
+            retLs->push_back( pointFromQgsPoint( pt ) );
           }
-          return retLs;
+          retGeom = retLs;
         }
         break;
+
+
         case QGis::WKBPolygon:
         case QGis::WKBPolygon25D:
         {
-          QgsPolygon poly = geom.asPolygon();
-          // a ring for osg earth is open (first point != last point)
-          // an outer ring is oriented CCW, an inner ring is oriented CW
-
-          Polygon* retPoly = new Polygon();
-
-          // the outer ring
-          size_t nPts = poly[0].size();
-          for ( size_t j = 0; j < nPts; ++j )
-          {
-            const QgsPoint& pt = poly[0][j];
-            retPoly->push_back( osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 ) );
-          }
-          retPoly->rewind( Symbology::Ring::ORIENTATION_CCW );
-
-          size_t nRings = poly.size();
-          for ( size_t i = 1; i < nRings; ++i )
-          {
-            size_t nPts = poly[i].size();
-            Ring* innerRing = new Ring();
-            for ( size_t j = 0; j < nPts; ++j )
-            {
-              const QgsPoint& pt = poly[i][j];
-              innerRing->push_back( osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 ) );
-            }
-            innerRing->rewind( Symbology::Ring::ORIENTATION_CW );
-            retPoly->getHoles().push_back( osg::ref_ptr<Ring>( innerRing ) );
-          }
-          return retPoly;
+          retGeom = polygonFromQgsPolygon( geom.asPolygon() );
         }
         break;
+
+
         case QGis::WKBMultiPoint:
         case QGis::WKBMultiPoint25D:
         {
-          QgsMultiPoint multiPt = geom.asMultiPoint();
           PointSet* retPt = new PointSet();
-          size_t nPts = multiPt.size();
-          for ( size_t i = 0; i < nPts; ++i )
+
+          Q_FOREACH( const QgsPoint& point, geom.asMultiPoint() )
           {
-            const QgsPoint& pt = multiPt[i];
-            retPt->push_back( osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 ) );
+            retPt->push_back( pointFromQgsPoint( point ) );
           }
-          return retPt;
+          retGeom = retPt;
         }
         break;
+
+
         case QGis::WKBMultiLineString:
         case QGis::WKBMultiLineString25D:
         {
-          QgsMultiPolyline multiLine = geom.asMultiPolyline();
-
           MultiGeometry* retMulti = new MultiGeometry();
 
-          size_t nGeoms = multiLine.size();
-          for ( size_t m = 0; m < nGeoms; ++m )
+          Q_FOREACH( const QgsPolyline& line, geom.asMultiPolyline() )
           {
-            QgsPolyline& line = multiLine[m];
             LineString* retLs = new LineString();
 
-            size_t nPts = line.size();
-            for ( size_t i = 0; i < nPts; ++i )
+            Q_FOREACH( const QgsPoint& pt, line )
             {
-              retLs->push_back( osg::Vec3d( line[i].x(), line[i].y(), line[i].is3D() ? line[i].z() : 0.0 ) );
+              retLs->push_back( pointFromQgsPoint( pt ) );
             }
 
             retMulti->getComponents().push_back( retLs );
           }
-          return retMulti;
+          retGeom = retMulti;
         }
         break;
+
+
         case QGis::WKBMultiPolygon:
         case QGis::WKBMultiPolygon25D:
         {
-          QgsMultiPolygon mpoly = geom.asMultiPolygon();
-
           MultiGeometry* retMulti = new MultiGeometry();
-          size_t nGeoms = mpoly.size();
-          for ( size_t m = 0; m < nGeoms; ++m )
+
+          Q_FOREACH( const QgsPolygon& poly, geom.asMultiPolygon() )
           {
-            QgsPolygon& poly = mpoly[m];
-
-            Polygon* retPoly = new Polygon();
-            size_t nRings = poly.size();
-
-            // the outer ring
-            size_t nPts = poly[0].size();
-            for ( size_t j = 0; j < nPts; ++j )
-            {
-              const QgsPoint& pt = poly[0][j];
-              retPoly->push_back( osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 ) );
-            }
-            retPoly->rewind( Symbology::Ring::ORIENTATION_CCW );
-
-            // inner rings, if any
-            for ( size_t i = 1; i < nRings; ++i )
-            {
-              size_t nPts = poly[i].size();
-              Ring* innerRing = new Ring();
-              for ( size_t j = 0; j < nPts; ++j )
-              {
-                const QgsPoint& pt = poly[i][j];
-                innerRing->push_back( osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 ) );
-              }
-              innerRing->rewind( Symbology::Ring::ORIENTATION_CW );
-              retPoly->getHoles().push_back( osg::ref_ptr<Ring>( innerRing ) );
-            }
-            // add polygon to the returned multi geometry
-            retMulti->getComponents().push_back( osg::ref_ptr<Polygon>( retPoly ) );
+            retMulti->getComponents().push_back( osg::ref_ptr<Polygon>( polygonFromQgsPolygon( poly ) ) );
           }
-          return retMulti;
+          retGeom = retMulti;
         }
         break;
+
+
         default:
           break;
       }
-      return 0;
+      return retGeom;
     }
 
-    Feature* featureFromQgsFeature( const QgsFeature& feat )
+    static Feature* featureFromQgsFeature( const QgsFeature& feat )
     {
-      QgsGeometry* geom = feat.geometry();
+      const QgsGeometry* geom = feat.geometry();
 
       Geometry* nGeom = geometryFromQgsGeometry( *geom );
       Feature* retFeat = new Feature( nGeom, 0 );
       return retFeat;
     }
+
 
     class QGISFeatureCursor : public FeatureCursor
     {
@@ -227,6 +209,7 @@ namespace osgEarth
     {
       iface_ = options_.qgis();
     }
+
 
     void QGISFeatureSource::initialize( const std::string& /* uri */ )
     {
@@ -282,24 +265,39 @@ namespace osgEarth
 
     Feature* QGISFeatureSource::getFeature( FeatureID fid )
     {
-      std::cout << "QGISFeatureSource::geFeature " << fid << std::endl;
       QgsFeature feat;
-      mLayer->dataProvider()->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
+      mLayer->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
       return featureFromQgsFeature( feat );
     }
 
     Geometry::Type QGISFeatureSource::getGeometryType() const
     {
-      std::cout << "QGISFeatureSource::getGeometryType" << std::endl;
+      switch ( mLayer->geometryType() )
+      {
+        case  QGis::Point:
+          return Geometry::TYPE_POINTSET;
+          break;
+
+        case QGis::Line:
+          return Geometry::TYPE_LINESTRING;
+          break;
+
+        case QGis::Polygon:
+          return Geometry::TYPE_POLYGON;
+          break;
+        case QGis::UnknownGeometry:
+        case QGis::NoGeometry:
+          return Geometry::TYPE_UNKNOWN;
+          break;
+      }
+
       return Geometry::TYPE_POLYGON;
     }
 
     int QGISFeatureSource::getFeatureCount() const
     {
-      std::cout << "QGISFeatureSource::getFeatureCount" << std::endl;
-      return mLayer->dataProvider()->featureCount();
+      return mLayer->featureCount();
     }
-
   }
 }
 
