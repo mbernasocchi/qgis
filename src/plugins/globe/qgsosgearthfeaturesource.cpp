@@ -265,13 +265,13 @@ namespace osgEarth
     QGISFeatureSource::QGISFeatureSource( const QGISFeatureOptions& options ) :
         options_( options ),
         mLayer( 0 ),
-        profile_( 0 )
+        mProfile( 0 )
     {
       iface_ = options_.qgis();
     }
 
 
-    void QGISFeatureSource::initialize( const std::string& /* uri */ )
+    void QGISFeatureSource::initialize( const osgDB::Options* dbOptions )
     {
 #if 0
       std::string layerName = options_.getConfig().value( std::string( "layerId" ), std::string( "" ) );
@@ -309,22 +309,36 @@ namespace osgEarth
       }
       QgsRectangle next = provider->extent();
       GeoExtent ext( ref, next.xMinimum(), next.yMinimum(), next.xMaximum(), next.yMaximum() );
-      profile_ = new FeatureProfile( ext );
+      mProfile = new FeatureProfile( ext );
+#if 0
+      Q_FOREACH( const QgsField& field, mLayer->pendingFields() )
+      {
+        mSchema.push_back( field.name().toStdString(), ATTRTYPE_DOUBLE );
+      }
+#endif
     }
 
     const FeatureProfile* QGISFeatureSource::createFeatureProfile()
     {
-      return profile_;
+      std::cout << "get profile";
+      return mProfile;
+    }
+
+    const FeatureSchema& QGISFeatureSource::getSchema() const
+    {
+      return FeatureSource::getSchema();
     }
 
     FeatureCursor* QGISFeatureSource::createFeatureCursor( const Symbology::Query& query )
     {
       Q_UNUSED( query );
+      std::cout << "QgsFeatureSource::createFeatureCursor()";
       return new QGISFeatureCursor( mLayer->pendingFields(), mLayer->getFeatures() );
     }
 
     Feature* QGISFeatureSource::getFeature( FeatureID fid )
     {
+      std::cout << "QgsFeatureSource::fetFeature()";
       QgsFeature feat;
       mLayer->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
       return featureFromQgsFeature( mLayer->pendingFields(), feat );
@@ -332,6 +346,7 @@ namespace osgEarth
 
     Geometry::Type QGISFeatureSource::getGeometryType() const
     {
+      std::cout << "QGISFeatureSource::getGeometryType" << std::endl;
       switch ( mLayer->geometryType() )
       {
         case  QGis::Point:
@@ -356,6 +371,7 @@ namespace osgEarth
 
     int QGISFeatureSource::getFeatureCount() const
     {
+      std::cout << "QGISFeatureSource::getFeatureCount [" << mLayer->featureCount() << "]" << std::endl;
       return mLayer->featureCount();
     }
   }

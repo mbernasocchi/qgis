@@ -829,7 +829,8 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         style.addSymbol( altitudeSymbol );
 
         ExtrusionSymbol* extrusionSymbol = style.getOrCreateSymbol<ExtrusionSymbol>();
-        extrusionSymbol->heightExpression() = NumericExpression( "[derived_height]" );
+        //extrusionSymbol->heightExpression() = NumericExpression( "[derived_height]" );
+        extrusionSymbol->height() = 20;
         extrusionSymbol->flatten() = true;
         extrusionSymbol->wallGradientPercentage() = 0.5;
         style.addSymbol( extrusionSymbol );

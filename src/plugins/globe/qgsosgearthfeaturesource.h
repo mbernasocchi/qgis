@@ -29,10 +29,11 @@ namespace osgEarth
         const char* className() const { return "QGISFeatureSource"; }
         const char* libraryName() const { return "QGIS"; }
 
-        void initialize( const std::string& referenceURI );
+        void initialize( const osgDB::Options* dbOptions );
 
       protected:
         const FeatureProfile* createFeatureProfile();
+        const FeatureSchema& getSchema() const;
 
         ~QGISFeatureSource() {}
 
@@ -40,7 +41,8 @@ namespace osgEarth
         QGISFeatureOptions options_;
         QgsVectorLayer* mLayer;
         QgisInterface* iface_;
-        FeatureProfile* profile_;
+        FeatureProfile* mProfile;
+        FeatureSchema mSchema;
     };
   } // namespace Features
 } // namespace osgEarth
