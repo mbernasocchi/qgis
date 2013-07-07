@@ -16,6 +16,7 @@
 #include <qgsfeatureiterator.h>
 #include <qgsfeature.h>
 #include <qgsgeometry.h>
+#include <qgslogger.h>
 
 using namespace osgEarth::Features;
 
@@ -163,12 +164,67 @@ namespace osgEarth
       return retGeom;
     }
 
-    static Feature* featureFromQgsFeature( const QgsFeature& feat )
+    static Feature* featureFromQgsFeature( const QgsFields& fields, const QgsFeature& feat )
     {
+      QgsDebugMsg( QString( "featureFromQgsFeature" ) );
       const QgsGeometry* geom = feat.geometry();
 
       Geometry* nGeom = geometryFromQgsGeometry( *geom );
       Feature* retFeat = new Feature( nGeom, 0 );
+
+      const QgsAttributes& attrs = feat.attributes();
+
+      int numFlds = fields.size();
+
+      for ( int idx = 0; idx < numFlds; idx ++ )
+      {
+        const QgsField& fld = fields.at( idx );
+        std::string name = fld.name().toStdString();
+
+        std::cout << "feature " << feat.id() << " field " << idx << std::endl;
+
+        switch ( fld.type() )
+        {
+          case QVariant::Bool:
+            if ( !attrs[idx].isNull() )
+              retFeat->set( name, attrs[idx].toBool() );
+            else
+              retFeat->setNull( name, ATTRTYPE_BOOL );
+
+            break;
+
+          case QVariant::Int:
+          case QVariant::UInt:
+          case QVariant::LongLong:
+          case QVariant::ULongLong:
+            if ( !attrs[idx].isNull() )
+              retFeat->set( name, attrs[idx].toInt() );
+            else
+              retFeat->setNull( name, ATTRTYPE_INT );
+
+            break;
+
+          case QVariant::Double:
+            QgsDebugMsg( QString( "Setting double attr %1 for %2 " ).arg( attrs[idx].toDouble() ).arg( fld.name() ) );
+            if ( !attrs[idx].isNull() )
+              retFeat->set( name, attrs[idx].toDouble() );
+            else
+              retFeat->setNull( name, ATTRTYPE_DOUBLE );
+
+            break;
+
+          case QVariant::Char:
+          case QVariant::String:
+          default:
+            if ( !attrs[idx].isNull() )
+              retFeat->set( name, attrs[idx].toString().toStdString() );
+            else
+              retFeat->setNull( name, ATTRTYPE_STRING );
+
+            break;
+        }
+      }
+
       return retFeat;
     }
 
@@ -176,8 +232,10 @@ namespace osgEarth
     class QGISFeatureCursor : public FeatureCursor
     {
       public:
-        QGISFeatureCursor( QgsFeatureIterator iterator ) :
-            mIterator( iterator )
+        QGISFeatureCursor( const QgsFields& fields, QgsFeatureIterator iterator )
+            :            mIterator( iterator )
+            , mFields( fields )
+
         {
         }
 
@@ -193,13 +251,15 @@ namespace osgEarth
 
           mIterator.nextFeature( mFeature );
 
-          return featureFromQgsFeature( mFeature );
+          return featureFromQgsFeature( mFields, mFeature );
         }
       private:
         // current iterator
         QgsFeatureIterator mIterator;
         // dummy feature
         QgsFeature mFeature;
+        // fields
+        QgsFields mFields;
     };
 
     QGISFeatureSource::QGISFeatureSource( const QGISFeatureOptions& options ) :
@@ -260,14 +320,14 @@ namespace osgEarth
     FeatureCursor* QGISFeatureSource::createFeatureCursor( const Symbology::Query& query )
     {
       Q_UNUSED( query );
-      return new QGISFeatureCursor( mLayer->dataProvider()->getFeatures() );
+      return new QGISFeatureCursor( mLayer->pendingFields(), mLayer->getFeatures() );
     }
 
     Feature* QGISFeatureSource::getFeature( FeatureID fid )
     {
       QgsFeature feat;
       mLayer->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
-      return featureFromQgsFeature( feat );
+      return featureFromQgsFeature( mLayer->pendingFields(), feat );
     }
 
     Geometry::Type QGISFeatureSource::getGeometryType() const
