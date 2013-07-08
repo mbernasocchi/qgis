@@ -233,23 +233,24 @@ namespace osgEarth
     {
       public:
         QGISFeatureCursor( const QgsFields& fields, QgsFeatureIterator iterator )
-            :            mIterator( iterator )
+            : mIterator( iterator )
             , mFields( fields )
-
         {
         }
 
         virtual bool hasMore() const
         {
-          return mIterator.isClosed();
+          return !mIterator.isClosed();
         }
 
         virtual Feature* nextFeature()
         {
+          std::cout << "next feature " << std::endl;
           if ( mIterator.isClosed() )
             return NULL;
 
           mIterator.nextFeature( mFeature );
+          std::cout << "next feature " << mFeature.id() << std::endl;
 
           return featureFromQgsFeature( mFields, mFeature );
         }
@@ -332,8 +333,8 @@ namespace osgEarth
     FeatureCursor* QGISFeatureSource::createFeatureCursor( const Symbology::Query& query )
     {
       Q_UNUSED( query );
-      std::cout << "QgsFeatureSource::createFeatureCursor()";
-      return new QGISFeatureCursor( mLayer->pendingFields(), mLayer->getFeatures() );
+      QgsFeatureIterator it = mLayer->getFeatures();
+      return new QGISFeatureCursor( mLayer->pendingFields(), it );
     }
 
     Feature* QGISFeatureSource::getFeature( FeatureID fid )
