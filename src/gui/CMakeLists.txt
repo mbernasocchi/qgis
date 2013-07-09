@@ -59,7 +59,6 @@ editorwidgets/qgsrelationreferencefactory.cpp
 editorwidgets/qgsrelreferenceconfigdlg.cpp
 
 qgisgui.cpp
-qgisinterface.cpp
 qgsannotationitem.cpp
 qgsattributedialog.cpp
 qgsattributeeditor.cpp
