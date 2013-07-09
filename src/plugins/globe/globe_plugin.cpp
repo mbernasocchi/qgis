@@ -71,6 +71,9 @@
 #endif
 #include <osgEarthDrivers/model_feature_geom/FeatureGeomModelOptions>
 
+#include "qgsglobelayerpropertiesfactory.h"
+#include "qgsglobevectorlayerconfig.h"
+
 using namespace osgEarth::Drivers;
 using namespace osgEarth::Util;
 
@@ -238,6 +241,12 @@ void GlobePlugin::initGui()
   mQGisIface->addPluginToMenu( tr( "&Globe" ), mQActionSettingsPointer );
   mQGisIface->addPluginToMenu( tr( "&Globe" ), mQActionUnload );
 
+  // Add layer properties pages
+  mLayerPropertiesFactory = new QgsGlobeLayerPropertiesFactory();
+  mQGisIface->registerMapLayerPropertiesFactory( mLayerPropertiesFactory );
+
+  connect( mLayerPropertiesFactory, SIGNAL( layerSettingsChanged( QgsMapLayer* ) ), this, SLOT( layerSettingsChanged( QgsMapLayer* ) ) );
+
   QgsMapLayerRegistry* layerRegistry = QgsMapLayerRegistry::instance();
 
   connect( layerRegistry , SIGNAL( layersAdded( QList<QgsMapLayer*> ) ),
@@ -260,7 +269,7 @@ void GlobePlugin::run()
   {
     QSettings settings;
 
-#ifdef QGISDEBUG
+#if 0
     if ( !getenv( "OSGNOTIFYLEVEL" ) ) osgEarth::setNotifyLevel( osg::DEBUG_INFO );
 #endif
 
@@ -798,6 +807,8 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
         Q_ASSERT( vLayer );
 
+        QgsGlobeVectorLayerConfig layerConfig = vLayer->property( "globe-config" ).value<QgsGlobeVectorLayerConfig>();
+
         QGISFeatureOptions  featureOpt;
         featureOpt.setLayer( vLayer );
         Style style;
@@ -823,14 +834,59 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         }
 
         AltitudeSymbol* altitudeSymbol = style.getOrCreateSymbol<AltitudeSymbol>();
-        altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_RELATIVE_TO_TERRAIN;
-        altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_MAP;
-        altitudeSymbol->binding() = osgEarth::Symbology::AltitudeSymbol::BINDING_VERTEX;
+
+        switch ( layerConfig.altitudeClamping() )
+        {
+          case QgsGlobeVectorLayerConfig::AltitudeClampingRelative:
+            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_RELATIVE_TO_TERRAIN;
+            break;
+
+          case QgsGlobeVectorLayerConfig::AltitudeClampingTerrain:
+            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_TO_TERRAIN;
+            break;
+
+          case QgsGlobeVectorLayerConfig::AltitudeClampingAbsolute:
+            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_ABSOLUTE;
+            break;
+
+          default:
+            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_NONE;
+            break;
+        }
+
+        switch ( layerConfig.altitudeTechnique() )
+        {
+          case QgsGlobeVectorLayerConfig::AltitudeTechniqueMap:
+            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_MAP;
+            break;
+
+          case QgsGlobeVectorLayerConfig::AltitudeTechniqueDrape:
+            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_DRAPE;
+            break;
+
+          case QgsGlobeVectorLayerConfig::AltitudeTechniqueGpu:
+            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_GPU;
+            break;
+
+          default:
+            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_SCENE;
+        }
+
+        switch ( layerConfig.altitudeBinding() )
+        {
+          case QgsGlobeVectorLayerConfig::AltitudeBindingVertex:
+            altitudeSymbol->binding() = osgEarth::Symbology::AltitudeSymbol::BINDING_VERTEX;
+            break;
+
+          default:
+            altitudeSymbol->binding() = osgEarth::Symbology::AltitudeSymbol::BINDING_CENTROID;
+            break;
+        }
+
         style.addSymbol( altitudeSymbol );
 
         ExtrusionSymbol* extrusionSymbol = style.getOrCreateSymbol<ExtrusionSymbol>();
         extrusionSymbol->heightExpression() = NumericExpression( "[derived_height]" );
-        //extrusionSymbol->height() = 20;
         extrusionSymbol->flatten() = true;
         extrusionSymbol->wallGradientPercentage() = 0.5;
         style.addSymbol( extrusionSymbol );
@@ -842,7 +898,7 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         // geomOpt.depthTestEnabled() = true;
         // worldOpt.enableLighting() = true;
 
-        ModelLayerOptions modelOptions( "QgisFeatures", geomOpt );
+        ModelLayerOptions modelOptions( vLayer->id().toStdString(), geomOpt );
         modelOptions.lightingEnabled() = true;
         ModelLayer* nLayer = new ModelLayer( modelOptions );
 
@@ -864,11 +920,18 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
   }
 }
 
-void GlobePlugin::layersRemoved( QStringList )
+void GlobePlugin::layersRemoved( QStringList layerIds )
 {
+  QgsDebugMsg( QString( "layers removed [%1]" ).arg( layerIds.join( ", " ) ) );
   if ( mIsGlobeRunning )
   {
-    osg::ref_ptr<Map> map = mMapNode->getMap();
+    osg::ref_ptr<Map> mapNode = mMapNode->getMap();
+
+    Q_FOREACH( const QString &layer, layerIds )
+    {
+      ModelLayer* modelLayer = mapNode->getModelLayerByName( layer.toStdString() );
+      mapNode->removeModelLayer( modelLayer );
+    }
   }
 }
 
@@ -1003,6 +1066,7 @@ void GlobePlugin::unload()
   mQGisIface->removeToolBarIcon( mQActionPointer );
 
   delete mQActionPointer;
+  mQGisIface->unregisterMapLayerPropertiesFactory( mLayerPropertiesFactory );
 }
 
 void GlobePlugin::help()
@@ -1057,6 +1121,12 @@ void GlobePlugin::copyFolder( QString sourceFolder, QString destFolder )
     QString destName = destFolder + "/" + files[i];
     copyFolder( srcName, destName );
   }
+}
+
+void GlobePlugin::layerSettingsChanged( QgsMapLayer* layer )
+{
+  layersRemoved( QStringList() << layer->id() );
+  layersAdded( QList<QgsMapLayer*>() << layer );
 }
 
 void GlobePlugin::setGlobeNotRunning()

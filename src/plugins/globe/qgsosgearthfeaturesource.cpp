@@ -205,7 +205,6 @@ namespace osgEarth
             break;
 
           case QVariant::Double:
-            QgsDebugMsg( QString( "Setting double attr %1 for %2 " ).arg( attrs[idx].toDouble() ).arg( fld.name() ) );
             if ( !attrs[idx].isNull() )
               retFeat->set( name, attrs[idx].toDouble() );
             else
@@ -245,12 +244,10 @@ namespace osgEarth
 
         virtual Feature* nextFeature()
         {
-          std::cout << "next feature " << std::endl;
           if ( mIterator.isClosed() )
             return NULL;
 
           mIterator.nextFeature( mFeature );
-          std::cout << "next feature " << mFeature.id() << std::endl;
 
           return featureFromQgsFeature( mFields, mFeature );
         }
@@ -297,7 +294,6 @@ namespace osgEarth
       }
 #endif
       mLayer = options_.layer();
-      std::cout << "got vector layer = " << mLayer << std::endl;
 
       QgsVectorDataProvider* provider = mLayer->dataProvider();
 
@@ -321,7 +317,6 @@ namespace osgEarth
 
     const FeatureProfile* QGISFeatureSource::createFeatureProfile()
     {
-      std::cout << "get profile";
       return mProfile;
     }
 

@@ -20,6 +20,8 @@ SET (GLOBE_PLUGIN_SRCS
      globe_plugin.cpp
      qgsosgearthtilesource.cpp
      globe_plugin_dialog.cpp
+     qgsglobelayerpropertiesfactory.cpp
+     qgsglobevectorlayerpropertiespage.cpp
 )
 IF (NOT HAVE_OSGEARTHQT)
     SET(GLOBE_PLUGIN_SRCS
@@ -31,17 +33,23 @@ ENDIF (NOT HAVE_OSGEARTHQT)
 
 SET (GLOBE_PLUGIN_UIS
      globe_plugin_dialog_guibase.ui
+     qgsglobevectorlayerpropertiespage.ui
      )
 
 SET (GLOBE_PLUGIN_MOC_HDRS
      globe_plugin.h
      globe_plugin_dialog.h
+     qgsglobelayerpropertiesfactory.h
+     qgsglobevectorlayerpropertiespage.h
 )
 
 SET (GLOBE_PLUGIN_HDRS
      qgsosgearthtilesource.h
      qgsosgearthfeaturesource.h
      qgsosgearthfeatureoptions.h
+     qgsglobelayerpropertiesfactory.h
+     qgsglobevectorlayerpropertiespage.h
+     qgsglobevectorlayerconfig.h
 )
 
 SET (GLOBE_PLUGIN_RCCS  globe_plugin.qrc)
