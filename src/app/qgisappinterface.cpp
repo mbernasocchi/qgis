@@ -614,7 +614,7 @@ QDialog* QgisAppInterface::getFeatureForm( QgsVectorLayer *l, QgsFeature &featur
   QgsDistanceArea myDa;
 
   myDa.setSourceCrs( l->crs().srsid() );
-  myDa.setEllipsoidalMode( QgisApp::instance()->mapCanvas()->mapRenderer()->hasCrsTransformEnabled() );
+  myDa.setEllipsoidalMode( qgis->mapCanvas()->mapRenderer()->hasCrsTransformEnabled() );
   myDa.setEllipsoid( QgsProject::instance()->readEntry( "Measure", "/Ellipsoid", GEO_NONE ) );
 
   QgsAttributeDialog *dialog = new QgsAttributeDialog( l, &feature, false, NULL, true );
@@ -634,4 +634,15 @@ QList<QgsMapLayer *> QgisAppInterface::editableLayers( bool modified ) const
 int QgisAppInterface::messageTimeout()
 {
   return qgis->messageTimeout();
+}
+
+
+void QgisAppInterface::registerMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory )
+{
+  qgis->registerMapLayerPropertiesFactory( factory );
+}
+
+void QgisAppInterface::unregisterMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory )
+{
+  qgis->unregisterMapLayerPropertiesFactory( factory );
 }

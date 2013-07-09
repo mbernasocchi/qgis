@@ -277,6 +277,16 @@ class APP_EXPORT QgisAppInterface : public QgisInterface
       @note added in version 1.2. */
     virtual bool unregisterMainWindowAction( QAction* action );
 
+    /** Register a new tab in the layer properties dialog
+      \note added in 2.1
+    */
+    virtual void registerMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory );
+
+    /** Unregister a previously registered tab in the layer properties dialog
+      \note added in 2.1
+    */
+    virtual void unregisterMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory );
+
     /** Accessors for inserting items into menus and toolbars.
      * An item can be inserted before any existing action.
      */

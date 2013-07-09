@@ -31,15 +31,17 @@
 #include "qgscontexthelp.h"
 #include "qgsexpressionbuilderdialog.h"
 
-class QgsMapLayer;
-
-class QgsAttributeActionDialog;
 class QgsApplyDialog;
-class QgsLabelDialog;
-class QgsVectorLayer;
-class QgsLabelingGui;
+class QgsAttributeActionDialog;
 class QgsDiagramProperties;
 class QgsFieldsProperties;
+class QgsLabelDialog;
+class QgsLabelingGui;
+class QgsMapLayer;
+class QgsMapLayerPropertiesFactory;
+class QgsVectorLayer;
+class QgsVectorLayerPropertiesPage;
+
 
 class APP_EXPORT QgsVectorLayerProperties : public QgsOptionsDialogBase, private Ui::QgsVectorLayerPropertiesBase
 {
@@ -119,6 +121,8 @@ class APP_EXPORT QgsVectorLayerProperties : public QgsOptionsDialogBase, private
     void on_mMinimumScaleSetCurrentPushButton_clicked();
     void on_mMaximumScaleSetCurrentPushButton_clicked();
 
+    void addPropertiesPageFactory( QgsMapLayerPropertiesFactory *factory );
+
   signals:
 
     /** emitted when changes to layer were saved to update legend */
@@ -147,7 +151,7 @@ class APP_EXPORT QgsVectorLayerProperties : public QgsOptionsDialogBase, private
 
     void updateSymbologyPage();
 
-    QgsVectorLayer *layer;
+    QgsVectorLayer *mLayer;
 
     bool mMetadataFilled;
 
@@ -168,6 +172,9 @@ class APP_EXPORT QgsVectorLayerProperties : public QgsOptionsDialogBase, private
     QgsFieldsProperties* mFieldsPropertiesDialog;
 
     void initDiagramTab();
+
+    //! A list of additional pages provided by plugins
+    QList<QgsVectorLayerPropertiesPage*> mLayerPropertiesPages;
 
     /**Buffer pixmap which takes the picture of renderers before they are assigned to the vector layer*/
     //QPixmap bufferPixmap;

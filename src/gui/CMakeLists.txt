@@ -100,6 +100,7 @@ qgsmapcanvas.cpp
 qgsmapcanvasitem.cpp
 qgsmapcanvasmap.cpp
 qgsmapcanvassnapper.cpp
+qgsmaplayerpropertiesfactory.cpp
 qgsmapoverviewcanvas.cpp
 qgsmaptip.cpp
 qgsmaptool.cpp
@@ -136,6 +137,7 @@ qgssublayersdialog.cpp
 qgssvgannotationitem.cpp
 qgstextannotationitem.cpp
 qgsvertexmarker.cpp
+qgsvectorlayerpropertiespage.cpp
 )
 
 IF (WITH_TOUCH)
@@ -259,6 +261,7 @@ qgsrelationmanagerdialog.h
 qgsscalecombobox.h
 qgssearchquerybuilder.h
 qgssublayersdialog.h
+qgsvectorlayerpropertiespage.h
 )
 
 QT4_WRAP_CPP(QGIS_GUI_MOC_SRCS ${QGIS_GUI_MOC_HDRS})
@@ -293,6 +296,7 @@ qgsmapcanvas.h
 qgsmapcanvasitem.h
 qgsmapcanvasmap.h
 qgsmapcanvassnapper.h
+qgsmaplayerpropertiesfactory.h
 qgsmapoverviewcanvas.h
 qgsmaptip.h
 qgsmaptool.h
@@ -308,6 +312,7 @@ qgsowssourceselect.h
 qgsprojectionselector.h
 qgsrelationeditor.h
 qgsrubberband.h
+qgsvectorlayerpropertiespage.h
 qgsscalecombobox.h
 qgssearchquerybuilder.h
 qgssublayersdialog.h
