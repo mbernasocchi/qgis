@@ -244,12 +244,10 @@ namespace osgEarth
 
         virtual Feature* nextFeature()
         {
-          if ( mIterator.isClosed() )
+          if ( mIterator.nextFeature( mFeature ) )
+            return featureFromQgsFeature( mFields, mFeature );
+          else
             return NULL;
-
-          mIterator.nextFeature( mFeature );
-
-          return featureFromQgsFeature( mFields, mFeature );
         }
       private:
         // current iterator
@@ -327,14 +325,25 @@ namespace osgEarth
 
     FeatureCursor* QGISFeatureSource::createFeatureCursor( const Symbology::Query& query )
     {
-      Q_UNUSED( query );
-      QgsFeatureIterator it = mLayer->getFeatures();
+      QgsFeatureRequest request;
+
+      if ( query.expression().isSet() )
+      {
+        QgsDebugMsg( QString( "Ignoring query expression '%1'" ). arg( query.expression().value().c_str() ) );
+      }
+
+      if ( query.bounds().isSet() )
+      {
+        QgsRectangle bounds( query.bounds()->xMin(), query.bounds()->yMin(), query.bounds()->xMax(), query.bounds()->yMax() );
+        request.setFilterRect( bounds );
+      }
+
+      QgsFeatureIterator it = mLayer->getFeatures( request );
       return new QGISFeatureCursor( mLayer->pendingFields(), it );
     }
 
     Feature* QGISFeatureSource::getFeature( FeatureID fid )
     {
-      std::cout << "QgsFeatureSource::fetFeature()";
       QgsFeature feat;
       mLayer->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
       return featureFromQgsFeature( mLayer->pendingFields(), feat );
@@ -342,7 +351,6 @@ namespace osgEarth
 
     Geometry::Type QGISFeatureSource::getGeometryType() const
     {
-      std::cout << "QGISFeatureSource::getGeometryType" << std::endl;
       switch ( mLayer->geometryType() )
       {
         case  QGis::Point:

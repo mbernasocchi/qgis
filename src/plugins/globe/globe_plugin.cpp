@@ -70,6 +70,7 @@
 #include <osgEarthDrivers/cache_filesystem/FileSystemCache>
 #endif
 #include <osgEarthDrivers/model_feature_geom/FeatureGeomModelOptions>
+#include <osgEarthFeatures/FeatureDisplayLayout>
 
 #include "qgsglobelayerpropertiesfactory.h"
 #include "qgsglobevectorlayerconfig.h"
@@ -891,12 +892,20 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         extrusionSymbol->wallGradientPercentage() = 0.5;
         style.addSymbol( extrusionSymbol );
 
+        FeatureDisplayLayout layout;
+
+        layout.tileSizeFactor() = 45.0;
+        layout.addLevel( FeatureLevel( 0.0f, 20000.0f ) );
+
         FeatureGeomModelOptions geomOpt;
         geomOpt.featureOptions() = featureOpt;
         geomOpt.styles() = new StyleSheet();
         geomOpt.styles()->addStyle( style );
+        geomOpt.layout() = layout;
+
         // geomOpt.depthTestEnabled() = true;
         // worldOpt.enableLighting() = true;
+
 
         ModelLayerOptions modelOptions( vLayer->id().toStdString(), geomOpt );
         modelOptions.lightingEnabled() = true;
