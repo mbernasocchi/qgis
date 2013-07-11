@@ -600,12 +600,21 @@ void QgsVectorLayer::drawRendererV2Levels( QgsFeatureIterator &fit, QgsRenderCon
           stopRendererV2( rendererContext, selRenderer );
           return;
         }
-#ifndef Q_WS_MAC
-        if ( featureCount % 1000 == 0 )
+
+#ifndef Q_WS_MAC //MH: disable this on Mac for now to avoid problems with resizing
+#ifdef Q_WS_X11
+        if ( !mEnableBackbuffer ) // do not handle events, as we're already inside a paint event
         {
-          qApp->processEvents();
+#endif // Q_WS_X11
+          if ( featureCount % 1000 == 0 )
+          {
+            qApp->processEvents();
+          }
+#ifdef Q_WS_X11
         }
-#endif //Q_WS_MAC
+#endif // Q_WS_X11
+#endif // Q_WS_MAC
+
         bool sel = mSelectedFeatureIds.contains( fit->id() );
         // maybe vertex markers should be drawn only during the last pass...
         bool drawMarker = ( mEditBuffer && ( !vertexMarkerOnlyForSelection || sel ) );
