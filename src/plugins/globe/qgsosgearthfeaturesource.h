@@ -1,5 +1,5 @@
-#ifndef QGIS_FEATURE_SOURCE_H
-#define QGIS_FEATURE_SOURCE_H
+#ifndef QGSGLOBEFEATURESOURCE_H
+#define QGSGLOBEFEATURESOURCE_H
 
 #include <osgEarthFeatures/FeatureSource>
 
@@ -15,10 +15,10 @@ namespace osgEarth
     using namespace osgEarth::Symbology;
     using namespace osgEarth::Drivers;
 
-    class QGISFeatureSource : public FeatureSource
+    class QgsGlobeFeatureSource : public FeatureSource
     {
       public:
-        QGISFeatureSource( const QGISFeatureOptions& options = ConfigOptions() );
+        QgsGlobeFeatureSource( const QgsGlobeFeatureOptions& options = ConfigOptions() );
 
         FeatureCursor* createFeatureCursor( const Symbology::Query& query = Symbology::Query() );
 
@@ -35,12 +35,11 @@ namespace osgEarth
         const FeatureProfile* createFeatureProfile();
         const FeatureSchema& getSchema() const;
 
-        ~QGISFeatureSource() {}
+        ~QgsGlobeFeatureSource() {}
 
       private:
-        QGISFeatureOptions options_;
+        QgsGlobeFeatureOptions mOptions;
         QgsVectorLayer* mLayer;
-        QgisInterface* iface_;
         FeatureProfile* mProfile;
         FeatureSchema mSchema;
     };

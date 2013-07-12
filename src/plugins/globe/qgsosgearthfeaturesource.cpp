@@ -1,22 +1,28 @@
+// qt includes
+#include <QList>
+
+// osg / osgearth includes
 #include <osgDB/ReaderWriter>
 #include <osgDB/FileNameUtils>
 
 #include <osgEarthFeatures/FeatureSource>
 #include <osgEarth/Registry>
 
-#include "qgsosgearthfeaturesource.h"
-
-#include <QList>
-
+// qgis includes
 #include <qgisinterface.h>
+#include <qgsfeature.h>
+#include <qgsfeatureiterator.h>
+#include <qgsgeometry.h>
+#include <qgslogger.h>
 #include <qgsmapcanvas.h>
 #include <qgsrectangle.h>
 #include <qgsvectordataprovider.h>
 #include "qgsvectorlayer.h"
-#include <qgsfeatureiterator.h>
-#include <qgsfeature.h>
-#include <qgsgeometry.h>
-#include <qgslogger.h>
+
+// plugin includes
+#include "qgsglobefeaturecursor.h"
+#include "qgsglobefeatureutils.h"
+#include "qgsosgearthfeaturesource.h"
 
 using namespace osgEarth::Features;
 
@@ -28,246 +34,15 @@ namespace osgEarth
     using namespace osgEarth::Symbology;
     using namespace osgEarth::Drivers;
 
-    static inline osg::Vec3d pointFromQgsPoint( const QgsPoint& pt )
-    {
-      return osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 );
-    }
-
-    static inline Polygon* polygonFromQgsPolygon( const QgsPolygon& poly )
-    {
-      Q_ASSERT( poly.size() > 0 );
-
-      // a ring for osg earth is open (first point != last point)
-      // an outer ring is oriented CCW, an inner ring is oriented CW
-      Polygon* retPoly = new Polygon();
-
-      // the outer ring
-      Q_FOREACH( const QgsPoint& pt, poly[0] )
-      {
-        retPoly->push_back( pointFromQgsPoint( pt ) );
-      }
-      retPoly->rewind( Symbology::Ring::ORIENTATION_CCW );
-
-      size_t nRings = poly.size();
-      for ( size_t i = 1; i < nRings; ++i )
-      {
-        Ring* innerRing = new Ring();
-        Q_FOREACH( const QgsPoint& pt, poly[i] )
-        {
-          innerRing->push_back( pointFromQgsPoint( pt ) );
-        }
-        innerRing->rewind( Symbology::Ring::ORIENTATION_CW );
-        retPoly->getHoles().push_back( osg::ref_ptr<Ring>( innerRing ) );
-      }
-      return retPoly;
-    }
-
-    static inline Geometry* geometryFromQgsGeometry( const QgsGeometry& geom )
-    {
-#if 0
-      // test srid
-      std::cout << "geom = " << &geom << std::endl;
-      std::cout << "wkb = " << geom.asWkb() << std::endl;
-      uint32_t srid;
-      memcpy( &srid, geom.asWkb() + 2 + sizeof( void* ), sizeof( uint32_t ) );
-      std::cout << "srid = " << srid << std::endl;
-#endif
-
-      Geometry* retGeom = NULL;
-
-      switch ( geom.wkbType() )
-      {
-        case QGis::WKBPoint:
-        case QGis::WKBPoint25D:
-        {
-          PointSet* retPt = new PointSet();
-          retPt->push_back( pointFromQgsPoint( geom.asPoint() ) );
-          retGeom = retPt;
-        }
-        break;
-
-
-        case QGis::WKBLineString:
-        case QGis::WKBLineString25D:
-        {
-          LineString* retLs = new LineString();
-
-          Q_FOREACH( const QgsPoint& pt, geom.asPolyline() )
-          {
-            retLs->push_back( pointFromQgsPoint( pt ) );
-          }
-          retGeom = retLs;
-        }
-        break;
-
-
-        case QGis::WKBPolygon:
-        case QGis::WKBPolygon25D:
-        {
-          retGeom = polygonFromQgsPolygon( geom.asPolygon() );
-        }
-        break;
-
-
-        case QGis::WKBMultiPoint:
-        case QGis::WKBMultiPoint25D:
-        {
-          PointSet* retPt = new PointSet();
-
-          Q_FOREACH( const QgsPoint& point, geom.asMultiPoint() )
-          {
-            retPt->push_back( pointFromQgsPoint( point ) );
-          }
-          retGeom = retPt;
-        }
-        break;
-
-
-        case QGis::WKBMultiLineString:
-        case QGis::WKBMultiLineString25D:
-        {
-          MultiGeometry* retMulti = new MultiGeometry();
-
-          Q_FOREACH( const QgsPolyline& line, geom.asMultiPolyline() )
-          {
-            LineString* retLs = new LineString();
-
-            Q_FOREACH( const QgsPoint& pt, line )
-            {
-              retLs->push_back( pointFromQgsPoint( pt ) );
-            }
-
-            retMulti->getComponents().push_back( retLs );
-          }
-          retGeom = retMulti;
-        }
-        break;
-
-
-        case QGis::WKBMultiPolygon:
-        case QGis::WKBMultiPolygon25D:
-        {
-          MultiGeometry* retMulti = new MultiGeometry();
-
-          Q_FOREACH( const QgsPolygon& poly, geom.asMultiPolygon() )
-          {
-            retMulti->getComponents().push_back( osg::ref_ptr<Polygon>( polygonFromQgsPolygon( poly ) ) );
-          }
-          retGeom = retMulti;
-        }
-        break;
-
-
-        default:
-          break;
-      }
-      return retGeom;
-    }
-
-    static Feature* featureFromQgsFeature( const QgsFields& fields, const QgsFeature& feat )
-    {
-      QgsDebugMsg( QString( "featureFromQgsFeature" ) );
-      const QgsGeometry* geom = feat.geometry();
-
-      Geometry* nGeom = geometryFromQgsGeometry( *geom );
-      Feature* retFeat = new Feature( nGeom, 0 );
-
-      const QgsAttributes& attrs = feat.attributes();
-
-      int numFlds = fields.size();
-
-      for ( int idx = 0; idx < numFlds; idx ++ )
-      {
-        const QgsField& fld = fields.at( idx );
-        std::string name = fld.name().toStdString();
-
-        std::cout << "feature " << feat.id() << " field " << idx << std::endl;
-
-        switch ( fld.type() )
-        {
-          case QVariant::Bool:
-            if ( !attrs[idx].isNull() )
-              retFeat->set( name, attrs[idx].toBool() );
-            else
-              retFeat->setNull( name, ATTRTYPE_BOOL );
-
-            break;
-
-          case QVariant::Int:
-          case QVariant::UInt:
-          case QVariant::LongLong:
-          case QVariant::ULongLong:
-            if ( !attrs[idx].isNull() )
-              retFeat->set( name, attrs[idx].toInt() );
-            else
-              retFeat->setNull( name, ATTRTYPE_INT );
-
-            break;
-
-          case QVariant::Double:
-            if ( !attrs[idx].isNull() )
-              retFeat->set( name, attrs[idx].toDouble() );
-            else
-              retFeat->setNull( name, ATTRTYPE_DOUBLE );
-
-            break;
-
-          case QVariant::Char:
-          case QVariant::String:
-          default:
-            if ( !attrs[idx].isNull() )
-              retFeat->set( name, attrs[idx].toString().toStdString() );
-            else
-              retFeat->setNull( name, ATTRTYPE_STRING );
-
-            break;
-        }
-      }
-
-      return retFeat;
-    }
-
-
-    class QGISFeatureCursor : public FeatureCursor
-    {
-      public:
-        QGISFeatureCursor( const QgsFields& fields, QgsFeatureIterator iterator )
-            : mIterator( iterator )
-            , mFields( fields )
-        {
-        }
-
-        virtual bool hasMore() const
-        {
-          return !mIterator.isClosed();
-        }
-
-        virtual Feature* nextFeature()
-        {
-          if ( mIterator.nextFeature( mFeature ) )
-            return featureFromQgsFeature( mFields, mFeature );
-          else
-            return NULL;
-        }
-      private:
-        // current iterator
-        QgsFeatureIterator mIterator;
-        // dummy feature
-        QgsFeature mFeature;
-        // fields
-        QgsFields mFields;
-    };
-
-    QGISFeatureSource::QGISFeatureSource( const QGISFeatureOptions& options ) :
-        options_( options ),
+    QgsGlobeFeatureSource::QgsGlobeFeatureSource( const QgsGlobeFeatureOptions& options ) :
+        mOptions( options ),
         mLayer( 0 ),
         mProfile( 0 )
     {
-      iface_ = options_.qgis();
     }
 
 
-    void QGISFeatureSource::initialize( const osgDB::Options* dbOptions )
+    void QgsGlobeFeatureSource::initialize( const osgDB::Options* dbOptions )
     {
 #if 0
       std::string layerName = options_.getConfig().value( std::string( "layerId" ), std::string( "" ) );
@@ -291,7 +66,7 @@ namespace osgEarth
         return;
       }
 #endif
-      mLayer = options_.layer();
+      mLayer = mOptions.layer();
 
       QgsVectorDataProvider* provider = mLayer->dataProvider();
 
@@ -313,17 +88,17 @@ namespace osgEarth
 #endif
     }
 
-    const FeatureProfile* QGISFeatureSource::createFeatureProfile()
+    const FeatureProfile* QgsGlobeFeatureSource::createFeatureProfile()
     {
       return mProfile;
     }
 
-    const FeatureSchema& QGISFeatureSource::getSchema() const
+    const FeatureSchema& QgsGlobeFeatureSource::getSchema() const
     {
       return FeatureSource::getSchema();
     }
 
-    FeatureCursor* QGISFeatureSource::createFeatureCursor( const Symbology::Query& query )
+    FeatureCursor* QgsGlobeFeatureSource::createFeatureCursor( const Symbology::Query& query )
     {
       QgsFeatureRequest request;
 
@@ -339,17 +114,17 @@ namespace osgEarth
       }
 
       QgsFeatureIterator it = mLayer->getFeatures( request );
-      return new QGISFeatureCursor( mLayer->pendingFields(), it );
+      return new QgsGlobeFeatureCursor( mLayer->pendingFields(), it );
     }
 
-    Feature* QGISFeatureSource::getFeature( FeatureID fid )
+    Feature* QgsGlobeFeatureSource::getFeature( FeatureID fid )
     {
       QgsFeature feat;
       mLayer->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
-      return featureFromQgsFeature( mLayer->pendingFields(), feat );
+      return QgsGlobeFeatureUtils::featureFromQgsFeature( mLayer->pendingFields(), feat );
     }
 
-    Geometry::Type QGISFeatureSource::getGeometryType() const
+    Geometry::Type QgsGlobeFeatureSource::getGeometryType() const
     {
       switch ( mLayer->geometryType() )
       {
@@ -373,7 +148,7 @@ namespace osgEarth
       return Geometry::TYPE_POLYGON;
     }
 
-    int QGISFeatureSource::getFeatureCount() const
+    int QgsGlobeFeatureSource::getFeatureCount() const
     {
       std::cout << "QGISFeatureSource::getFeatureCount [" << mLayer->featureCount() << "]" << std::endl;
       return mLayer->featureCount();
@@ -401,7 +176,7 @@ class QGISFeatureSourceFactory : public FeatureSourceDriver
       if ( !acceptsExtension( osgDB::getLowerCaseFileExtension( file_name ) ) )
         return ReadResult::FILE_NOT_HANDLED;
 
-      return ReadResult( new QGISFeatureSource( getFeatureSourceOptions( options ) ) );
+      return ReadResult( new QgsGlobeFeatureSource( getFeatureSourceOptions( options ) ) );
     }
 };
 

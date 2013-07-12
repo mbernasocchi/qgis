@@ -34,5 +34,5 @@ QgsVectorLayerPropertiesPage* QgsGlobeLayerPropertiesFactory::createVectorLayerP
 QListWidgetItem* QgsGlobeLayerPropertiesFactory::createVectorLayerPropertiesItem( QgsVectorLayer* layer, QListWidget* view )
 {
   Q_UNUSED( layer );
-  return new QListWidgetItem( QIcon( ":/globe/globe.png" ), tr( "Globe" ), view );
+  return new QListWidgetItem( QIcon( ":/globe/icon.svg" ), tr( "Globe" ), view );
 }

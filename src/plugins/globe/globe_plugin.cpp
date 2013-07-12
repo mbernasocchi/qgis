@@ -85,7 +85,7 @@ static const QString sDescription = QObject::tr( "Overlay data on a 3D globe" );
 static const QString sCategory = QObject::tr( "Plugins" );
 static const QString sPluginVersion = QObject::tr( "Version 0.1" );
 static const QgisPlugin::PLUGINTYPE sPluginType = QgisPlugin::UI;
-static const QString sIcon = ":/globe/globe.png";
+static const QString sIcon = ":/globe/icon.svg";
 static const QString sExperimental = QString( "true" );
 
 
@@ -131,6 +131,8 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
 #endif
 
   mSettingsDialog = new QgsGlobePluginDialog( theQgisInterface->mainWindow(), this, QgisGui::ModalDialogFlags );
+  connect( QgsProject::instance(), SIGNAL( readMapLayer( QgsMapLayer*, QDomElement ) ), this, SLOT( onLayerRead( QgsMapLayer*, QDomElement ) ) );
+  connect( QgsProject::instance(), SIGNAL( writeMapLayer( QgsMapLayer*, QDomElement&, QDomDocument& ) ), this, SLOT( onLayerWrite( QgsMapLayer*, QDomElement&, QDomDocument& ) ) );
 }
 
 //destructor
@@ -317,8 +319,9 @@ void GlobePlugin::run()
     mRootNode->addChild( mControlCanvas );
 
     mOsgViewer->setSceneData( mRootNode );
-
+#if 0
     mOsgViewer->setThreadingModel( osgViewer::Viewer::SingleThreaded );
+#endif
 
     mOsgViewer->addEventHandler( new osgViewer::StatsHandler() );
     mOsgViewer->addEventHandler( new osgViewer::WindowSizeHandler() );
@@ -550,6 +553,8 @@ void GlobePlugin::syncExtent()
   QgsPoint ll = QgsPoint( extent.xMinimum(), extent.yMinimum() );
   QgsPoint ul = QgsPoint( extent.xMinimum(), extent.yMaximum() );
   double height = dist.measureLine( ll, ul );
+
+  //double height = dist.computeDistanceBearing( ll, ul );
 
   //camera viewing angle
   double viewAngle = 30;
@@ -808,9 +813,9 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
         Q_ASSERT( vLayer );
 
-        QgsGlobeVectorLayerConfig layerConfig = vLayer->property( "globe-config" ).value<QgsGlobeVectorLayerConfig>();
+        QgsGlobeVectorLayerConfig* layerConfig = QgsGlobeVectorLayerConfig::configForLayer( vLayer );
 
-        QGISFeatureOptions  featureOpt;
+        QgsGlobeFeatureOptions  featureOpt;
         featureOpt.setLayer( vLayer );
         Style style;
 
@@ -836,7 +841,7 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
 
         AltitudeSymbol* altitudeSymbol = style.getOrCreateSymbol<AltitudeSymbol>();
 
-        switch ( layerConfig.altitudeClamping() )
+        switch ( layerConfig->altitudeClamping() )
         {
           case QgsGlobeVectorLayerConfig::AltitudeClampingRelative:
             altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_RELATIVE_TO_TERRAIN;
@@ -855,7 +860,7 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
             break;
         }
 
-        switch ( layerConfig.altitudeTechnique() )
+        switch ( layerConfig->altitudeTechnique() )
         {
           case QgsGlobeVectorLayerConfig::AltitudeTechniqueMap:
             altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_MAP;
@@ -873,7 +878,7 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
             altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_SCENE;
         }
 
-        switch ( layerConfig.altitudeBinding() )
+        switch ( layerConfig->altitudeBinding() )
         {
           case QgsGlobeVectorLayerConfig::AltitudeBindingVertex:
             altitudeSymbol->binding() = osgEarth::Symbology::AltitudeSymbol::BINDING_VERTEX;
@@ -886,29 +891,40 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
 
         style.addSymbol( altitudeSymbol );
 
-        ExtrusionSymbol* extrusionSymbol = style.getOrCreateSymbol<ExtrusionSymbol>();
-        extrusionSymbol->heightExpression() = NumericExpression( "[derived_height]" );
-        extrusionSymbol->flatten() = true;
-        extrusionSymbol->wallGradientPercentage() = 0.5;
-        style.addSymbol( extrusionSymbol );
+        if ( layerConfig->extrusionEnabled() )
+        {
+          ExtrusionSymbol* extrusionSymbol = style.getOrCreateSymbol<ExtrusionSymbol>();
 
+          if ( layerConfig->isExtrusionHeightNumeric() )
+          {
+            extrusionSymbol->height() = layerConfig->extrusionHeightNumeric();
+          }
+          else
+          {
+            extrusionSymbol->heightExpression() = layerConfig->extrusionHeight().toStdString();
+          }
+
+          extrusionSymbol->flatten() = layerConfig->extrusionFlatten();
+          extrusionSymbol->wallGradientPercentage() = layerConfig->extrusionWallGradient();
+          style.addSymbol( extrusionSymbol );
+        }
+#if 0
         FeatureDisplayLayout layout;
 
         layout.tileSizeFactor() = 45.0;
-        layout.addLevel( FeatureLevel( 0.0f, 20000.0f ) );
-
+        layout.addLevel( FeatureLevel( 0.0f, 200000.0f ) );
+#endif
         FeatureGeomModelOptions geomOpt;
         geomOpt.featureOptions() = featureOpt;
         geomOpt.styles() = new StyleSheet();
         geomOpt.styles()->addStyle( style );
+#if 0
         geomOpt.layout() = layout;
-
-        // geomOpt.depthTestEnabled() = true;
-        // worldOpt.enableLighting() = true;
-
+#endif
 
         ModelLayerOptions modelOptions( vLayer->id().toStdString(), geomOpt );
-        modelOptions.lightingEnabled() = true;
+        modelOptions.lightingEnabled() = layerConfig->lighting();
+
         ModelLayer* nLayer = new ModelLayer( modelOptions );
 
         osg::ref_ptr<Map> map = mMapNode->getMap();
@@ -1136,6 +1152,24 @@ void GlobePlugin::layerSettingsChanged( QgsMapLayer* layer )
 {
   layersRemoved( QStringList() << layer->id() );
   layersAdded( QList<QgsMapLayer*>() << layer );
+}
+
+void GlobePlugin::onLayerRead( QgsMapLayer* mapLayer, QDomElement elem )
+{
+  if ( mapLayer->type() == QgsMapLayer::VectorLayer )
+  {
+    QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
+    QgsGlobeVectorLayerConfig::readLayer( vLayer, elem );
+  }
+}
+
+void GlobePlugin::onLayerWrite( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc )
+{
+  if ( mapLayer->type() == QgsMapLayer::VectorLayer )
+  {
+    QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
+    QgsGlobeVectorLayerConfig::writeLayer( vLayer, elem, doc );
+  }
 }
 
 void GlobePlugin::setGlobeNotRunning()

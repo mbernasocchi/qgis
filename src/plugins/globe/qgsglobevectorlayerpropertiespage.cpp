@@ -26,9 +26,13 @@ QgsGlobeVectorLayerPropertiesPage::QgsGlobeVectorLayerPropertiesPage( QgsVectorL
 {
   setupUi( this );
 
-  mCbxAltitudeClamping->setModel( new QgsEnumComboBox<QgsGlobeVectorLayerConfig::AltitudeClamping>( mCbxAltitudeClamping ) );
-  mCbxAltitudeTechnique->setModel( new QgsEnumComboBox<QgsGlobeVectorLayerConfig::AltitudeTechnique>( mCbxAltitudeTechnique ) );
-  mCbxAltitudeBinding->setModel( new QgsEnumComboBox<QgsGlobeVectorLayerConfig::AltitudeBinding>( mCbxAltitudeBinding ) );
+  mCbxAltitudeClamping->setModel( new QgsEnumComboBoxModel<QgsGlobeVectorLayerConfig::AltitudeClamping>( mCbxAltitudeClamping ) );
+  mCbxAltitudeTechnique->setModel( new QgsEnumComboBoxModel<QgsGlobeVectorLayerConfig::AltitudeTechnique>( mCbxAltitudeTechnique ) );
+  mCbxAltitudeBinding->setModel( new QgsEnumComboBoxModel<QgsGlobeVectorLayerConfig::AltitudeBinding>( mCbxAltitudeBinding ) );
+
+  QgsGlobeVectorLayerConfig* layerConfig = QgsGlobeVectorLayerConfig::configForLayer( mLayer );
+
+  mChkLighting->setChecked( layerConfig->lighting() );
 
   // Fill altitude combo boxes
   mCbxAltitudeClamping->addItem( tr( "None" ), QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeClamping>( QgsGlobeVectorLayerConfig::AltitudeClampingNone ) );
@@ -44,22 +48,103 @@ QgsGlobeVectorLayerPropertiesPage::QgsGlobeVectorLayerPropertiesPage( QgsVectorL
   mCbxAltitudeBinding->addItem( tr( "Vertex" ), QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeBinding>( QgsGlobeVectorLayerConfig::AltitudeBindingVertex ) );
   mCbxAltitudeBinding->addItem( tr( "Centroid" ), QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeBinding>( QgsGlobeVectorLayerConfig::AltitudeBindingCentroid ) );
 
-  QgsGlobeVectorLayerConfig layerConfig = mLayer->property( "globe-config" ).value<QgsGlobeVectorLayerConfig>();
+  // Set altitude combobox values
+  mCbxAltitudeClamping->setCurrentIndex( mCbxAltitudeClamping->findData( QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeClamping>( layerConfig->altitudeClamping() ) ) );
+  mCbxAltitudeTechnique->setCurrentIndex( mCbxAltitudeTechnique->findData( QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeTechnique>( layerConfig->altitudeTechnique() ) ) );
+  mCbxAltitudeBinding->setCurrentIndex( mCbxAltitudeBinding->findData( QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeBinding>( layerConfig->altitudeBinding() ) ) );
 
-  mCbxAltitudeClamping->setCurrentIndex( mCbxAltitudeClamping->findData( QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeClamping>( layerConfig.altitudeClamping() ) ) );
-  mCbxAltitudeTechnique->setCurrentIndex( mCbxAltitudeTechnique->findData( QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeTechnique>( layerConfig.altitudeTechnique() ) ) );
-  mCbxAltitudeBinding->setCurrentIndex( mCbxAltitudeBinding->findData( QVariant::fromValue<QgsGlobeVectorLayerConfig::AltitudeBinding>( layerConfig.altitudeBinding() ) ) );
+  mGbxExtrusion->setChecked( layerConfig->extrusionEnabled() );
+  mTxtHeight->setText( layerConfig->extrusionHeight() );
+  mChkExtrusionFlatten->setChecked( layerConfig->extrusionFlatten() );
+  mTxtWallGradient->setValue( layerConfig->extrusionWallGradient() );
+
+  // Trigger visibility determination for dynamicly visible widgets
+  on_mCbxAltitudeClamping_currentIndexChanged( mCbxAltitudeClamping->currentIndex() );
 }
 
 void QgsGlobeVectorLayerPropertiesPage::apply()
 {
-  QgsGlobeVectorLayerConfig layerConfig(
+  QgsGlobeVectorLayerConfig* layerConfig = new QgsGlobeVectorLayerConfig(
     mCbxAltitudeClamping->itemData( mCbxAltitudeClamping->currentIndex() ).value<QgsGlobeVectorLayerConfig::AltitudeClamping>(),
     mCbxAltitudeTechnique->itemData( mCbxAltitudeTechnique->currentIndex() ).value<QgsGlobeVectorLayerConfig::AltitudeTechnique>(),
-    mCbxAltitudeBinding->itemData( mCbxAltitudeBinding->currentIndex() ).value<QgsGlobeVectorLayerConfig::AltitudeBinding>()
+    mCbxAltitudeBinding->itemData( mCbxAltitudeBinding->currentIndex() ).value<QgsGlobeVectorLayerConfig::AltitudeBinding>(),
+    mLayer
   );
 
-  mLayer->setProperty( "globe-config", QVariant::fromValue<QgsGlobeVectorLayerConfig>( layerConfig ) );
+  layerConfig->setExtrusionEnabled( mGbxExtrusion->isChecked() );
+  layerConfig->setExtrusionHeight( mTxtHeight->text() );
+  layerConfig->setExtrusionFlatten( mChkExtrusionFlatten->isChecked() );
+  layerConfig->setExtrusionWallGradient( mTxtWallGradient->value() );
+
+  layerConfig->setLighting( mChkLighting->isChecked() );
+
+  QgsGlobeVectorLayerConfig::setConfigForLayer( mLayer, layerConfig );
 
   emit layerSettingsChanged( mLayer );
+}
+
+void QgsGlobeVectorLayerPropertiesPage::on_mCbxAltitudeClamping_currentIndexChanged( int index )
+{
+  QgsGlobeVectorLayerConfig::AltitudeClamping clamping = mCbxAltitudeClamping->itemData( index ).value<QgsGlobeVectorLayerConfig::AltitudeClamping>();
+
+  if ( clamping == QgsGlobeVectorLayerConfig::AltitudeClampingTerrain )
+  {
+    mLblTechnique->show();
+    mCbxAltitudeTechnique->show();
+  }
+  else
+  {
+    mLblTechnique->hide();
+    mCbxAltitudeTechnique->hide();
+  }
+
+  on_mCbxAltitudeTechnique_currentIndexChanged( mCbxAltitudeTechnique->currentIndex() );
+}
+
+void QgsGlobeVectorLayerPropertiesPage::on_mCbxAltitudeTechnique_currentIndexChanged( int index )
+{
+  QgsGlobeVectorLayerConfig::AltitudeTechnique technique = mCbxAltitudeTechnique->itemData( index ).value<QgsGlobeVectorLayerConfig::AltitudeTechnique>();
+
+  if ( technique == QgsGlobeVectorLayerConfig::AltitudeTechniqueMap && !mCbxAltitudeTechnique->isHidden() )
+  {
+    mLblBinding->show();
+    mCbxAltitudeBinding->show();
+    mLblResolution->show();
+    mTxtAltitudeResolution->show();
+  }
+  else
+  {
+    mLblBinding->hide();
+    mCbxAltitudeBinding->hide();
+    mLblResolution->hide();
+    mTxtAltitudeResolution->hide();
+  }
+}
+
+
+QgsGlobeVectorLayerConfig* QgsGlobeVectorLayerConfig::configForLayer( QgsVectorLayer* vLayer )
+{
+  QVariant v = vLayer->property( "globe-config" );
+
+  QgsGlobeVectorLayerConfig* layerConfig = v.value<QgsGlobeVectorLayerConfig*>();
+
+  if ( !layerConfig )
+  {
+    layerConfig = new QgsGlobeVectorLayerConfig( vLayer );
+  }
+
+  return layerConfig;
+}
+
+void QgsGlobeVectorLayerConfig::setConfigForLayer( QgsVectorLayer* vLayer, QgsGlobeVectorLayerConfig* newConfig )
+{
+  QgsGlobeVectorLayerConfig* oldConfig = vLayer->property( "globe-config" ).value<QgsGlobeVectorLayerConfig*>();
+
+  if ( oldConfig != newConfig )
+  {
+    if ( oldConfig && oldConfig->parent() == vLayer )
+      delete oldConfig;
+
+    vLayer->setProperty( "globe-config", QVariant::fromValue<QgsGlobeVectorLayerConfig*>( newConfig ) );
+  }
 }

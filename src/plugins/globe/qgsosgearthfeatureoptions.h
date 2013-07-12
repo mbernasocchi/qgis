@@ -13,13 +13,12 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
-#ifndef OSGEARTH_DRIVER_QGIS_FEATURE_SOURCE_OPTIONS
-#define OSGEARTH_DRIVER_QGIS_FEATURE_SOURCE_OPTIONS 1
+#ifndef QGSGLOBEFEATUREOPTIONS_H
+#define QGSGLOBEFEATUREOPTIONS_H
 
 #include <osgEarth/Common>
 #include <osgEarthFeatures/FeatureSource>
 
-class QgisInterface;
 class QgsVectorLayer;
 
 namespace osgEarth
@@ -29,7 +28,7 @@ namespace osgEarth
     using namespace osgEarth;
     using namespace osgEarth::Features;
 
-    class QGISFeatureOptions : public FeatureSourceOptions // NO EXPORT; header only
+    class QgsGlobeFeatureOptions : public FeatureSourceOptions // NO EXPORT; header only
     {
       public:
         template <class T>
@@ -48,17 +47,14 @@ namespace osgEarth
         };
 
       public:
-        optional<std::string>& layerId() { return layerId_; }
-        const optional<std::string>& layerId() const { return layerId_; }
-
-        QgisInterface* qgis() { return mQgisIface; }
-        void setQgis( QgisInterface* iface ) { mQgisIface = iface; }
+        optional<std::string>& layerId() { return mLayerId; }
+        const optional<std::string>& layerId() const { return mLayerId; }
 
         QgsVectorLayer* layer() { return mLayer; }
         void setLayer( QgsVectorLayer* layer ) { mLayer = layer; }
 
       public:
-        QGISFeatureOptions( const ConfigOptions& opt = ConfigOptions() ) : FeatureSourceOptions( opt )
+        QgsGlobeFeatureOptions( const ConfigOptions& opt = ConfigOptions() ) : FeatureSourceOptions( opt )
         {
           // -> this is the important thing here
           // it will call the driver declared as "osgearth_feature_qgis"
@@ -72,8 +68,7 @@ namespace osgEarth
         {
           std::cout << "QGIS options::getConfig" << std::endl;
           Config conf = FeatureSourceOptions::getConfig();
-          conf.updateIfSet( "layerId", layerId_ );
-          conf.updateNonSerializable( "qgis", new RefPtr< QgisInterface >( mQgisIface ) );
+          conf.updateIfSet( "layerId", mLayerId );
           conf.updateNonSerializable( "layer", new RefPtr< QgsVectorLayer >( mLayer ) );
           return conf;
         }
@@ -88,19 +83,16 @@ namespace osgEarth
       private:
         void fromConfig( const Config& conf )
         {
-          conf.getIfSet( "layerId", layerId_ );
-          RefPtr< QgisInterface> *qgis_ptr = conf.getNonSerializable< RefPtr< QgisInterface > >( "qgis" );
-          mQgisIface = qgis_ptr ? qgis_ptr->ptr() : 0;
+          conf.getIfSet( "layerId", mLayerId );
           RefPtr< QgsVectorLayer > *layer_ptr = conf.getNonSerializable< RefPtr< QgsVectorLayer > >( "layer" );
           mLayer = layer_ptr ? layer_ptr->ptr() : 0;
         }
 
-        optional<std::string> layerId_;
-        QgisInterface*        mQgisIface;
+        optional<std::string> mLayerId;
         QgsVectorLayer*       mLayer;
     };
   }
 } // namespace osgEarth::Drivers
 
-#endif // OSGEARTH_DRIVER_QGIS_FEATURE_SOURCE_OPTIONS
+#endif // QGSGLOBEFEATUREOPTIONS_H
 

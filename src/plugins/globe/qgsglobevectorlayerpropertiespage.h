@@ -27,10 +27,10 @@ class QgsMapLayer;
  * and not the address of the values when looking for a custom types.
  */
 template <typename T>
-class QgsEnumComboBox : public QStandardItemModel
+class QgsEnumComboBoxModel : public QStandardItemModel
 {
   public:
-    QgsEnumComboBox( QObject* parent )
+    QgsEnumComboBoxModel( QObject* parent )
         : QStandardItemModel( parent )
     {}
 
@@ -75,6 +75,10 @@ class QgsGlobeVectorLayerPropertiesPage : public QgsVectorLayerPropertiesPage, p
 
   public slots:
     virtual void apply();
+
+  private slots:
+    void on_mCbxAltitudeClamping_currentIndexChanged( int index );
+    void on_mCbxAltitudeTechnique_currentIndexChanged( int index );
 
   signals:
     void layerSettingsChanged( QgsMapLayer* );

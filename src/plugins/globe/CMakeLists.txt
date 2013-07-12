@@ -41,6 +41,7 @@ SET (GLOBE_PLUGIN_MOC_HDRS
      globe_plugin_dialog.h
      qgsglobelayerpropertiesfactory.h
      qgsglobevectorlayerpropertiespage.h
+     qgsglobevectorlayerconfig.h
 )
 
 SET (GLOBE_PLUGIN_HDRS

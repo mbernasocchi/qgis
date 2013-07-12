@@ -125,6 +125,9 @@ class GlobePlugin : public QObject, public QgisPlugin
   private slots:
     void layerSettingsChanged( QgsMapLayer* layer );
 
+    void onLayerRead( QgsMapLayer* mapLayer, QDomElement elem );
+    void onLayerWrite( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc );
+
   private:
     //!  Set HTTP proxy settings
     void setupProxy();

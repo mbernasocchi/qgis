@@ -17,64 +17,197 @@
 #define QGSGLOBEVECTORLAYERCONFIG_H
 
 #include <QObject>
+#include <QDomElement>
+#include <QDomDocument>
+#include <QMetaEnum>
 
-#include <iostream>
+#include <qgsvectorlayer.h>
+#include <qgslogger.h>
 
-class QgsGlobeVectorLayerConfig
+class QgsGlobeVectorLayerConfig : public QObject
 {
+    Q_OBJECT
+
   public:
     enum AltitudeClamping
     {
-      AltitudeClampingNone,
       AltitudeClampingTerrain,
+      AltitudeClampingNone,
       AltitudeClampingRelative,
       AltitudeClampingAbsolute
     };
+    Q_ENUMS( AltitudeClamping )
 
     enum AltitudeTechnique
     {
-      AltitudeTechniqueMap,
       AltitudeTechniqueDrape,
+      AltitudeTechniqueMap,
       AltitudeTechniqueGpu,
       AltitudeTechniqueScene
     };
+    Q_ENUMS( AltitudeTechnique )
 
     enum AltitudeBinding
     {
       AltitudeBindingVertex,
       AltitudeBindingCentroid
     };
+    Q_ENUMS( AltitudeBinding )
 
   public:
-    QgsGlobeVectorLayerConfig()
-        : mAltitudeClamping( AltitudeClampingTerrain )
+    QgsGlobeVectorLayerConfig( QObject* parent )
+        : QObject( parent )
+        , mAltitudeClamping( AltitudeClampingTerrain )
         , mAltitudeTechnique( AltitudeTechniqueDrape )
         , mAltitudeBinding( AltitudeBindingVertex )
+        , mExtrusionEnabled( false )
+        , mExtrusionHeight( 10 )
+        , mExtrusionFlatten( false )
+        , mExtrusionWallGradient( 0.5 )
+        , mLighting( true )
     {
     }
 
-    QgsGlobeVectorLayerConfig( AltitudeClamping altitudeClamping, AltitudeTechnique altitudeTechnique, AltitudeBinding altitudeBinding )
-        : mAltitudeClamping( altitudeClamping )
+    QgsGlobeVectorLayerConfig( AltitudeClamping altitudeClamping, AltitudeTechnique altitudeTechnique, AltitudeBinding altitudeBinding, QObject* parent )
+        : QObject( parent )
+        , mAltitudeClamping( altitudeClamping )
         , mAltitudeTechnique( altitudeTechnique )
         , mAltitudeBinding( altitudeBinding )
-    {
-    }
+        , mExtrusionEnabled( false )
+        , mExtrusionHeight( 10 )
+        , mExtrusionFlatten( false )
+        , mExtrusionWallGradient( 0.5 )
+        , mLighting( true )
+    {}
 
     ~QgsGlobeVectorLayerConfig() {}
 
+    void setAltitudeClamping( AltitudeClamping altitudeClamping ) { mAltitudeClamping = altitudeClamping; }
     AltitudeClamping altitudeClamping() { return mAltitudeClamping; }
+
+    void setAltitudeTechnique( AltitudeTechnique altitudeTechnique ) { mAltitudeTechnique = altitudeTechnique; }
     AltitudeTechnique altitudeTechnique() { return mAltitudeTechnique; }
+
+
+    void setAltitudeBinding( AltitudeBinding altitudeBinding ) { mAltitudeBinding = altitudeBinding; }
     AltitudeBinding altitudeBinding() { return mAltitudeBinding; }
 
+    void setExtrusionEnabled( bool enabled ) { mExtrusionEnabled = enabled; }
+    bool extrusionEnabled() { return mExtrusionEnabled; }
+
+    void setExtrusionHeight( QString height ) { mExtrusionHeight = height; }
+    QString extrusionHeight() { return mExtrusionHeight; }
+
+    bool isExtrusionHeightNumeric() { bool ok; mExtrusionHeight.toDouble( &ok ); return ok; }
+    double extrusionHeightNumeric() { return mExtrusionHeight.toDouble(); }
+
+    void setExtrusionFlatten( bool flatten ) { mExtrusionFlatten = flatten; }
+    bool extrusionFlatten() { return mExtrusionFlatten; }
+
+    void setExtrusionWallGradient( float wallGradient ) { mExtrusionWallGradient = wallGradient; }
+    float extrusionWallGradient() { return mExtrusionWallGradient; }
+
+    void setLighting( bool lighting ) { mLighting = lighting; }
+    bool lighting() { return mLighting; }
+
+    /**
+     * Helper method
+     */
+    QString enumToQString( const char* name, int val )
+    {
+      int idx = metaObject()->indexOfEnumerator( name );
+      QMetaEnum e = metaObject()->enumerator( idx );
+      return e.valueToKey( val );
+    }
+
     QString dump() const { return QString( "Altitude { Clamping %1, Technique %2, Binding %3 }" ).arg( mAltitudeClamping ).arg( mAltitudeTechnique ).arg( mAltitudeBinding ); }
+
+    template <typename T>
+    static T qStringToEnum( const char* name, const QString& val )
+    {
+      int idx = staticMetaObject.indexOfEnumerator( name );
+      QMetaEnum e = staticMetaObject.enumerator( idx );
+
+      T ret = ( T )e.keyToValue( val.toUtf8().constData() );
+
+      if ( ret == -1 )
+      {
+        ret = ( T )0;
+      }
+
+      return ret;
+    }
+
+    static QgsGlobeVectorLayerConfig* configForLayer( QgsVectorLayer* vLayer );
+
+    static void setConfigForLayer( QgsVectorLayer* vLayer, QgsGlobeVectorLayerConfig* newConfig );
+
+    static void readLayer( QgsVectorLayer* vLayer, QDomElement elem )
+    {
+      QgsGlobeVectorLayerConfig* layerConfig = new QgsGlobeVectorLayerConfig( vLayer );
+
+      QDomElement globeElem = elem.firstChildElement( "globe" );
+
+      if ( !globeElem.isNull() )
+      {
+        QDomElement renderingElem = globeElem.firstChildElement( "rendering" );
+        layerConfig->setLighting( renderingElem.attribute( "lighting", "1" ).toInt() == 1 );
+
+        QDomElement extrusionElem = globeElem.firstChildElement( "extrusion" );
+        layerConfig->setExtrusionEnabled( extrusionElem.attribute( "enabled" ).toInt() == 1 );
+        layerConfig->setExtrusionHeight( extrusionElem.attribute( "height" ) );
+        layerConfig->setExtrusionFlatten( extrusionElem.attribute( "flatten" ).toInt() == 1 );
+        layerConfig->setExtrusionWallGradient( extrusionElem.attribute( "wall-gradient" ).toDouble() );
+
+        QDomElement altitudeElem = globeElem.firstChildElement( "altitude" );
+        layerConfig->setAltitudeClamping( qStringToEnum<AltitudeClamping>( "AltitudeClamping", altitudeElem.attribute( "clamping" ) ) );
+        layerConfig->setAltitudeTechnique( qStringToEnum<AltitudeTechnique>( "AltitudeTechnique", altitudeElem.attribute( "technique" ) ) );
+        layerConfig->setAltitudeBinding( qStringToEnum<AltitudeBinding>( "AltitudeBinding", altitudeElem.attribute( "binding" ) ) );
+      }
+
+      setConfigForLayer( vLayer, layerConfig );
+    }
+
+    static void writeLayer( QgsVectorLayer* vLayer, QDomElement& elem, QDomDocument& doc )
+    {
+      QgsGlobeVectorLayerConfig* layerConfig = configForLayer( vLayer );
+
+      QDomElement globeElem = doc.createElement( "globe" );
+
+      QDomElement renderingElem = doc.createElement( "rendering" );
+      renderingElem.setAttribute( "lighting", layerConfig->lighting() );
+      globeElem.appendChild( renderingElem );
+
+      QDomElement extrusionElem = doc.createElement( "extrusion" );
+      extrusionElem.setAttribute( "enabled", layerConfig->extrusionEnabled() );
+      extrusionElem.setAttribute( "height", layerConfig->extrusionHeight() );
+      extrusionElem.setAttribute( "flatten", layerConfig->extrusionFlatten() );
+      extrusionElem.setAttribute( "wall-gradient", layerConfig->extrusionWallGradient() );
+      globeElem.appendChild( extrusionElem );
+
+      QDomElement altitudeElem = doc.createElement( "altitude" );
+      altitudeElem.setAttribute( "clamping", layerConfig->enumToQString( "AltitudeClamping", layerConfig->altitudeClamping() ) );
+      altitudeElem.setAttribute( "technique", layerConfig->enumToQString( "AltitudeTechnique", layerConfig->altitudeTechnique() ) );
+      altitudeElem.setAttribute( "binding", layerConfig->enumToQString( "AltitudeBinding", layerConfig->altitudeBinding() ) );
+      globeElem.appendChild( altitudeElem );
+
+      elem.appendChild( globeElem );
+    }
 
   protected:
     AltitudeClamping mAltitudeClamping;
     AltitudeTechnique mAltitudeTechnique;
     AltitudeBinding mAltitudeBinding;
+
+    bool mExtrusionEnabled;
+    QString mExtrusionHeight;
+    bool mExtrusionFlatten;
+    float mExtrusionWallGradient;
+
+    bool mLighting;
 };
 
-Q_DECLARE_METATYPE( QgsGlobeVectorLayerConfig )
+Q_DECLARE_METATYPE( QgsGlobeVectorLayerConfig* )
 Q_DECLARE_METATYPE( QgsGlobeVectorLayerConfig::AltitudeClamping )
 Q_DECLARE_METATYPE( QgsGlobeVectorLayerConfig::AltitudeTechnique )
 Q_DECLARE_METATYPE( QgsGlobeVectorLayerConfig::AltitudeBinding )
