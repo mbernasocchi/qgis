@@ -319,9 +319,7 @@ void GlobePlugin::run()
     mRootNode->addChild( mControlCanvas );
 
     mOsgViewer->setSceneData( mRootNode );
-#if 0
     mOsgViewer->setThreadingModel( osgViewer::Viewer::SingleThreaded );
-#endif
 
     mOsgViewer->addEventHandler( new osgViewer::StatsHandler() );
     mOsgViewer->addEventHandler( new osgViewer::WindowSizeHandler() );
