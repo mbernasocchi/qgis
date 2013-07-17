@@ -20,13 +20,12 @@
 #include "globe_plugin_dialog.h"
 #include "qgsosgearthtilesource.h"
 #include "qgsosgearthfeaturesource.h"
+#include "qgsglobestyleutils.h"
 #ifdef HAVE_OSGEARTHQT
 #include <osgEarthQt/ViewerWidget>
 #else
 #include "osgEarthQt/ViewerWidget"
 #endif
-
-#include <cmath>
 
 #include <qgisinterface.h>
 #include <qgisgui.h>
@@ -74,6 +73,7 @@
 
 #include "qgsglobelayerpropertiesfactory.h"
 #include "qgsglobevectorlayerconfig.h"
+#include "qgspallabeling.h"
 
 using namespace osgEarth::Drivers;
 using namespace osgEarth::Util;
@@ -906,6 +906,32 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
           extrusionSymbol->wallGradientPercentage() = layerConfig->extrusionWallGradient();
           style.addSymbol( extrusionSymbol );
         }
+
+        if ( layerConfig->labelingEnabled() )
+        {
+          TextSymbol* textSymbol = style.getOrCreateSymbol<TextSymbol>();
+
+          textSymbol->declutter() = layerConfig->labelingDeclutter();
+
+          // load labeling settings from layer
+          QgsPalLayerSettings lyr;
+          lyr.readFromLayer( vLayer );
+
+          textSymbol->content() = QString( "Test" ).arg( lyr.fieldName ).toStdString();
+
+          /*
+                    Stroke stroke;
+                    stroke.color() = QgsGlobeStyleUtils::QColorToOsgColor( lyr.bufferColor );
+                    textSymbol->halo() = stroke;
+                    textSymbol->haloOffset() = lyr.bufferSize;
+                    textSymbol->font() = lyr.textFont.family().toStdString();
+                    textSymbol->size() = lyr.textFont.pointSize();
+          */
+          textSymbol->alignment() = TextSymbol::ALIGN_CENTER_TOP;
+
+          style.addSymbol( textSymbol );
+        }
+
 #if 0
         FeatureDisplayLayout layout;
 

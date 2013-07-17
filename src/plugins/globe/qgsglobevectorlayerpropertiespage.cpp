@@ -58,6 +58,10 @@ QgsGlobeVectorLayerPropertiesPage::QgsGlobeVectorLayerPropertiesPage( QgsVectorL
   mChkExtrusionFlatten->setChecked( layerConfig->extrusionFlatten() );
   mTxtWallGradient->setValue( layerConfig->extrusionWallGradient() );
 
+  // Set labeling values
+  mGbxLabelingEnabled->setChecked( layerConfig->labelingEnabled() );
+  mCbxLabelingDeclutter->setChecked( layerConfig->labelingDeclutter() );
+
   // Trigger visibility determination for dynamicly visible widgets
   on_mCbxAltitudeClamping_currentIndexChanged( mCbxAltitudeClamping->currentIndex() );
 }
@@ -77,6 +81,9 @@ void QgsGlobeVectorLayerPropertiesPage::apply()
   layerConfig->setExtrusionWallGradient( mTxtWallGradient->value() );
 
   layerConfig->setLighting( mChkLighting->isChecked() );
+
+  layerConfig->setLabelingEnabled( mGbxLabelingEnabled->isChecked() );
+  layerConfig->setLabelingDeclutter( mCbxLabelingDeclutter->isChecked() );
 
   QgsGlobeVectorLayerConfig::setConfigForLayer( mLayer, layerConfig );
 

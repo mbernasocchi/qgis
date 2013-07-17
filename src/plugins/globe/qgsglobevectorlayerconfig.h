@@ -110,6 +110,16 @@ class QgsGlobeVectorLayerConfig : public QObject
     void setLighting( bool lighting ) { mLighting = lighting; }
     bool lighting() { return mLighting; }
 
+    void setLabelingEnabled( bool enabled ) { mLabelingEnabled = enabled; }
+    bool labelingEnabled() { return mLabelingEnabled; }
+
+    void setLabelingField( const QString& field ) { mLabelingField = field; }
+    const QString& labelingField() { return mLabelingField; }
+
+    void setLabelingDeclutter( bool declutter ) { mLabelingDeclutter = declutter; }
+    bool labelingDeclutter() { return mLabelingDeclutter; }
+
+
     /**
      * Helper method
      */
@@ -163,6 +173,11 @@ class QgsGlobeVectorLayerConfig : public QObject
         layerConfig->setAltitudeClamping( qStringToEnum<AltitudeClamping>( "AltitudeClamping", altitudeElem.attribute( "clamping" ) ) );
         layerConfig->setAltitudeTechnique( qStringToEnum<AltitudeTechnique>( "AltitudeTechnique", altitudeElem.attribute( "technique" ) ) );
         layerConfig->setAltitudeBinding( qStringToEnum<AltitudeBinding>( "AltitudeBinding", altitudeElem.attribute( "binding" ) ) );
+
+        QDomElement labelingElem = globeElem.firstChildElement( "labeling" );
+        layerConfig->setLabelingEnabled( labelingElem.attribute( "enabled", "0" ).toInt() == 1 );
+        layerConfig->setLabelingField( labelingElem.attribute( "field" ) );
+        layerConfig->setLabelingDeclutter( labelingElem.attribute( "declutter", "1" ).toInt() == 1 );
       }
 
       setConfigForLayer( vLayer, layerConfig );
@@ -191,6 +206,11 @@ class QgsGlobeVectorLayerConfig : public QObject
       altitudeElem.setAttribute( "binding", layerConfig->enumToQString( "AltitudeBinding", layerConfig->altitudeBinding() ) );
       globeElem.appendChild( altitudeElem );
 
+      QDomElement labelingElem = doc.createElement( "labeling" );
+      labelingElem.setAttribute( "enabled", layerConfig->labelingEnabled() );
+      labelingElem.setAttribute( "field", layerConfig->labelingField() );
+      labelingElem.setAttribute( "declutter", layerConfig->labelingDeclutter() );
+
       elem.appendChild( globeElem );
     }
 
@@ -203,6 +223,10 @@ class QgsGlobeVectorLayerConfig : public QObject
     QString mExtrusionHeight;
     bool mExtrusionFlatten;
     float mExtrusionWallGradient;
+
+    bool mLabelingEnabled;
+    QString mLabelingField;
+    bool mLabelingDeclutter;
 
     bool mLighting;
 };

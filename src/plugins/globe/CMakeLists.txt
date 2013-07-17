@@ -48,6 +48,8 @@ SET (GLOBE_PLUGIN_HDRS
      qgsosgearthtilesource.h
      qgsosgearthfeaturesource.h
      qgsosgearthfeatureoptions.h
+     qgsglobefeatureutils.h
+     qgsglobestyleutils.h
      qgsglobelayerpropertiesfactory.h
      qgsglobevectorlayerpropertiespage.h
      qgsglobevectorlayerconfig.h

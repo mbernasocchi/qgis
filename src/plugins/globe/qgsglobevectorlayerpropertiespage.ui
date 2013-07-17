@@ -39,7 +39,7 @@
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="0" column="0">
-        <widget class="QGroupBox" name="groupBox_2">
+        <widget class="QGroupBox" name="mGbxLabelingEnabled">
          <property name="title">
           <string>Enable labeling</string>
          </property>
@@ -48,7 +48,7 @@
          </property>
          <layout class="QFormLayout" name="formLayout_4">
           <item row="0" column="0">
-           <widget class="QCheckBox" name="checkBox">
+           <widget class="QCheckBox" name="mCbxLabelingDeclutter">
             <property name="text">
              <string>Declutter</string>
             </property>
