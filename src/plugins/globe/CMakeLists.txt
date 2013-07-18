@@ -158,6 +158,7 @@ SET(LIB_NAME feature_qgis)
 SET(LIB_PUBLIC_HEADERS ${TARGET_H})
 INCLUDE(ModuleInstallOsgEarthDriverIncludes OPTIONAL)
 
+ADD_SUBDIRECTORY(python)
 ########################################################
 # Install
 
