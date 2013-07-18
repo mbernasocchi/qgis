@@ -910,15 +910,18 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         if ( layerConfig->labelingEnabled() )
         {
           TextSymbol* textSymbol = style.getOrCreateSymbol<TextSymbol>();
-
+#if 0
           textSymbol->declutter() = layerConfig->labelingDeclutter();
-
+#endif
           // load labeling settings from layer
           QgsPalLayerSettings lyr;
           lyr.readFromLayer( vLayer );
-
-          textSymbol->content() = QString( "Test" ).arg( lyr.fieldName ).toStdString();
-
+#if 0
+          textSymbol->content() = QString( "[%1]" ).arg( lyr.fieldName ).toStdString();
+#endif
+          textSymbol->content() = std::string( "test" );
+          textSymbol->font() = "Cantarell";
+          textSymbol->size() = 20;
           /*
                     Stroke stroke;
                     stroke.color() = QgsGlobeStyleUtils::QColorToOsgColor( lyr.bufferColor );
@@ -932,6 +935,10 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
           style.addSymbol( textSymbol );
         }
 
+        RenderSymbol* renderSymbol = style.getOrCreateSymbol<RenderSymbol>();
+        renderSymbol->lighting() = layerConfig->lighting();
+
+        style.addSymbol( renderSymbol );
 #if 0
         FeatureDisplayLayout layout;
 
@@ -947,7 +954,6 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
 #endif
 
         ModelLayerOptions modelOptions( vLayer->id().toStdString(), geomOpt );
-        modelOptions.lightingEnabled() = layerConfig->lighting();
 
         ModelLayer* nLayer = new ModelLayer( modelOptions );
 

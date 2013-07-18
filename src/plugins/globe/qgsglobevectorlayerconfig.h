@@ -210,6 +210,7 @@ class QgsGlobeVectorLayerConfig : public QObject
       labelingElem.setAttribute( "enabled", layerConfig->labelingEnabled() );
       labelingElem.setAttribute( "field", layerConfig->labelingField() );
       labelingElem.setAttribute( "declutter", layerConfig->labelingDeclutter() );
+      globeElem.appendChild( labelingElem );
 
       elem.appendChild( globeElem );
     }
