@@ -18,8 +18,11 @@
 
 #include <osgEarthFeatures/Feature>
 
-#include <qgspoint.h>
+#include <qgsfield.h>
 #include <qgsgeometry.h>
+#include <qgslogger.h>
+#include <qgspoint.h>
+
 
 using namespace osgEarth::Features;
 

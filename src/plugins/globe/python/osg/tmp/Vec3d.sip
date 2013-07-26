@@ -1,9 +1,12 @@
+namespace osg {
+
 /** General purpose double triple for use as vertices, vectors and normals.
   * Provides general math operations from addition through to cross products.
   * No support yet added for double * Vec3d - is it necessary?
   * Need to define a non-member non-friend operator*  etc.
   *    Vec3d * double is okay
 */
+
 class Vec3d
 {
 %TypeHeaderCode
@@ -34,11 +37,19 @@ class Vec3d
 
         bool operator <  (const Vec3d& v) const;
 
+        value_type* ptr();
+        const value_type* ptr() const;
+
         void set( value_type x, value_type y, value_type z);
 
         void set( const Vec3d& rhs);
 
+        value_type& operator [] (int i);
         value_type operator [] (int i) const;
+
+        value_type& x();
+        value_type& y();
+        value_type& z();
 
         value_type x() const;
         value_type y() const;
@@ -96,3 +107,4 @@ class Vec3d
         */
         value_type normalize();
 };    // end of class Vec3d
+}; // end of namespace osg

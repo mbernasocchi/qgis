@@ -1,44 +1,38 @@
-/** General purpose double triple for use as vertices, vectors and normals.
+/** General purpose float triple for use as vertices, vectors and normals.
   * Provides general math operations from addition through to cross products.
-  * No support yet added for double * Vec3d - is it necessary?
+  * No support yet added for float * Vec3f - is it necessary?
   * Need to define a non-member non-friend operator*  etc.
-  *    Vec3d * double is okay
+  * Vec3f * float is okay
 */
-class Vec3d
+class Vec3f
 {
 %TypeHeaderCode
-#include <osg/Vec3d>
+#include <osg/Vec3f>
 %End
-
     public:
 
         /** Data type of vector components.*/
-        typedef double value_type;
+        typedef float value_type;
 
         /** Number of vector components. */
         enum { num_components = 3 };
 
         /** Constructor that sets all components of the vector to zero */
-        Vec3d();
+        Vec3f();
+        Vec3f(value_type x,value_type y,value_type z);
+        Vec3f(const Vec2f& v2,value_type zz);
 
-        Vec3d(const Vec3f& vec);
+        bool operator == (const Vec3f& v) const;
+        
+        bool operator != (const Vec3f& v) const;
 
-        operator Vec3f() const;
-
-        Vec3d(value_type x,value_type y,value_type z);
-        Vec3d(const Vec2d& v2,value_type zz);
-
-        bool operator == (const Vec3d& v) const;
-
-        bool operator != (const Vec3d& v) const;
-
-        bool operator <  (const Vec3d& v) const;
+        bool operator <  (const Vec3f& v) const;
 
         void set( value_type x, value_type y, value_type z);
 
-        void set( const Vec3d& rhs);
+        void set( const Vec3f& rhs);
 
-        value_type operator [] (int i) const;
+        value_type operator [] (int i);
 
         value_type x() const;
         value_type y() const;
@@ -50,39 +44,39 @@ class Vec3d
         bool isNaN() const;
 
         /** Dot product. */
-        value_type operator * (const Vec3d& rhs) const;
+        value_type operator * (const Vec3f& rhs) const;
 
         /** Cross product. */
-        const Vec3d operator ^ (const Vec3d& rhs) const;
+        const Vec3f operator ^ (const Vec3f& rhs) const;
 
         /** Multiply by scalar. */
-        const Vec3d operator * (value_type rhs) const;
+        const Vec3f operator * (value_type rhs) const;
 
         /** Unary multiply by scalar. */
-        Vec3d& operator *= (value_type rhs);
+        Vec3f& operator *= (value_type rhs);
 
         /** Divide by scalar. */
-        const Vec3d operator / (value_type rhs) const;
+        const Vec3f operator / (value_type rhs) const;
 
         /** Unary divide by scalar. */
-        Vec3d& operator /= (value_type rhs);
+        Vec3f& operator /= (value_type rhs);
 
         /** Binary vector add. */
-        const Vec3d operator + (const Vec3d& rhs) const;
+        const Vec3f operator + (const Vec3f& rhs) const;
 
         /** Unary vector add. Slightly more efficient because no temporary
           * intermediate object.
         */
-        Vec3d& operator += (const Vec3d& rhs);
+        Vec3f& operator += (const Vec3f& rhs);
 
         /** Binary vector subtract. */
-        const Vec3d operator - (const Vec3d& rhs) const;
+        const Vec3f operator - (const Vec3f& rhs) const;
 
         /** Unary vector subtract. */
-        Vec3d& operator -= (const Vec3d& rhs);
+        Vec3f& operator -= (const Vec3f& rhs);
 
-        /** Negation operator. Returns the negative of the Vec3d. */
-        const Vec3d operator - () const;
+        /** Negation operator. Returns the negative of the Vec3f. */
+        const Vec3f operator - () const;
 
         /** Length of the vector = sqrt( vec . vec ) */
         value_type length() const;
@@ -92,7 +86,7 @@ class Vec3d
 
         /** Normalize the vector so that it has length unity.
           * Returns the previous length of the vector.
-          * If the vector is zero length, it is left unchanged and zero is returned.
         */
         value_type normalize();
-};    // end of class Vec3d
+
+};    // end of class Vec3f
