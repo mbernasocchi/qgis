@@ -94,7 +94,7 @@ class CORE_EXPORT QgsPoint
 
     /*! Test point dimension
      */
-    bool is3D() const { return !isNaN( m_z ); }
+    inline bool is3D() const { return !isNaN( m_z ); }
 
     ~QgsPoint()
     {}
