@@ -13,3 +13,4 @@
 %Import osg/osg.sip
 
 %Include qgsglobefeatureutils.sip
+%Include qgsglobeinterface.sip

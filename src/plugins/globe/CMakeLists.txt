@@ -20,6 +20,7 @@ SET (GLOBE_PLUGIN_SRCS
      globe_plugin.cpp
      qgsosgearthtilesource.cpp
      globe_plugin_dialog.cpp
+     qgsglobeinterface.cpp
      qgsglobelayerpropertiesfactory.cpp
      qgsglobevectorlayerpropertiespage.cpp
 )
@@ -39,6 +40,7 @@ SET (GLOBE_PLUGIN_UIS
 SET (GLOBE_PLUGIN_MOC_HDRS
      globe_plugin.h
      globe_plugin_dialog.h
+     qgsglobeinterface.h
      qgsglobelayerpropertiesfactory.h
      qgsglobevectorlayerpropertiespage.h
      qgsglobevectorlayerconfig.h
@@ -48,7 +50,9 @@ SET (GLOBE_PLUGIN_HDRS
      qgsosgearthtilesource.h
      qgsosgearthfeaturesource.h
      qgsosgearthfeatureoptions.h
+
      qgsglobefeatureutils.h
+     qgsglobeinterface.h
      qgsglobestyleutils.h
      qgsglobelayerpropertiesfactory.h
      qgsglobevectorlayerpropertiespage.h
@@ -73,6 +77,7 @@ INCLUDE_DIRECTORIES(
      ${OSGEARTH_INCLUDE_DIR}
      ${OSG_INCLUDE_DIR}
      ${GEOS_INCLUDE_DIR}
+     ${SIP_INCLUDE_DIR}
      ../../core ../../core/raster
      ../../gui
      ..

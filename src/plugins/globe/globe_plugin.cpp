@@ -16,6 +16,10 @@
  *                                                                         *
  ***************************************************************************/
 
+// Include this first to avoid _POSIX_C_SOURCE redefined warnings
+// see http://bytes.com/topic/python/answers/30009-warning-_posix_c_source-redefined
+#include "qgsglobeinterface.h"
+
 #include "globe_plugin.h"
 #include "globe_plugin_dialog.h"
 #include "qgsosgearthtilesource.h"
@@ -75,6 +79,7 @@
 #include "qgsglobevectorlayerconfig.h"
 #include "qgspallabeling.h"
 
+
 using namespace osgEarth::Drivers;
 using namespace osgEarth::Util;
 
@@ -102,6 +107,7 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     , mTileSource( 0 )
     , mElevationManager( NULL )
     , mObjectPlacer( NULL )
+    , mGlobeInterface( new QgsGlobeInterface( this ) )
 {
   mIsGlobeRunning = false;
   //needed to be "seen" by other plugins by doing
@@ -1503,4 +1509,9 @@ QGISEXTERN QString experimental()
 QGISEXTERN void unload( QgisPlugin * thePluginPointer )
 {
   delete thePluginPointer;
+}
+
+QGISEXTERN QgsPluginInterface* GlobePlugin::pluginInterface()
+{
+  return mGlobeInterface;
 }

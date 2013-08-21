@@ -50,6 +50,7 @@ class QAction;
 class QToolBar;
 class QgisInterface;
 class QgsGlobeLayerPropertiesFactory;
+class QgsGlobeInterface;
 
 namespace osgEarth { namespace QtGui { class ViewerWidget; } }
 namespace osgEarth { namespace Util { class SkyNode; } }
@@ -62,17 +63,22 @@ class GlobePlugin : public QObject, public QgisPlugin
     GlobePlugin( QgisInterface* theQgisInterface );
     virtual ~GlobePlugin();
 
-  public slots:
+    // QgisPlugin interface
+  public:
+    //! offer an interface for python plugins
+    virtual QgsPluginInterface* pluginInterface();
+    //! unload the plugin
+    void unload();
     //! init the gui
     virtual void initGui();
+
     //! Show the dialog box
     void run();
     //! Show the settings dialog box
     void settings();
     //!  Reset globe
     void reset();
-    //! unload the plugin
-    void unload();
+
     //! show the help document
     void help();
 
@@ -188,6 +194,9 @@ class GlobePlugin : public QObject, public QgisPlugin
     void xyCoordinates( const QgsPoint & p );
     //! emits position of right click on globe
     void newCoordinatesSelected( const QgsPoint & p );
+
+  private:
+    QgsGlobeInterface* mGlobeInterface;
 };
 
 class FlyToExtentHandler : public osgGA::GUIEventHandler
@@ -199,6 +208,7 @@ class FlyToExtentHandler : public osgGA::GUIEventHandler
 
   private:
     GlobePlugin* mGlobe;
+
 };
 
 // An event handler that will print out the coordinates at the clicked point
