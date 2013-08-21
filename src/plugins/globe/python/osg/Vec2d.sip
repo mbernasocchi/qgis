@@ -9,6 +9,7 @@ class Vec2d
 {
 %TypeHeaderCode
 #include <osg/Vec2d>
+using namespace osg;
 %End
     public:
 

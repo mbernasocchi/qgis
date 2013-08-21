@@ -1,4 +1,4 @@
-%Module(name=osgearth,
+%Module(name=osgearth.osgearth,
         version=0,
         keyword_arguments="Optional")
 

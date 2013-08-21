@@ -35,4 +35,6 @@ using namespace osg;
             Initialize the parent list to empty, node name to "" and
             bounding sphere dirty flag to true.*/
         Node();
+    protected:
+        virtual ~Node();
 };

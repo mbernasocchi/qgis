@@ -9,6 +9,7 @@ class Vec2f
 {
 %TypeHeaderCode
 #include <osg/Vec2f>
+using namespace osg;
 %End
     public:
 

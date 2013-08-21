@@ -8,6 +8,7 @@ class Vec3d
 {
 %TypeHeaderCode
 #include <osg/Vec3d>
+using namespace osg;
 %End
 
     public:
