@@ -2,7 +2,7 @@
         version=0,
         keyword_arguments="Optional")
 
-%Import osg/osg.sip
+%Import osg/osg/osg.sip
 
 %Include GeoData.sip
 %Include GeoCommon.sip

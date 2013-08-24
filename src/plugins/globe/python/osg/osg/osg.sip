@@ -7,3 +7,4 @@
 %Include Vec2d.sip
 %Include Vec3f.sip
 %Include Vec3d.sip
+%Include Camera.sip

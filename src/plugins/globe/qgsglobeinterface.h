@@ -18,6 +18,7 @@
 
 #include "qgsplugininterface.h"
 
+#include <osgViewer/Viewer>
 
 class GlobePlugin;
 
@@ -28,7 +29,9 @@ class QgsGlobeInterface : public QgsPluginInterface
   public:
     QgsGlobeInterface( GlobePlugin* const globe );
 
-    static void doFunnyStuff();
+    osgViewer::Viewer* osgViewer();
+
+    void syncExtent();
 
   private:
     GlobePlugin* mGlobe;

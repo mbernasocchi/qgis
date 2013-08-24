@@ -29,7 +29,12 @@ QgsGlobeInterface::QgsGlobeInterface( GlobePlugin* const globe )
 {
 }
 
-void QgsGlobeInterface::doFunnyStuff()
+osgViewer::Viewer* QgsGlobeInterface::osgViewer()
 {
-  QgsDebugMsg( "Doing the funny stuff" );
+  return mGlobe->osgViewer();
+}
+
+void QgsGlobeInterface::syncExtent()
+{
+  mGlobe->syncExtent();
 }

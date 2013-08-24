@@ -17,6 +17,8 @@ class QgsGlobeInterface : QgsPluginInterface
 {
 %TypeHeaderCode
     #include "qgsglobeinterface.h"
+
+    using namespace osgViewer;
 %End
 
 // Provide converter code
@@ -33,7 +35,10 @@ class QgsGlobeInterface : QgsPluginInterface
 
 
   public:
-    static void doFunnyStuff();
+    Viewer* osgViewer();
+
+    void syncExtent();
+
 
   private:
     // Instances will only be created from the globe plugin itself
