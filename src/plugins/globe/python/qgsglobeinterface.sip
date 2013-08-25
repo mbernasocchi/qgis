@@ -17,8 +17,6 @@ class QgsGlobeInterface : QgsPluginInterface
 {
 %TypeHeaderCode
     #include "qgsglobeinterface.h"
-
-    using namespace osgViewer;
 %End
 
 // Provide converter code
@@ -35,9 +33,13 @@ class QgsGlobeInterface : QgsPluginInterface
 
 
   public:
-    Viewer* osgViewer();
+    osgViewer::Viewer* osgViewer();
 
     void syncExtent();
+%Docstring
+Synchronize the extent currently visible on the globe with the extent currently
+visible on the mapcanvas.
+%End
 
 
   private:

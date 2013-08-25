@@ -22,7 +22,9 @@ SET(SIP_INCLUDES ${SIP_INCLUDES} ${QGIS_GLOBE_PYTHON_DIRECTORY})
 SET(SIP_DISABLE_FEATURES ${SIP_DISABLE_FEATURES} QSETINT_CONVERSION)
 SET(SIP_DISABLE_FEATURES ${SIP_DISABLE_FEATURES} QSETTYPE_CONVERSION)
 
-# osg module
+##########################
+# osg modules
+##########################
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OSG_PYTHON_OUTPUT_DIRECTORY})
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSG_PYTHON_OUTPUT_DIRECTORY})
 FILE(GLOB sip_files_osg osg/osg/*.sip)
@@ -37,7 +39,9 @@ SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgViewer})
 SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgViewer.api)
 ADD_SIP_PYTHON_MODULE(osg.osgViewer osg/osgViewer/osgViewer.sip ${OSG_LIBRARY} ${OSGVIEWER_LIBRARY})
 
-# osgearth module
+##########################
+# osgearth modules
+##########################
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
 FILE(GLOB_RECURSE sip_files_osgearth osgearth/*.sip)
@@ -54,6 +58,11 @@ FILE(GLOB_RECURSE sip_files_osgearth_symbology osgearth/symbology/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_symbology} ${sip_files_osgearth})
 SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgearth.symbology.api)
 ADD_SIP_PYTHON_MODULE(osgearth.symbology osgearth/symbology/symbology.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+
+FILE(GLOB_RECURSE sip_files_osgearth_util osgearth/Util/*.sip)
+SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_util} ${sip_files_osgearth})
+SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgearth.Util.api)
+ADD_SIP_PYTHON_MODULE(osgearth.Util osgearth/Util/Util.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
 
 # globe module
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QGIS_GLOBE_PYTHON_OUTPUT_DIRECTORY})

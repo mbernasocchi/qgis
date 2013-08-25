@@ -4,4 +4,5 @@
 
 %Import osg/osg/osg.sip
 
+%Include View.sip
 %Include Viewer.sip

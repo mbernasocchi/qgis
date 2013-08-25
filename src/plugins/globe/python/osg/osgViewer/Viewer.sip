@@ -11,13 +11,13 @@
  * OpenSceneGraph Public License for more details.
 */
 
+namespace osgViewer {
+
 /** Viewer holds a single view on to a single scene.*/
-class Viewer
+class Viewer : osgViewer::View
 {
 %TypeHeaderCode
   #include <osgViewer/Viewer>
-  using namespace osg;
-  using namespace osgViewer;
 %End
     public:
 
@@ -26,6 +26,12 @@ class Viewer
 //        Viewer(const osgViewer::Viewer& viewer, const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
 
         void setCameraWithFocus(Camera* camera);
+%Docstring
+Set the specified camera for this viewer.
+
+@param camera   The camera to set
+%End
+
         Camera* getCameraWithFocus();
 
         virtual ~Viewer();
@@ -119,4 +125,6 @@ class Viewer
 
     private:
       Viewer& operator= ( const Viewer& );
+};
+
 };
