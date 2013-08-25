@@ -72,8 +72,6 @@ class GlobePlugin : public QObject, public QgisPlugin
     //! init the gui
     virtual void initGui();
 
-    //! Show the dialog box
-    void run();
     //! Show the settings dialog box
     void settings();
     //!  Reset globe
@@ -81,12 +79,6 @@ class GlobePlugin : public QObject, public QgisPlugin
 
     //! show the help document
     void help();
-
-    //! Called when a new set of image layers has been received
-    void canvasLayersChanged();
-
-    void layersAdded( QList<QgsMapLayer*> );
-    void layersRemoved( QStringList layerIds );
 
     //! Called when a new set of elevation layers has been received
     void elevationLayersChanged();
@@ -123,12 +115,24 @@ class GlobePlugin : public QObject, public QgisPlugin
     //! Place an OSG model on the globe
     void placeNode( osg::Node* node, double lat, double lon, double alt = 0.0 );
 
+    //! Get the OSG viewer
     osgViewer::Viewer* osgViewer() { return mOsgViewer; }
 
     //! Recursive copy folder
     static void copyFolder( QString sourceFolder, QString destFolder );
 
+  public slots:
+    //! Open the 3D viewer window (if not yet open)
+    void run();
+    //! Called when a new set of image layers has been received
+    void canvasLayersChanged();
+
   private slots:
+
+    void layersAdded( QList<QgsMapLayer*> );
+
+    void layersRemoved( QStringList layerIds );
+
     void layerSettingsChanged( QgsMapLayer* layer );
 
     void onLayerRead( QgsMapLayer* mapLayer, QDomElement elem );
