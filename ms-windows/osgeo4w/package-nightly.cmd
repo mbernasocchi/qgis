@@ -13,7 +13,7 @@ REM *   (at your option) any later version.                                   *
 REM *                                                                         *
 REM ***************************************************************************
 @echo off
-set GRASS_VERSION=6.4.3RC4
+set GRASS_VERSION=6.4.3
 
 set BUILDDIR=%CD%\build
 REM set BUILDDIR=%TEMP%\qgis_unstable
@@ -130,7 +130,7 @@ cmake -G "Visual Studio 9 2008" ^
 	-D QWT_INCLUDE_DIR=%O4W_ROOT%/include/qwt ^
 	-D QWT_LIBRARY=%O4W_ROOT%/lib/qwt5.lib ^
 	-D CMAKE_INSTALL_PREFIX=%O4W_ROOT%/apps/%PACKAGENAME% ^
-	-D CMAKE_CXX_FLAGS_RELWITHDEBINFO="/MD /ZI /Od /D NDEBUG /D QGISDEBUG" ^
+	-D CMAKE_CXX_FLAGS_RELWITHDEBINFO="/MD /ZI /MP /Od /D NDEBUG /D QGISDEBUG" ^
 	-D FCGI_INCLUDE_DIR=%O4W_ROOT%/include ^
 	-D FCGI_LIBRARY=%O4W_ROOT%/lib/libfcgi.lib ^
 	%SRCDIR%>>%LOG% 2>&1

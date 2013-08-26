@@ -788,6 +788,8 @@ void QgsVectorLayer::modifySelection( QgsFeatureIds selectIds, QgsFeatureIds des
   mSelectedFeatureIds -= deselectIds;
   mSelectedFeatureIds += selectIds;
 
+  setCacheImage( 0 );
+
   emit selectionChanged( selectIds, deselectIds - intersectingIds, false );
 }
 
@@ -1159,7 +1161,7 @@ QgsRectangle QgsVectorLayer::extent()
     QgsFeature fet;
     while ( fit.nextFeature( fet ) )
     {
-      if ( fet.geometry() )
+      if ( fet.geometry() && fet.geometry()->type() != QGis::UnknownGeometry )
       {
         QgsRectangle bb = fet.geometry()->boundingBox();
         rect.combineExtentWith( &bb );
@@ -1496,6 +1498,7 @@ bool QgsVectorLayer::startEditing()
 
   mEditBuffer = new QgsVectorLayerEditBuffer( this );
   // forward signals
+  connect( mEditBuffer, SIGNAL( layerModified() ), this, SLOT( invalidateSymbolCountedFlag() ) );
   connect( mEditBuffer, SIGNAL( layerModified() ), this, SIGNAL( layerModified() ) ); // TODO[MD]: necessary?
   //connect( mEditBuffer, SIGNAL( layerModified() ), this, SLOT( triggerRepaint() ) ); // TODO[MD]: works well?
   connect( mEditBuffer, SIGNAL( featureAdded( QgsFeatureId ) ), this, SIGNAL( featureAdded( QgsFeatureId ) ) );
@@ -3767,6 +3770,11 @@ void QgsVectorLayer::onCacheImageDelete()
 {
   if ( mCurrentRendererContext )
     mCurrentRendererContext->setRenderingStopped( true );
+}
+
+void QgsVectorLayer::invalidateSymbolCountedFlag()
+{
+  mSymbolFeatureCounted = false;
 }
 
 QgsVectorLayer::ValueRelationData &QgsVectorLayer::valueRelation( int idx )

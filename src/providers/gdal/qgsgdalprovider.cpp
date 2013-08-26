@@ -139,7 +139,7 @@ QgsGdalProvider::QgsGdalProvider( QString const & uri, bool update )
   QString gdalUri = dataSourceUri();
 
   CPLErrorReset();
-  mGdalBaseDataset = GDALOpen( TO8F( gdalUri ), mUpdate ? GA_Update : GA_ReadOnly );
+  mGdalBaseDataset = gdalOpen( TO8F( gdalUri ), mUpdate ? GA_Update : GA_ReadOnly );
 
   if ( !mGdalBaseDataset )
   {
@@ -405,7 +405,7 @@ void QgsGdalProvider::readBlock( int theBandNo, int xBlock, int yBlock, void *bl
   // We have to read with correct data type consistent with other readBlock functions
   int xOff = xBlock * mXBlockSize;
   int yOff = yBlock * mYBlockSize;
-  GDALRasterIO( myGdalBand, GF_Read, xOff, yOff, mXBlockSize, mYBlockSize, block, mXBlockSize, mYBlockSize, ( GDALDataType ) mGdalDataType[theBandNo-1], 0, 0 );
+  gdalRasterIO( myGdalBand, GF_Read, xOff, yOff, mXBlockSize, mYBlockSize, block, mXBlockSize, mYBlockSize, ( GDALDataType ) mGdalDataType[theBandNo-1], 0, 0 );
 }
 
 void QgsGdalProvider::readBlock( int theBandNo, QgsRectangle  const & theExtent, int thePixelWidth, int thePixelHeight, void *theBlock )
@@ -580,7 +580,7 @@ void QgsGdalProvider::readBlock( int theBandNo, QgsRectangle  const & theExtent,
   GDALRasterBandH gdalBand = GDALGetRasterBand( mGdalDataset, theBandNo );
   GDALDataType type = ( GDALDataType )mGdalDataType[theBandNo-1];
   CPLErrorReset();
-  CPLErr err = GDALRasterIO( gdalBand, GF_Read,
+  CPLErr err = gdalRasterIO( gdalBand, GF_Read,
                              srcLeft, srcTop, srcWidth, srcHeight,
                              ( void * )tmpBlock,
                              tmpWidth, tmpHeight, type,
@@ -1424,12 +1424,12 @@ QString QgsGdalProvider::buildPyramids( const QList<QgsRasterPyramid> & theRaste
       GDALClose( mGdalDataset );
       //mGdalBaseDataset = GDALOpen( QFile::encodeName( dataSourceUri() ).constData(), GA_Update );
 
-      mGdalBaseDataset = GDALOpen( TO8F( dataSourceUri() ), GA_Update );
+      mGdalBaseDataset = gdalOpen( TO8F( dataSourceUri() ), GA_Update );
 
       // if the dataset couldn't be opened in read / write mode, tell the user
       if ( !mGdalBaseDataset )
       {
-        mGdalBaseDataset = GDALOpen( TO8F( dataSourceUri() ), GA_ReadOnly );
+        mGdalBaseDataset = gdalOpen( TO8F( dataSourceUri() ), GA_ReadOnly );
         //Since we are not a virtual warped dataset, mGdalDataSet and mGdalBaseDataset are supposed to be the same
         mGdalDataset = mGdalBaseDataset;
         return "ERROR_WRITE_FORMAT";
@@ -1521,7 +1521,7 @@ QString QgsGdalProvider::buildPyramids( const QList<QgsRasterPyramid> & theRaste
       //something bad happenend
       //QString myString = QString (CPLGetLastError());
       GDALClose( mGdalBaseDataset );
-      mGdalBaseDataset = GDALOpen( TO8F( dataSourceUri() ), mUpdate ? GA_Update : GA_ReadOnly );
+      mGdalBaseDataset = gdalOpen( TO8F( dataSourceUri() ), mUpdate ? GA_Update : GA_ReadOnly );
       //Since we are not a virtual warped dataset, mGdalDataSet and mGdalBaseDataset are supposed to be the same
       mGdalDataset = mGdalBaseDataset;
 
@@ -1576,7 +1576,7 @@ QString QgsGdalProvider::buildPyramids( const QList<QgsRasterPyramid> & theRaste
     QgsDebugMsg( "Reopening dataset ..." );
     //close the gdal dataset and reopen it in read only mode
     GDALClose( mGdalBaseDataset );
-    mGdalBaseDataset = GDALOpen( TO8F( dataSourceUri() ), mUpdate ? GA_Update : GA_ReadOnly );
+    mGdalBaseDataset = gdalOpen( TO8F( dataSourceUri() ), mUpdate ? GA_Update : GA_ReadOnly );
     //Since we are not a virtual warped dataset, mGdalDataSet and mGdalBaseDataset are supposed to be the same
     mGdalDataset = mGdalBaseDataset;
   }
@@ -2029,7 +2029,7 @@ QGISEXTERN bool isValidRasterFileName( QString const & theFileNameQString, QStri
 
   //open the file using gdal making sure we have handled locale properly
   //myDataset = GDALOpen( QFile::encodeName( theFileNameQString ).constData(), GA_ReadOnly );
-  myDataset = GDALOpen( TO8F( fileName ), GA_ReadOnly );
+  myDataset = QgsGdalProviderBase::gdalOpen( TO8F( fileName ), GA_ReadOnly );
   if ( !myDataset )
   {
     if ( CPLGetLastErrorNo() != CPLE_OpenFailed )
@@ -2353,7 +2353,7 @@ void QgsGdalProvider::initBaseDataset()
   }
 
   // check if this file has pyramids
-  mHasPyramids = GDALGetOverviewCount( myGDALBand ) > 0;
+  mHasPyramids = gdalGetOverviewCount( myGDALBand ) > 0;
 
   // Get the layer's projection info and set up the
   // QgsCoordinateTransform for this layer
@@ -2533,7 +2533,7 @@ bool QgsGdalProvider::write( void* data, int band, int width, int height, int xO
   {
     return false;
   }
-  return GDALRasterIO( rasterBand, GF_Write, xOffset, yOffset, width, height, data, width, height, GDALGetRasterDataType( rasterBand ), 0, 0 ) == CE_None;
+  return gdalRasterIO( rasterBand, GF_Write, xOffset, yOffset, width, height, data, width, height, GDALGetRasterDataType( rasterBand ), 0, 0 ) == CE_None;
 }
 
 bool QgsGdalProvider::setNoDataValue( int bandNo, double noDataValue )

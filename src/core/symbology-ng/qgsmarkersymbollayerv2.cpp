@@ -200,7 +200,10 @@ void QgsSimpleMarkerSymbolLayerV2::startRender( QgsSymbolV2RenderContext& contex
 
   if ( mUsingCache )
   {
-    prepareCache( context );
+    if ( !prepareCache( context ) )
+    {
+      mUsingCache = false;
+    }
   }
   else
   {
@@ -212,7 +215,7 @@ void QgsSimpleMarkerSymbolLayerV2::startRender( QgsSymbolV2RenderContext& contex
 }
 
 
-void QgsSimpleMarkerSymbolLayerV2::prepareCache( QgsSymbolV2RenderContext& context )
+bool QgsSimpleMarkerSymbolLayerV2::prepareCache( QgsSymbolV2RenderContext& context )
 {
   double scaledSize = mSize * QgsSymbolLayerV2Utils::lineWidthScaleFactor( context.renderContext(), mSizeUnit );
 
@@ -220,6 +223,11 @@ void QgsSimpleMarkerSymbolLayerV2::prepareCache( QgsSymbolV2RenderContext& conte
   double pw = (( mPen.widthF() == 0 ? 1 : mPen.widthF() ) + 1 ) / 2 * 2; // make even (round up); handle cosmetic pen
   int imageSize = (( int ) scaledSize + pw ) / 2 * 2 + 1; //  make image width, height odd; account for pen width
   double center = imageSize / 2.0;
+
+  if ( imageSize > mMaximumCacheWidth )
+  {
+    return false;
+  }
 
   mCache = QImage( QSize( imageSize, imageSize ), QImage::Format_ARGB32_Premultiplied );
   mCache.fill( 0 );
@@ -263,6 +271,8 @@ void QgsSimpleMarkerSymbolLayerV2::prepareCache( QgsSymbolV2RenderContext& conte
     drawMarker( &p, context );
     p.end();
   }
+
+  return true;
 }
 
 void QgsSimpleMarkerSymbolLayerV2::stopRender( QgsSymbolV2RenderContext& context )
@@ -413,8 +423,7 @@ bool QgsSimpleMarkerSymbolLayerV2::preparePath( QString name )
 
 void QgsSimpleMarkerSymbolLayerV2::renderPoint( const QPointF& point, QgsSymbolV2RenderContext& context )
 {
-  QgsRenderContext& rc = context.renderContext();
-  QPainter* p = rc.painter();
+  QPainter *p = context.renderContext().painter();
   if ( !p )
   {
     return;
@@ -460,13 +469,11 @@ void QgsSimpleMarkerSymbolLayerV2::renderPoint( const QPointF& point, QgsSymbolV
   {
     QMatrix transform;
 
-
-    bool hasDataDefinedRotation = context.renderHints() & QgsSymbolV2::DataDefinedRotation || angleExpression;
-    QgsExpression* sizeExpression = expression( "size" );
-    bool hasDataDefinedSize = context.renderHints() & QgsSymbolV2::DataDefinedSizeScale || sizeExpression;
-
     // move to the desired position
     transform.translate( point.x() + off.x(), point.y() + off.y() );
+
+    QgsExpression *sizeExpression = expression( "size" );
+    bool hasDataDefinedSize = context.renderHints() & QgsSymbolV2::DataDefinedSizeScale || sizeExpression;
 
     // resize if necessary
     if ( hasDataDefinedSize )
@@ -491,11 +498,9 @@ void QgsSimpleMarkerSymbolLayerV2::renderPoint( const QPointF& point, QgsSymbolV
       transform.scale( half, half );
     }
 
-    // rotate if necessary
+    bool hasDataDefinedRotation = context.renderHints() & QgsSymbolV2::DataDefinedRotation || angleExpression;
     if ( angle != 0 && hasDataDefinedRotation )
-    {
       transform.rotate( angle );
-    }
 
     QgsExpression* colorExpression = expression( "color" );
     QgsExpression* colorBorderExpression = expression( "color_border" );
@@ -835,11 +840,9 @@ void QgsSvgMarkerSymbolLayerV2::stopRender( QgsSymbolV2RenderContext& context )
 
 void QgsSvgMarkerSymbolLayerV2::renderPoint( const QPointF& point, QgsSymbolV2RenderContext& context )
 {
-  QPainter* p = context.renderContext().painter();
+  QPainter *p = context.renderContext().painter();
   if ( !p )
-  {
     return;
-  }
 
   double size = mSize;
   QgsExpression* sizeExpression = expression( "size" );
@@ -1167,12 +1170,14 @@ void QgsFontMarkerSymbolLayerV2::stopRender( QgsSymbolV2RenderContext& context )
 
 void QgsFontMarkerSymbolLayerV2::renderPoint( const QPointF& point, QgsSymbolV2RenderContext& context )
 {
-  QPainter* p = context.renderContext().painter();
+  QPainter *p = context.renderContext().painter();
+  if ( !p )
+    return;
+
   QColor penColor = context.selected() ? context.renderContext().selectionColor() : mColor;
   penColor.setAlphaF( mColor.alphaF() * context.alpha() );
   p->setPen( penColor );
   p->setFont( mFont );
-
 
   p->save();
   double offsetX = mOffset.x() * QgsSymbolLayerV2Utils::lineWidthScaleFactor( context.renderContext(), mOffsetUnit );

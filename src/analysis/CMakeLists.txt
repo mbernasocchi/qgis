@@ -66,10 +66,11 @@ ADD_BISON_FILES_PREFIX(QGIS_ANALYSIS_SRCS raster raster/qgsrastercalcparser.yy)
 IF (PEDANTIC AND MSVC)
   # disable warnings
   # 4065 switch with default and no case
+  # 4127 conditional expression is constant
   # 4702 unreachable code
   SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_BINARY_DIR}/src/analysis/qgsrastercalcparser.cpp
-    PROPERTIES COMPILE_FLAGS "-wd4065 -wd4702"
+    PROPERTIES COMPILE_FLAGS "-wd4065 -wd4127 -wd4702"
   )
 ENDIF (PEDANTIC AND MSVC)
 
@@ -95,15 +96,33 @@ SET(QGIS_ANALYSIS_HDRS
   raster/qgsrelief.h
   raster/qgsruggednessfilter.h
   raster/qgsslopefilter.h
+  raster/qgsrastermatrix.h
+  raster/qgsrastercalcnode.h
+  raster/qgstotalcurvaturefilter.h
+
   vector/qgsgeometryanalyzer.h
   vector/qgszonalstatistics.h
+  vector/qgsoverlayanalyzer.h
+
   interpolation/qgsinterpolator.h
   interpolation/qgsgridfilewriter.h
   interpolation/qgsidwinterpolator.h
   interpolation/qgstininterpolator.h
-)
+  interpolation/Bezier3D.h
+  interpolation/ParametricLine.h
+  interpolation/CloughTocherInterpolator.h
+  interpolation/TriangleInterpolator.h
+  interpolation/Point3D.h
+  interpolation/Vector3D.h
+  interpolation/DualEdgeTriangulation.h
+  interpolation/Node.h
+  interpolation/TriDecorator.h
+  interpolation/Triangulation.h
+  interpolation/HalfEdge.h
+  interpolation/LinTriangleInterpolator.h
+  interpolation/NormVecDecorator.h
+  interpolation/Line3D.h
 
-SET(QGIS_ANALYSIS_HDRS ${QGIS_ANALYSIS_HDRS}
   openstreetmap/qgsosmbase.h
   openstreetmap/qgsosmdatabase.h
   openstreetmap/qgsosmdownload.h

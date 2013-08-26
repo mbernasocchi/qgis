@@ -89,6 +89,7 @@ qgsmaptoolidentify.cpp
 qgsmaptoolpan.cpp
 qgsmaptoolzoom.cpp
 qgsmessagebar.cpp
+qgsmessagebaritem.cpp
 qgsmessageviewer.cpp
 qgsmessagelogviewer.cpp
 qgsnewhttpconnection.cpp
@@ -201,6 +202,7 @@ qgsmapcanvas.h
 qgsmapoverviewcanvas.h
 qgsmaptoolemitpoint.h
 qgsmaptoolidentify.h
+qgsmessagebaritem.h
 qgsmessagebar.h
 qgsmessageviewer.h
 qgsmessagelogviewer.h
@@ -253,6 +255,7 @@ qgsmaptoolemitpoint.h
 qgsmaptoolidentify.h
 qgsmaptoolpan.h
 qgsmaptoolzoom.h
+qgsmessagebaritem.h
 qgsmessagebar.h
 qgsmessageviewer.h
 qgsoptionsdialogbase.h
@@ -275,6 +278,12 @@ qgsexpressionhighlighter.h
 qgscollapsiblegroupbox.h
 qgsfilterlineedit.h
 qgssublayersdialog.h
+qgsnumericsortlistviewitem.h
+qgsannotationitem.h
+qgstextannotationitem.h
+qgssvgannotationitem.h
+qgscomposerruler.h
+qgsdetaileditemdata.h
 
 attributetable/qgsattributetablemodel.h
 attributetable/qgsattributetableview.h
@@ -286,6 +295,8 @@ attributetable/qgsfeaturelistmodel.h
 attributetable/qgsfeaturelistviewdelegate.h
 attributetable/qgsfeatureselectionmodel.h
 attributetable/qgsdualview.h
+
+raster/qgsrasterrendererwidget.h
 )
 
 IF (WITH_TOUCH)

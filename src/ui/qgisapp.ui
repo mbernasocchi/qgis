@@ -96,6 +96,7 @@
      <addaction name="mActionSelectPolygon"/>
      <addaction name="mActionSelectFreehand"/>
      <addaction name="mActionSelectRadius"/>
+     <addaction name="mActionSelectByExpression"/>
      <addaction name="mActionDeselectAll"/>
     </widget>
     <widget class="QMenu" name="menuMeasure">
@@ -798,7 +799,7 @@
    </property>
    <property name="icon">
     <iconset resource="../../images/images.qrc">
-     <normaloff>:/images/themes/default/mActionPan.png</normaloff>:/images/themes/default/mActionPan.png</iconset>
+     <normaloff>:/images/themes/default/mActionPan.svg</normaloff>:/images/themes/default/mActionPan.svg</iconset>
    </property>
    <property name="text">
     <string>Pan Map</string>
@@ -1233,7 +1234,7 @@
      <normaloff>:/images/themes/default/mActionAddWmsLayer.svg</normaloff>:/images/themes/default/mActionAddWmsLayer.svg</iconset>
    </property>
    <property name="text">
-    <string>Add WMS Layer...</string>
+    <string>Add WMS/WMTS Layer...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+W</string>
@@ -1687,7 +1688,7 @@ Ctl (Cmd) increments by 15 deg.</string>
   <action name="mActionPanToSelected">
    <property name="icon">
     <iconset resource="../../images/images.qrc">
-     <normaloff>:/images/themes/default/mActionPanToSelected.png</normaloff>:/images/themes/default/mActionPanToSelected.png</iconset>
+     <normaloff>:/images/themes/default/mActionPanToSelected.svg</normaloff>:/images/themes/default/mActionPanToSelected.svg</iconset>
    </property>
    <property name="text">
     <string>Pan Map to Selection</string>

@@ -260,7 +260,7 @@ class QgsOgrProvider : public QgsVectorDataProvider
 
     QTextCodec* textEncoding() { return mEncoding; }
 
-    QString quotedIdentifier( QString field );
+    QByteArray quotedIdentifier( QByteArray field );
 
   protected:
     /** loads fields from input file to member attributeFields */
@@ -340,6 +340,8 @@ class QgsOgrProvider : public QgsVectorDataProvider
 
     /**Calls OGR_L_SyncToDisk and recreates the spatial index if present*/
     bool syncToDisc();
+
+    OGRLayerH setSubsetString( OGRLayerH layer, OGRDataSourceH ds );
 
     friend class QgsOgrFeatureIterator;
     QSet< QgsOgrFeatureIterator* > mActiveIterators;

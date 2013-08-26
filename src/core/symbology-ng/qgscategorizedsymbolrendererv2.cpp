@@ -97,7 +97,7 @@ void QgsRendererCategoryV2::setLabel( const QString &label )
   mLabel = label;
 }
 
-QString QgsRendererCategoryV2::dump()
+QString QgsRendererCategoryV2::dump() const
 {
   return QString( "%1::%2::%3\n" ).arg( mValue.toString() ).arg( mLabel ).arg( mSymbol->dump() );
 }
@@ -124,12 +124,10 @@ void QgsRendererCategoryV2::toSld( QDomDocument &doc, QDomElement &element, QgsS
   ruleElem.appendChild( descrElem );
 
   // create the ogc:Filter for the range
-  QDomElement filterElem = doc.createElement( "ogc:Filter" );
   QString filterFunc = QString( "%1 = '%2'" )
                        .arg( attrName.replace( "\"", "\"\"" ) )
                        .arg( mValue.toString().replace( "'", "''" ) );
-  QgsSymbolLayerV2Utils::createFunctionElement( doc, filterElem, filterFunc );
-  ruleElem.appendChild( filterElem );
+  QgsSymbolLayerV2Utils::createFunctionElement( doc, ruleElem, filterFunc );
 
   mSymbol->toSld( doc, ruleElem, props );
 }
@@ -188,7 +186,7 @@ QgsSymbolV2* QgsCategorizedSymbolRendererV2::symbolForValue( QVariant value )
     }
     else
     {
-      QgsDebugMsg( "attribute value not found: " + value.toString() );
+      QgsDebugMsgLevel( "attribute value not found: " + value.toString(), 3 );
     }
     return NULL;
   }
@@ -425,7 +423,7 @@ QList<QString> QgsCategorizedSymbolRendererV2::usedAttributes()
   return attributes.toList();
 }
 
-QString QgsCategorizedSymbolRendererV2::dump()
+QString QgsCategorizedSymbolRendererV2::dump() const
 {
   QString s = QString( "CATEGORIZED: idx %1\n" ).arg( mAttrName );
   for ( int i = 0; i < mCategories.count(); i++ )

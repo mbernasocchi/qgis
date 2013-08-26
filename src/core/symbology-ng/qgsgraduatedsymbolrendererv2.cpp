@@ -112,7 +112,7 @@ void QgsRendererRangeV2::setLowerValue( double lowerValue )
   mLowerValue = lowerValue;
 }
 
-QString QgsRendererRangeV2::dump()
+QString QgsRendererRangeV2::dump() const
 {
   return QString( "%1 - %2::%3::%4\n" ).arg( mLowerValue ).arg( mUpperValue ).arg( mLabel ).arg( mSymbol->dump() );
 }
@@ -139,12 +139,10 @@ void QgsRendererRangeV2::toSld( QDomDocument &doc, QDomElement &element, QgsStri
   ruleElem.appendChild( descrElem );
 
   // create the ogc:Filter for the range
-  QDomElement filterElem = doc.createElement( "ogc:Filter" );
   QString filterFunc = QString( "%1 > %2 AND %1 <= %3" )
                        .arg( attrName.replace( "\"", "\"\"" ) )
                        .arg( mLowerValue ).arg( mUpperValue );
-  QgsSymbolLayerV2Utils::createFunctionElement( doc, filterElem, filterFunc );
-  ruleElem.appendChild( filterElem );
+  QgsSymbolLayerV2Utils::createFunctionElement( doc, ruleElem, filterFunc );
 
   mSymbol->toSld( doc, ruleElem, props );
 }
@@ -336,7 +334,7 @@ bool QgsGraduatedSymbolRendererV2::updateRangeLowerValue( int rangeIndex, double
   return true;
 }
 
-QString QgsGraduatedSymbolRendererV2::dump()
+QString QgsGraduatedSymbolRendererV2::dump() const
 {
   QString s = QString( "GRADUATED: attr %1\n" ).arg( mAttrName );
   for ( int i = 0; i < mRanges.count(); i++ )

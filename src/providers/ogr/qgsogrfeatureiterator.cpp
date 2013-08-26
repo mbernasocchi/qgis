@@ -54,11 +54,7 @@ QgsOgrFeatureIterator::QgsOgrFeatureIterator( QgsOgrProvider* p, const QgsFeatur
 
   if ( !P->subsetString().isEmpty() )
   {
-    QString sql = QString( "SELECT * FROM %1 WHERE %2" )
-                  .arg( P->quotedIdentifier( FROM8( OGR_FD_GetName( OGR_L_GetLayerDefn( ogrLayer ) ) ) ) )
-                  .arg( P->subsetString() );
-    QgsDebugMsg( QString( "SQL: %1" ).arg( sql ) );
-    ogrLayer = OGR_DS_ExecuteSQL( ogrDataSource, P->textEncoding()->fromUnicode( sql ).constData(), NULL, NULL );
+    ogrLayer = P->setSubsetString( ogrLayer, ogrDataSource );
     mSubsetStringSet = true;
   }
 
