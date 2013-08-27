@@ -17,31 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+/** osgEarth core */
 namespace osgEarth
 {
-    /**
-     * Base class for all Map layers. 
-     */
-    class Layer // : public osg::Referenced
-    {
-%TypeHeaderCode
-#include <osgEarth/Layer>
-%End
-    public:
-        Layer();
-
-        /** dtor */
-        virtual ~Layer();
-
-        /**
-         * Gets this layer's unique ID.
-         */
-        const osgEarth::UID getUID() const;
-
-        /**
-         * Sequence controller if the layer has one.
-         */
-//        virtual SequenceControl* getSequenceControl();
-    };
-
-}; // namespace osgEarth
+    // application-wide unique ID.
+    typedef int UID;
+};

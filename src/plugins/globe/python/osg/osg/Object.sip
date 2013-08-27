@@ -58,11 +58,11 @@ class Object // : public Referenced
 //        /** return the name of the object's library. Must be defined
 //            by derived classes. The OpenSceneGraph convention is that the
 //            namespace of a library is the same as the library name.*/
-//        virtual const char* libraryName() const = 0;
+        virtual const char* libraryName() const = 0;
 //
 //        /** return the name of the object's class type. Must be defined
 //            by derived classes.*/
-//        virtual const char* className() const = 0;
+        virtual const char* className() const = 0;
 //
 //
 //        /** Set whether to use a mutex to ensure ref() and unref() are thread safe.*/

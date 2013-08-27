@@ -47,7 +47,7 @@ SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
 FILE(GLOB_RECURSE sip_files_osgearth osgearth/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth})
 SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgearth.api)
-ADD_SIP_PYTHON_MODULE(osgearth.osgearth osgearth/osgearth.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+ADD_SIP_PYTHON_MODULE(osgearth.osgearth osgearth/osgearth.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGDB_LIBRARY})
 
 FILE(GLOB_RECURSE sip_files_osgearth_features osgearth/features/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_features} ${sip_files_osgearth})

@@ -31,7 +31,7 @@ namespace osgEarth
     public:
         ModelLayerOptions( const osgEarth::ConfigOptions& options =osgEarth::ConfigOptions() );
 
-//        ModelLayerOptions( const std::string& name, const ModelSourceOptions& driverOptions =ModelSourceOptions() );
+        ModelLayerOptions( const std::string& name, const osgEarth::ModelSourceOptions& driverOptions =ModelSourceOptions() );
 
         /** dtor */
         virtual ~ModelLayerOptions();
@@ -46,7 +46,7 @@ namespace osgEarth
          * Options for the underlying model source driver.
          */
 //        optional<ModelSourceOptions>& driver();
-//        const optional<ModelSourceOptions>& driver() const;
+        const optional<osgEarth::ModelSourceOptions>& driver() const;
 
         /**
          * Whether to enable OpenGL lighting on the model node.
@@ -140,7 +140,7 @@ namespace osgEarth
         /**
          * Access the underlying model source.
          */
-//        osgEarth::ModelSource* getModelSource() const;
+        osgEarth::ModelSource* getModelSource() const;
 
     public:
 

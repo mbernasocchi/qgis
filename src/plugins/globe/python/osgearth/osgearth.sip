@@ -5,13 +5,17 @@
 %Import osg/osg/osg.sip
 
 %Include Bounds.sip
-%Include GeoData.sip
-%Include GeoCommon.sip
+%Include Common.sip
 %Include Config.sip
-%Include MapNode.sip
+%Include GeoCommon.sip
+%Include GeoData.sip
 %Include Layer.sip
-%Include ModelLayer.sip
-%Include Terrain.sip
-%Include SpatialReference.sip
 %Include Map.sip
+%Include MapNode.sip
+%Include ModelLayer.sip
+%Include ModelSource.sip
 %Include Revisioning.sip
+%Include SpatialReference.sip
+%Include Terrain.sip
+
+%Include optional.sip

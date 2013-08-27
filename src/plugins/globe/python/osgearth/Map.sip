@@ -78,7 +78,7 @@ namespace osgEarth
 //        /**
 //         * Gets an image layer by its unique ID.
 //         */
-//        ImageLayer* getImageLayerByUID( UID layerUID ) const;
+        ImageLayer* getImageLayerByUID( osgEarth::UID layerUID ) const;
 //
 //        /**
 //         * Gets an image layer at the specified index.
@@ -133,7 +133,7 @@ namespace osgEarth
         /**
          * Gets a model layer by its unique ID.
          */
-//        osgEarth::ModelLayer* getModelLayerByUID( UID layerUID ) const;
+        osgEarth::ModelLayer* getModelLayerByUID( osgEarth::UID layerUID ) const;
 
         /**
          * Gets the model layer at the specified index.
