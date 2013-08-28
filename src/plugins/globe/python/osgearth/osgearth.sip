@@ -9,6 +9,7 @@
 %Include Config.sip
 %Include GeoCommon.sip
 %Include GeoData.sip
+%Include ImageLayer.sip
 %Include Layer.sip
 %Include Map.sip
 %Include MapNode.sip

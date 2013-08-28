@@ -57,28 +57,28 @@ namespace osgEarth
          * Gets the SRS of the map's profile (convenience)
          */
         const osgEarth::SpatialReference* getSRS() const;
-//
-//        /**
-//         * Copies references of the map image layers into the output list.
-//         * This method is thread safe. It returns the map revision that was
-//         * in effect when the data was copied.
-//         */
-//        Revision getImageLayers( ImageLayerVector& out_layers ) const;
-//
-//        /**
-//         * Gets the number of image layers in the map.
-//         */
-//        int getNumImageLayers() const;
-//
-//        /**
-//         * Gets an image layer by name.
-//         */
-//        ImageLayer* getImageLayerByName( const std::string& name ) const;
-//
-//        /**
-//         * Gets an image layer by its unique ID.
-//         */
-        ImageLayer* getImageLayerByUID( osgEarth::UID layerUID ) const;
+
+        /**
+         * Copies references of the map image layers into the output list.
+         * This method is thread safe. It returns the map revision that was
+         * in effect when the data was copied.
+         */
+//        osgEarth::Revision getImageLayers( osgEarth::ImageLayerVector& out_layers ) const;
+
+        /**
+         * Gets the number of image layers in the map.
+         */
+        int getNumImageLayers() const;
+
+        /**
+         * Gets an image layer by name.
+         */
+        osgEarth::ImageLayer* getImageLayerByName( const std::string& name ) const;
+
+        /**
+         * Gets an image layer by its unique ID.
+         */
+        osgEarth::ImageLayer* getImageLayerByUID( osgEarth::UID layerUID ) const;
 //
 //        /**
 //         * Gets an image layer at the specified index.

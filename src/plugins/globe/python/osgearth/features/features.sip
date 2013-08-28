@@ -5,3 +5,4 @@
 %Import osgearth/osgearth.sip
 
 %Include Feature.sip
+// %Include FeatureSourceIndexNode.sip
