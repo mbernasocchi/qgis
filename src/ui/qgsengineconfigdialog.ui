@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>336</width>
-    <height>367</height>
+    <height>404</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -246,6 +246,12 @@
      </item>
      <item row="5" column="0" colspan="3">
       <widget class="QCheckBox" name="mSaveWithProjectChkBox">
+       <property name="font">
+        <font>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
        <property name="layoutDirection">
         <enum>Qt::LeftToRight</enum>
        </property>
