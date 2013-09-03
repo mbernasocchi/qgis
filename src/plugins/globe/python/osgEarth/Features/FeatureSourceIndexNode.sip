@@ -54,9 +54,11 @@ namespace osgEarth {
 %End
     public: // tagging functions
 //        virtual void tagPrimitiveSets( osg::Drawable* drawable, Feature* feature ) const =0;
-        virtual void tagNode( osg::Node* node, Feature* feature ) const =0;
+        virtual void tagNode( osg::Node* node, osgEarth::Features::Feature* feature ) const =0;
 
         virtual ~FeatureSourceIndex();
+    private:
+        FeatureSourceIndex();
     };
 
     /**
@@ -86,7 +88,7 @@ namespace osgEarth {
         /**
          * Tags a node with the specified FeatureID.
          */
-        void tagNode( osg::Node* node, Feature* feature ) const;
+        void tagNode( osg::Node* node, osgEarth::Features::Feature* feature ) const;
 
 
     public:
@@ -137,11 +139,14 @@ namespace osgEarth {
          * @param output  cached feature 
          * @return true if successful 
          */
-        bool getFeature(const FeatureID& fid, const Feature*& output) const;
+        bool getFeature(const osgEarth::Features::FeatureID& fid, const osgEarth::Features::Feature*& output) const;
 
     public:
         virtual const char* className() const;
         virtual const char* libraryName() const;
+
+    private:
+        FeatureSourceIndexNode();
     };
 
   };

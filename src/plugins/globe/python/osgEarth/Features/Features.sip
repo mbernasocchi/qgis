@@ -5,4 +5,4 @@
 %Import osgEarth/osgEarth.sip
 
 %Include Feature.sip
-// %Include FeatureSourceIndexNode.sip
+%Include FeatureSourceIndexNode.sip

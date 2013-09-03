@@ -4,11 +4,12 @@
   * Need to define a non-member non-friend operator*  etc.
   *    Vec3d * double is okay
 */
+namespace osg
+{
 class Vec3d
 {
 %TypeHeaderCode
 #include <osg/Vec3d>
-using namespace osg;
 %End
 
     public:
@@ -29,15 +30,15 @@ using namespace osg;
         Vec3d(value_type x,value_type y,value_type z);
         Vec3d(const Vec2d& v2,value_type zz);
 
-        bool operator == (const Vec3d& v) const;
+        bool operator == (const osg::Vec3d& v) const;
 
-        bool operator != (const Vec3d& v) const;
+        bool operator != (const osg::Vec3d& v) const;
 
-        bool operator <  (const Vec3d& v) const;
+        bool operator <  (const osg::Vec3d& v) const;
 
         void set( value_type x, value_type y, value_type z);
 
-        void set( const Vec3d& rhs);
+        void set( const osg::Vec3d& rhs);
 
         value_type operator [] (int i) const;
 
@@ -51,39 +52,39 @@ using namespace osg;
         bool isNaN() const;
 
         /** Dot product. */
-        value_type operator * (const Vec3d& rhs) const;
+        value_type operator * (const osg::Vec3d& rhs) const;
 
         /** Cross product. */
-        const Vec3d operator ^ (const Vec3d& rhs) const;
+        const osg::Vec3d operator ^ (const osg::Vec3d& rhs) const;
 
         /** Multiply by scalar. */
-        const Vec3d operator * (value_type rhs) const;
+        const osg::Vec3d operator * (value_type rhs) const;
 
         /** Unary multiply by scalar. */
-        Vec3d& operator *= (value_type rhs);
+        osg::Vec3d& operator *= (value_type rhs);
 
         /** Divide by scalar. */
-        const Vec3d operator / (value_type rhs) const;
+        const osg::Vec3d operator / (value_type rhs) const;
 
         /** Unary divide by scalar. */
-        Vec3d& operator /= (value_type rhs);
+        osg::Vec3d& operator /= (value_type rhs);
 
         /** Binary vector add. */
-        const Vec3d operator + (const Vec3d& rhs) const;
+        const osg::Vec3d operator + (const osg::Vec3d& rhs) const;
 
         /** Unary vector add. Slightly more efficient because no temporary
           * intermediate object.
         */
-        Vec3d& operator += (const Vec3d& rhs);
+        osg::Vec3d& operator += (const osg::Vec3d& rhs);
 
         /** Binary vector subtract. */
-        const Vec3d operator - (const Vec3d& rhs) const;
+        const osg::Vec3d operator - (const osg::Vec3d& rhs) const;
 
         /** Unary vector subtract. */
-        Vec3d& operator -= (const Vec3d& rhs);
+        osg::Vec3d& operator -= (const osg::Vec3d& rhs);
 
         /** Negation operator. Returns the negative of the Vec3d. */
-        const Vec3d operator - () const;
+        const osg::Vec3d operator - () const;
 
         /** Length of the vector = sqrt( vec . vec ) */
         value_type length() const;
@@ -97,3 +98,4 @@ using namespace osg;
         */
         value_type normalize();
 };    // end of class Vec3d
+};

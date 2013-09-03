@@ -53,7 +53,7 @@ using namespace osg;
          */
         GeoPoint(
             const osgEarth::SpatialReference* srs,
-            const Vec3d&       xyz,
+            const osg::Vec3d&       xyz,
             const AltitudeMode&     mode );
 
         /**
@@ -87,7 +87,7 @@ using namespace osg;
          */
         void set(
             const osgEarth::SpatialReference* srs,
-            const Vec3d&       xyz,
+            const osg::Vec3d&       xyz,
             const AltitudeMode&     mode );
 
         void set(
@@ -107,7 +107,7 @@ using namespace osg;
 
         double  alt() const;
 
-        const Vec3d& vec3d() const;
+        const osg::Vec3d& vec3d() const;
 
         const osgEarth::SpatialReference* getSRS() const;
 
@@ -155,19 +155,19 @@ using namespace osg;
          * the actual Z coordinate. Use the variant of toWorld that takes a
          * Terrain* instead.
          */
-        bool toWorld( Vec3d& out_world ) const;
+        bool toWorld( osg::Vec3d& out_world ) const;
 
         /**
          * Outputs world coordinates corresponding to this point, passing in a Terrain
          * object that will be used if the point needs to be converted to absolute
          * altitude
          */
-        bool toWorld( Vec3d& out_world, const osgEarth::TerrainHeightProvider* terrain ) const;
+        bool toWorld( osg::Vec3d& out_world, const osgEarth::TerrainHeightProvider* terrain ) const;
 
         /**
          * Converts world coordinates into a geopoint
          */
-        bool fromWorld(const osgEarth::SpatialReference* srs, const Vec3d& world);
+        bool fromWorld(const osgEarth::SpatialReference* srs, const osg::Vec3d& world);
 
         /**
          * geopoint into absolute world coords.
@@ -309,7 +309,7 @@ using namespace osgEarth;
 /*
         bool getCentroid( double& out_x, double& out_y ) const;
 */
-        Vec3d getCentroid() const;
+        osg::Vec3d getCentroid() const;
 
         /**
          * Returns true is that extent is in a Geographic (lat/long) SRS that spans
@@ -362,7 +362,7 @@ using namespace osgEarth;
          */
         bool contains(double x, double y, const osgEarth::SpatialReference* srs =0) const;
 
-        bool contains(const Vec3d& xy, const osgEarth::SpatialReference* srs =0) const;
+        bool contains(const osg::Vec3d& xy, const osgEarth::SpatialReference* srs =0) const;
 
         /**
          * Returns true if the point falls within this extent.
@@ -401,7 +401,7 @@ using namespace osgEarth;
          * in the extent's SRS.
          */
         void expandToInclude( double x, double y );
-        void expandToInclude( const Vec3d& v );
+        void expandToInclude( const osg::Vec3d& v );
         void expandToInclude( const Bounds& bounds );
 
         /**

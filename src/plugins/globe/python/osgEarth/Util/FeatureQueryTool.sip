@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-namespace osgEarth 
+namespace osgEarth
 {
   namespace Util
   {
@@ -30,18 +30,21 @@ namespace osgEarth
      */
     class FeatureQueryTool // : osgGA::GUIEventHandler, MapNodeObserver
     {
+%TypeHeaderCode
+#include <osgEarthUtil/FeatureQueryTool>
+%End
     public:
         struct Callback  // : osg::Referenced
         {
-//            struct EventArgs
-//            {
+            struct EventArgs
+            {
 //                const osgGA::GUIEventAdapter*  _ea;
 //                osgGA::GUIActionAdapter*       _aa;
-//                osg::Vec3d                     _worldPoint;
-//            };
+                osg::Vec3d                     _worldPoint;
+            };
 
             // called when a valid feature is found under the mouse coords
-            virtual void onHit( FeatureSourceIndexNode* index, FeatureID fid, const EventArgs& args );
+            virtual void onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args );
 
             // called when no feature is found under the mouse coords
             virtual void onMiss( const EventArgs& args );
@@ -52,9 +55,11 @@ namespace osgEarth
          */
         class InputPredicate// : osg::Referenced
         {
-        public:
+            public:
             // return true to active a query under the mouse cursor.
-            virtual bool accept( const osgGA::GUIEventAdapter& ea ) =0;
+//            virtual bool accept( const osgGA::GUIEventAdapter& ea ) =0;
+            private:
+              InputPredicate(); // TODO remove once accept can be uncommented
         };
 
     public:
@@ -110,7 +115,7 @@ namespace osgEarth
     class FeatureHighlightCallback : osgEarth::Util::FeatureQueryTool::Callback
     {
     public:
-        virtual void onHit( FeatureSourceIndexNode* index, FeatureID fid, const EventArgs& args );
+        virtual void onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args );
 
         virtual void onMiss( const EventArgs& args );
 
@@ -130,10 +135,10 @@ namespace osgEarth
     class FeatureReadoutCallback : osgEarth::Util::FeatureQueryTool::Callback
     {
     public:
-        FeatureReadoutCallback( Controls::Container* container );
+//        FeatureReadoutCallback( Controls::Container* container );
 
     public:
-        virtual void onHit( FeatureSourceIndexNode* index, FeatureID fid, const EventArgs& args );
+        virtual void onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args );
 
         virtual void onMiss( const EventArgs& args );
 
@@ -142,6 +147,9 @@ namespace osgEarth
 
         /** dtor */
         virtual ~FeatureReadoutCallback();
+
+    private:
+        FeatureReadoutCallback();
     };
   };
 }; // namespace osgEarthUtil

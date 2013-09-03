@@ -31,7 +31,7 @@ using namespace osgEarth::Symbology;
         bool      _leftSide;    //If doing a single sided buffer are we buffering to the left?  If false, buffer to the right
     };
 
-    typedef std::vector<Vec3d> Vec3dVector;
+    typedef std::vector<osg::Vec3d> Vec3dVector;
 
     /**
      * Baseline geometry class. All Geometry objects derive from this
@@ -46,7 +46,7 @@ using namespace osgEarth::Symbology;
     public:
         Geometry( int capacity =0 );
         Geometry( const Geometry& rhs );
-//        Geometry( const Vec3dVector* toCopy );
+//        Geometry( const osg::Vec3dVector* toCopy );
 
         /** dtor - intentionally public */
         virtual ~Geometry();
@@ -108,12 +108,12 @@ using namespace osgEarth::Symbology;
          * Localizes this geometry relative to its centroid, and returns the localization
          * offset.
          */
-        Vec3d localize();
+        osg::Vec3d localize();
 
         /**
          * Reverses a call the localize(), given the same offset returned by that method.
          */
-        void delocalize( const Vec3d& offset );
+        void delocalize( const osg::Vec3d& offset );
 
         /**
          * Reorders the points in the geometry so that, if the last point was connected
@@ -134,7 +134,7 @@ using namespace osgEarth::Symbology;
 
         virtual Geometry* clone() const;
 
-        void push_back(const Vec3d& v );
+        void push_back(const osg::Vec3d& v );
         void push_back(double x, double y);
         void push_back(double x, double y, double z);
 
@@ -178,7 +178,7 @@ using namespace osgEarth::Symbology;
         virtual ~LineString();
 
         double getLength() const;
-        bool getSegment(double length, Vec3d& start, Vec3d& end);
+        bool getSegment(double length, osg::Vec3d& start, osg::Vec3d& end);
 
     public:
         virtual Type getType() const;
@@ -342,7 +342,7 @@ using namespace osgEarth::Symbology;
         const Geometry* next();
     };
 
-    typedef std::pair<Vec3d, Vec3d> Segment;
+    typedef std::pair<osg::Vec3d, osg::Vec3d> Segment;
 
     class ConstSegmentIterator
     {

@@ -65,9 +65,9 @@ namespace osgEarth
          */
 /*
         virtual bool transform(
-            const Vec3d&       input,
+            const osg::Vec3d&       input,
             const osgEarth::SpatialReference* outputSRS,
-            Vec3d&             output) const;
+            osg::Vec3d&             output) const;
 */
         /**
          * Transform a collection of points from this SRS to another SRS.
@@ -75,7 +75,7 @@ namespace osgEarth
          */
 /*
         virtual bool transform(
-            std::vector<Vec3d>& input,
+            std::vector<osg::Vec3d>& input,
             const osgEarth::SpatialReference*  outputSRS ) const;
 /*
 
@@ -111,8 +111,8 @@ namespace osgEarth
          * if necessary.
          */
         bool transformToWorld(
-            const Vec3d& input,
-            Vec3d&       out_world ) const;
+            const osg::Vec3d& input,
+            osg::Vec3d&       out_world ) const;
 
         /**
          * Transforms a point from the "world" coordinate system into this spatial
@@ -127,8 +127,8 @@ namespace osgEarth
          *      (optional) Outputs the geodetic (HAE) Z if applicable
          */
         bool transformFromWorld(
-            const Vec3d& world,
-            Vec3d&       out_local,
+            const osg::Vec3d& world,
+            osg::Vec3d&       out_local,
             double*           out_geodeticZ =0 ) const;
 
     public: // extent transformations.
@@ -260,16 +260,16 @@ namespace osgEarth
 */
         /** Creates a localizer matrix based on a point in this SRS. */
 /*
-        bool createLocalToWorld( const Vec3d& point, osg::Matrixd& out_local2world ) const;
+        bool createLocalToWorld( const osg::Vec3d& point, osg::Matrixd& out_local2world ) const;
 */
         /** Create a de-localizer matrix based on a point in this SRS. */
 /*
-        bool createWorldToLocal( const Vec3d& point, osg::Matrix& out_world2local ) const;
+        bool createWorldToLocal( const osg::Vec3d& point, osg::Matrix& out_world2local ) const;
 */
         /** Creates and returns a local trangent plane SRS at the given reference location.
             The reference location is expressed in this object's SRS, but it tangent to
             the globe at getGeographicSRS(). LTP units are in meters. */
-        const osgEarth::SpatialReference* createTangentPlaneSRS( const Vec3d& refPos ) const;
+        const osgEarth::SpatialReference* createTangentPlaneSRS( const osg::Vec3d& refPos ) const;
 
         /** Creates a transverse mercator projection centered at the specified longitude. */
 /*

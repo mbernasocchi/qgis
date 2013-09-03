@@ -62,7 +62,7 @@ ADD_SIP_PYTHON_MODULE(osgEarth.Symbology osgEarth/Symbology/Symbology.sip ${OSGE
 FILE(GLOB_RECURSE sip_files_osgearth_util osgearth/Util/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_util} ${sip_files_osgearth})
 SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Util.api)
-ADD_SIP_PYTHON_MODULE(osgEarth.Util osgEarth/Util/Util.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+ADD_SIP_PYTHON_MODULE(osgEarth.Util osgEarth/Util/Util.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGGA_LIBRARY})
 
 # globe module
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QGIS_GLOBE_PYTHON_OUTPUT_DIRECTORY})

@@ -16,6 +16,10 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
+namespace osgEarth
+{
+  namespace Features
+  {
     /**
      * Metadata and schema information for feature data.
      */
@@ -23,7 +27,6 @@
     {
 %TypeHeaderCode
 #include <osgEarthFeatures/Feature>
-using namespace osgEarth::Features;
 %End
     public:
         FeatureProfile( const GeoExtent& extent );
@@ -94,10 +97,10 @@ using namespace osgEarth::Features;
 using namespace osgEarth::Features;
 %End
     public:
-        RefFeatureID( FeatureID fid );
+        RefFeatureID( osgEarth::Features::FeatureID fid );
         virtual ~RefFeatureID();
 
-        operator FeatureID () const;
+        operator osgEarth::Features::FeatureID () const;
     };
 
 /*
@@ -116,7 +119,7 @@ using namespace osgEarth::Features;
 %End
     public:
 /*
-        Feature( Geometry* geom, const osgEarth::SpatialReference* srs, const Style& style =Style(), FeatureID fid =0 );
+        Feature( Geometry* geom, const osgEarth::SpatialReference* srs, const Style& style =Style(), osgEarth::Features::FeatureID fid =0 );
 */
         /** Copy contructor */
 /*
@@ -129,7 +132,7 @@ using namespace osgEarth::Features;
         /**
          * The unique ID of this feature (unique relative to its provider)
          */
-        FeatureID getFID() const;
+        osgEarth::Features::FeatureID getFID() const;
 
         /**
          * The geometry in this feature.
@@ -223,7 +226,9 @@ using namespace osgEarth::Features;
         void transform( const osgEarth::SpatialReference* srs );
 
     protected:
-        Feature( FeatureID fid =0 );
+        Feature( osgEarth::Features::FeatureID fid =0 );
 
         void dirty();
     };
+  };
+};
