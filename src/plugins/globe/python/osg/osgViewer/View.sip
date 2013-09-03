@@ -120,9 +120,9 @@ class View : osg::View //, public osgGA::GUIActionAdapter
 //
 //        typedef std::list< osg::ref_ptr<osgGA::GUIEventHandler> > EventHandlers;
 //
-//        /** Add an EventHandler that adds handling of events to the View.*/
-//        void addEventHandler(osgGA::GUIEventHandler* eventHandler);
-//
+        /** Add an EventHandler that adds handling of events to the View.*/
+        void addEventHandler( osgGA::GUIEventHandler* eventHandler );
+
 //        /** Remove an EventHandler from View.*/
 //        void removeEventHandler(osgGA::GUIEventHandler* eventHandler);
 //

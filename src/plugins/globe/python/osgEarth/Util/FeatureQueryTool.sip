@@ -28,7 +28,7 @@ namespace osgEarth
      * By default, an unmodified left-click will activate a query. You can replace
      * this test by calling setInputPredicate().
      */
-    class FeatureQueryTool // : osgGA::GUIEventHandler, MapNodeObserver
+    class FeatureQueryTool : osgGA::GUIEventHandler //, MapNodeObserver
     {
 %TypeHeaderCode
 #include <osgEarthUtil/FeatureQueryTool>
