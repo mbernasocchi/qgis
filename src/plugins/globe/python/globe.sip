@@ -3,8 +3,8 @@
 
 %Import core/core.sip
 
-%Import osgearth/symbology/symbology.sip
-%Import osgearth/features/features.sip
+%Import osgEarth/Symbology/Symbology.sip
+%Import osgEarth/Features/Features.sip
 
 %Import osg/osg/osg.sip
 %Import osg/osgViewer/osgViewer.sip

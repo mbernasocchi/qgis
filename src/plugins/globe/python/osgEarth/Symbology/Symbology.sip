@@ -1,7 +1,7 @@
-%Module(name=osgearth.symbology,
+%Module(name=osgEarth.Symbology,
         version=0,
         keyword_arguments="Optional")
 
-%Import osgearth/osgearth.sip
+%Import osgEarth/osgEarth.sip
 
 %Include Geometry.sip

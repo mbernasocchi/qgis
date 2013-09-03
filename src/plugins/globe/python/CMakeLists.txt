@@ -44,25 +44,25 @@ ADD_SIP_PYTHON_MODULE(osg.osgViewer osg/osgViewer/osgViewer.sip ${OSG_LIBRARY} $
 ##########################
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
-FILE(GLOB_RECURSE sip_files_osgearth osgearth/*.sip)
+FILE(GLOB_RECURSE sip_files_osgearth osgEarth/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgearth.api)
-ADD_SIP_PYTHON_MODULE(osgearth.osgearth osgearth/osgearth.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGDB_LIBRARY})
+SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.api)
+ADD_SIP_PYTHON_MODULE(osgEarth.osgEarth osgEarth/osgEarth.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGDB_LIBRARY})
 
-FILE(GLOB_RECURSE sip_files_osgearth_features osgearth/features/*.sip)
+FILE(GLOB_RECURSE sip_files_osgearth_features osgEarth/Features/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_features} ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgearth.features.api)
-ADD_SIP_PYTHON_MODULE(osgearth.features osgearth/features/features.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Features.api)
+ADD_SIP_PYTHON_MODULE(osgEarth.Features osgEarth/Features/Features.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
 
-FILE(GLOB_RECURSE sip_files_osgearth_symbology osgearth/symbology/*.sip)
+FILE(GLOB_RECURSE sip_files_osgearth_symbology osgEarth/Symbology/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_symbology} ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgearth.symbology.api)
-ADD_SIP_PYTHON_MODULE(osgearth.symbology osgearth/symbology/symbology.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Symbology.api)
+ADD_SIP_PYTHON_MODULE(osgEarth.Symbology osgEarth/Symbology/Symbology.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
 
 FILE(GLOB_RECURSE sip_files_osgearth_util osgearth/Util/*.sip)
 SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_util} ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgearth.Util.api)
-ADD_SIP_PYTHON_MODULE(osgearth.Util osgearth/Util/Util.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Util.api)
+ADD_SIP_PYTHON_MODULE(osgEarth.Util osgEarth/Util/Util.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
 
 # globe module
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QGIS_GLOBE_PYTHON_OUTPUT_DIRECTORY})

@@ -2,7 +2,7 @@
         version=0,
         keyword_arguments="Optional")
 
-%Import osgearth/osgearth.sip
+%Import osgEarth/osgEarth.sip
 
 %Include EarthManipulator.sip
 // %Include FeatureQueryTool.sip
