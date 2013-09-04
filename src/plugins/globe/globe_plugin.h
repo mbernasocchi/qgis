@@ -23,6 +23,7 @@
 #include "qgisplugin.h"
 #include "qgsosgearthtilesource.h"
 #include "globe_plugin_dialog.h"
+#include "qgsrubberband.h"
 #include <QObject>
 #include <osgViewer/Viewer>
 #include <osgEarth/MapNode>
@@ -46,17 +47,61 @@ using namespace osgEarth::Util::Controls;
 #include <osgEarthUtil/ObjectPlacer>
 #endif
 
+#include <osgEarthUtil/FeatureQueryTool>
+#include <qgslogger.h>
+#include "qgsosgearthfeaturesource.h"
+#include "qgsvectorlayer.h"
+
 class QAction;
 class QToolBar;
 class QgisInterface;
 class QgsGlobeLayerPropertiesFactory;
 class QgsGlobeInterface;
+using namespace osgEarth::Features;
 
 namespace osgEarth { namespace QtGui { class ViewerWidget; } }
 namespace osgEarth { namespace Util { class SkyNode; } }
 
 class GlobePlugin : public QObject, public QgisPlugin
 {
+    struct MyCallback : public osgEarth::Util::FeatureQueryTool::Callback
+    {
+      MyCallback( QgsMapCanvas* mapCanvas )
+          : mRubberBand( mapCanvas, QGis::Polygon )
+      {
+        QColor color( Qt::green );
+        color.setAlpha( 190 );
+
+        mRubberBand.setColor( color );
+      }
+
+      virtual void onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args )
+      {
+        Q_UNUSED( args )
+        FeatureSource* featSource = index->getFeatureSource();
+        const QgsGlobeFeatureSource* globeSource = dynamic_cast<const QgsGlobeFeatureSource*>( featSource );
+
+        if ( globeSource )
+        {
+          QgsFeature feat;
+          QgsVectorLayer* lyr = globeSource->layer();
+
+          lyr->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
+
+          if ( feat.isValid() )
+            mRubberBand.setToGeometry( feat.geometry(), lyr );
+          else
+            mRubberBand.reset( QGis::Polygon );
+        }
+        else
+        {
+          QgsDebugMsg( "Clicked feature was not a QGIS layer" );
+        }
+      }
+
+      QgsRubberBand mRubberBand;
+    };
+
     Q_OBJECT
 
   public:

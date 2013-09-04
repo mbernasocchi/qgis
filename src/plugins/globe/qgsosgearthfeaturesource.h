@@ -26,6 +26,8 @@ namespace osgEarth
         Feature* getFeature( FeatureID fid );
         Geometry::Type getGeometryType() const;
 
+        QgsVectorLayer* layer() const { return mLayer; }
+
         const char* className() const { return "QGISFeatureSource"; }
         const char* libraryName() const { return "QGIS"; }
 

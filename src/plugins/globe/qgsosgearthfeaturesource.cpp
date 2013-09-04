@@ -44,6 +44,7 @@ namespace osgEarth
 
     void QgsGlobeFeatureSource::initialize( const osgDB::Options* dbOptions )
     {
+      Q_UNUSED( dbOptions )
 #if 0
       std::string layerName = options_.getConfig().value( std::string( "layerId" ), std::string( "" ) );
 

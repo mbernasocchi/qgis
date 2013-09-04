@@ -107,6 +107,7 @@ TARGET_LINK_LIBRARIES(globeplugin
   ${OSGVIEWER_LIBRARY}
   ${OSGEARTH_LIBS}
   ${OPENTHREADS_LIBRARY}
+  osgdb_osgearth_feature_qgis
 )
 
 ###################################################

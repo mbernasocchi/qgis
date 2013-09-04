@@ -382,6 +382,12 @@ void GlobePlugin::run()
                                  mMapNode->getMap()->getProfile()->getSRS() )
                                );
 #endif
+
+    osgEarth::Util::FeatureQueryTool* featureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new MyCallback( mQGisIface->mapCanvas() ) );
+
+    featureQueryTool->addCallback( new FeatureHighlightCallback() );
+
+    mOsgViewer->addEventHandler( featureQueryTool );
   }
   else
   {
@@ -955,11 +961,15 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         geomOpt.featureOptions() = featureOpt;
         geomOpt.styles() = new StyleSheet();
         geomOpt.styles()->addStyle( style );
+
+        geomOpt.featureIndexing() = FeatureSourceIndexOptions();
+
 #if 0
         geomOpt.layout() = layout;
 #endif
 
         ModelLayerOptions modelOptions( vLayer->id().toStdString(), geomOpt );
+
 
         ModelLayer* nLayer = new ModelLayer( modelOptions );
 

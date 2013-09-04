@@ -50,7 +50,7 @@ namespace osgEarth
         optional<std::string>& layerId() { return mLayerId; }
         const optional<std::string>& layerId() const { return mLayerId; }
 
-        QgsVectorLayer* layer() { return mLayer; }
+        QgsVectorLayer* layer() const { return mLayer; }
         void setLayer( QgsVectorLayer* layer ) { mLayer = layer; }
 
       public:
