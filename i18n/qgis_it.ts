@@ -11658,7 +11658,7 @@ anche per me (rospus)</translatorcomment>
         <location filename="../src/core/raster/qgsrasterrendererregistry.cpp" line="57"/>
         <source>Singleband pseudocolor</source>
         <translatorcomment>? ght</translatorcomment>
-        <translation>Folso colore banda singola</translation>
+        <translation>Falso colore banda singola</translation>
     </message>
     <message>
         <location filename="../src/core/raster/qgsrasterrendererregistry.cpp" line="59"/>
@@ -29752,8 +29752,7 @@ alla linea %2 colonna %3</translation>
     <message>
         <location filename="../src/plugins/grass/qgsgrasstoolsbase.ui" line="20"/>
         <source>Grass Tools</source>
-        <translatorcomment>quì proporrei &quot;strumenti GRASS&quot; (gc)</translatorcomment>
-        <translation>GRASS Tools</translation>
+        <translation>Strumenti GRASS</translation>
     </message>
     <message>
         <location filename="../src/plugins/grass/qgsgrasstoolsbase.ui" line="30"/>
@@ -63312,7 +63311,7 @@ Il plugin non sarà abilitato.</translation>
     </message>
     <message>
         <source>Random selection within subsets</source>
-        <translation>Selezione causale con un sottoinsieme</translation>
+        <translation>Selezione casuale con un sottoinsieme</translation>
     </message>
     <message>
         <source>Random points</source>
