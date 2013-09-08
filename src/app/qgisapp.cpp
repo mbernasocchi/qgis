@@ -734,6 +734,10 @@ QgisApp::QgisApp( QSplashScreen *splash, bool restorePlugins, QWidget * parent, 
   // should come after fileNewBlank to ensure project is properly set up to receive any data source files
   QgsApplication::setFileOpenEventReceiver( this );
 
+#ifdef ANDROID
+  toggleFullScreen();
+#endif
+
 } // QgisApp ctor
 
 
@@ -8648,6 +8652,30 @@ bool QgisApp::addRasterLayers( QStringList const &theFileNameQStringList, bool g
 //
 ///////////////////////////////////////////////////////////////////
 
+#ifdef ANDROID
+void QgisApp::keyReleaseEvent(QKeyEvent *event)
+{
+static bool accepted=true;
+    if (event->key()==Qt::Key_Close)
+    {
+        // do something useful here
+        int ret = QMessageBox::question(this, tr("Exit QGIS"),
+                                        tr("Do you really want to quit QGIS?"),
+                                        QMessageBox::Yes | QMessageBox::No);
+        switch(ret)
+        {
+        case QMessageBox::Yes:
+          this->close();
+          break;
+
+        case QMessageBox::No:
+          break;
+        }
+        event->setAccepted(accepted); // dont't close my Top Level Widget !
+        accepted=false;// close the app next time when the user press back button
+    }
+}
+#endif
 
 void QgisApp::keyPressEvent( QKeyEvent * e )
 {
