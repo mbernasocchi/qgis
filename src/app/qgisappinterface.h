@@ -301,6 +301,9 @@ class QgisAppInterface : public QgisInterface
 
     //! ToolBars
     virtual QToolBar *fileToolBar();
+#ifdef WITH_SAVEONLYTOOLBAR
+    virtual QToolBar *saveToolBar();
+#endif
     virtual QToolBar *layerToolBar();
     virtual QToolBar *mapNavToolToolBar();
     virtual QToolBar *digitizeToolBar();

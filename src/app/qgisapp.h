@@ -390,6 +390,9 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
     *   addWFS and GPS plugins.
     */
     QToolBar *fileToolBar() { return mFileToolBar; }
+#ifdef WITH_SAVEONLYTOOLBAR
+    QToolBar *saveToolBar() { return mSaveToolBar; }
+#endif
     QToolBar *layerToolBar() { return mLayerToolBar; }
     QToolBar *mapNavToolToolBar() { return mMapNavToolBar; }
     QToolBar *digitizeToolBar() { return mDigitizeToolBar; }
