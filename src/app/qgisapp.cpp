@@ -2303,7 +2303,11 @@ void QgisApp::saveWindowState()
   QgsPluginRegistry::instance()->unloadAll();
 }
 
+#ifdef ANDROID
+#include "ui_defaults_android.h"
+#else
 #include "ui_defaults.h"
+#endif
 
 void QgisApp::restoreWindowState()
 {
