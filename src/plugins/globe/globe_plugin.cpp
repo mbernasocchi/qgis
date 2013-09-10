@@ -107,7 +107,7 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     , mTileSource( 0 )
     , mElevationManager( NULL )
     , mObjectPlacer( NULL )
-    , mGlobeInterface( new QgsGlobeInterface( this ) )
+    , mGlobeInterface( this )
 {
   mIsGlobeRunning = false;
   //needed to be "seen" by other plugins by doing
@@ -136,7 +136,8 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
   }
 #endif
 
-  mSettingsDialog = new QgsGlobePluginDialog( theQgisInterface->mainWindow(), this, QgisGui::ModalDialogFlags );
+  mSettingsDialog = new QgsGlobePluginDialog( &mGlobeInterface, theQgisInterface->mainWindow(), QgisGui::ModalDialogFlags );
+
   connect( QgsProject::instance(), SIGNAL( readMapLayer( QgsMapLayer*, QDomElement ) ), this, SLOT( onLayerRead( QgsMapLayer*, QDomElement ) ) );
   connect( QgsProject::instance(), SIGNAL( writeMapLayer( QgsMapLayer*, QDomElement&, QDomDocument& ) ), this, SLOT( onLayerWrite( QgsMapLayer*, QDomElement&, QDomDocument& ) ) );
 }
@@ -144,6 +145,7 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
 //destructor
 GlobePlugin::~GlobePlugin()
 {
+  delete( mSettingsDialog );
 }
 
 struct PanControlHandler : public NavigationControlHandler
@@ -383,7 +385,7 @@ void GlobePlugin::run()
                                );
 #endif
 
-    osgEarth::Util::FeatureQueryTool* featureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new MyCallback( mQGisIface->mapCanvas() ) );
+    osgEarth::Util::FeatureQueryTool* featureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new FeatureHighlightSyncCallback( mQGisIface->mapCanvas() ) );
 
     featureQueryTool->addCallback( new FeatureHighlightCallback() );
 
@@ -454,6 +456,8 @@ void GlobePlugin::setupMap()
   // Add layers to the map
   layersAdded( mQGisIface->mapCanvas()->layers() );
   elevationLayersChanged();
+
+  mMapNode->getTerrainEngine()->addUpdateCallback( new MyTerrainCallback( mOsgViewer ) );
 
   // model placement utils
 #ifdef HAVE_OSGEARTH_ELEVATION_QUERY
@@ -970,12 +974,16 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
 
         ModelLayerOptions modelOptions( vLayer->id().toStdString(), geomOpt );
 
-
         ModelLayer* nLayer = new ModelLayer( modelOptions );
 
         osg::ref_ptr<Map> map = mMapNode->getMap();
 
         map->addModelLayer( nLayer );
+#if 0
+        osgEarth::Features::FeatureModelSource *ms = dynamic_cast<osgEarth::Features::FeatureModelSource*>(
+              map->getModelLayerByName( nLayer->getName() )->getModelSource() );
+        QgsDebugMsg( QString( "Model source: %1" ).arg( ms->getFeatureSource()-> ) );
+#endif
       }
       else
       {
@@ -1192,6 +1200,10 @@ void GlobePlugin::copyFolder( QString sourceFolder, QString destFolder )
     QString destName = destFolder + "/" + files[i];
     copyFolder( srcName, destName );
   }
+}
+
+void GlobePlugin::updateOutline()
+{
 }
 
 void GlobePlugin::layerSettingsChanged( QgsMapLayer* layer )
@@ -1523,5 +1535,5 @@ QGISEXTERN void unload( QgisPlugin * thePluginPointer )
 
 QGISEXTERN QgsPluginInterface* GlobePlugin::pluginInterface()
 {
-  return mGlobeInterface;
+  return &mGlobeInterface;
 }

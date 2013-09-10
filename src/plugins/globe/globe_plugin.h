@@ -64,9 +64,9 @@ namespace osgEarth { namespace Util { class SkyNode; } }
 
 class GlobePlugin : public QObject, public QgisPlugin
 {
-    struct MyCallback : public osgEarth::Util::FeatureQueryTool::Callback
+    struct FeatureHighlightSyncCallback : public osgEarth::Util::FeatureQueryTool::Callback
     {
-      MyCallback( QgsMapCanvas* mapCanvas )
+      FeatureHighlightSyncCallback( QgsMapCanvas* mapCanvas )
           : mRubberBand( mapCanvas, QGis::Polygon )
       {
         QColor color( Qt::green );
@@ -100,6 +100,38 @@ class GlobePlugin : public QObject, public QgisPlugin
       }
 
       QgsRubberBand mRubberBand;
+    };
+
+    struct SyncSelectionVisitor : public osg::NodeVisitor
+    {
+      SyncSelectionVisitor()
+          : osg::NodeVisitor( osg::NodeVisitor::NodeVisitor::TRAVERSE_ALL_CHILDREN )
+      {
+      }
+
+      // NodeVisitor interface
+    public:
+      virtual void apply( osg::Node& node )
+      {
+      }
+    };
+
+    struct MyTerrainCallback : public osg::NodeCallback
+    {
+      MyTerrainCallback( osgViewer::Viewer* viewer )
+          : osg::NodeCallback()
+          , mOsgViewer( viewer )
+      {}
+
+      // NodeCallback interface
+    public:
+      virtual void operator()( osg::Node* node, osg::NodeVisitor* nv )
+      {
+        QgsDebugMsg( "Node Callback" );
+      }
+
+    private:
+      osgViewer::Viewer* mOsgViewer;
     };
 
     Q_OBJECT
@@ -167,6 +199,9 @@ class GlobePlugin : public QObject, public QgisPlugin
     static void copyFolder( QString sourceFolder, QString destFolder );
 
     osgEarth::MapNode* mapNode() { return mMapNode; }
+
+    void updateOutline();
+
   public slots:
     //! Open the 3D viewer window (if not yet open)
     void run();
@@ -246,7 +281,7 @@ class GlobePlugin : public QObject, public QgisPlugin
     void newCoordinatesSelected( const QgsPoint & p );
 
   private:
-    QgsGlobeInterface* mGlobeInterface;
+    QgsGlobeInterface mGlobeInterface;
 };
 
 class FlyToExtentHandler : public osgGA::GUIEventHandler

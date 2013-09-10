@@ -19,10 +19,10 @@
 #include <QDialog>
 #include <QSettings>
 #include <QCheckBox>
-#include <osgViewer/Viewer>
 #include "qgscontexthelp.h"
 #include <qgsproject.h>
 #include <qgsvectorlayer.h>
+#include "qgsglobeinterface.h"
 
 class GlobePlugin;
 
@@ -31,7 +31,7 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     Q_OBJECT
 
   public:
-    QgsGlobePluginDialog( QWidget * parent, GlobePlugin* globe, Qt::WFlags fl = 0 );
+    QgsGlobePluginDialog( QgsGlobeInterface* globeIface, QWidget * parent = 0, Qt::WFlags fl = 0 );
     ~QgsGlobePluginDialog();
     void resetElevationDatasources();
     void readElevationDatasources();
@@ -99,6 +99,8 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void on_elevationUp_clicked();
     void on_elevationDown_clicked();
 
+    void on_mTxtVerticalScale_changed( double value );
+
     //MAP
     void on_mBaseLayerComboBox_currentIndexChanged( int index );
 
@@ -106,7 +108,7 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void elevationDatasourcesChanged();
 
   private:
-    GlobePlugin* mGlobe;
+    QgsGlobeInterface* mGlobeIface;
     QSettings settings;
 };
 

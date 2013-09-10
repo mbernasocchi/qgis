@@ -167,7 +167,6 @@ class QgsGlobeFeatureUtils
 
     static Feature* featureFromQgsFeature( const QgsFields& fields, const QgsFeature& feat )
     {
-      QgsDebugMsg( QString( "featureFromQgsFeature" ) );
       const QgsGeometry* geom = feat.geometry();
 
       Geometry* nGeom = geometryFromQgsGeometry( *geom );

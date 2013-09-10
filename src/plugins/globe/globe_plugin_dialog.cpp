@@ -36,11 +36,15 @@
 #include <QNetworkReply>
 
 #include <osg/DisplaySettings>
+// will be available for osgEarth 2.5
+#if 0
+#include <osgEarthUtil/VerticalScale>
+#endif
 
 //constructor
-QgsGlobePluginDialog::QgsGlobePluginDialog( QWidget* parent, GlobePlugin* globe, Qt::WFlags fl )
+QgsGlobePluginDialog::QgsGlobePluginDialog( QgsGlobeInterface* globeIface , QWidget* parent, Qt::WFlags fl )
     : QDialog( parent, fl )
-    , mGlobe( globe )
+    , mGlobeIface( globeIface )
 {
   setupUi( this );
 
@@ -238,6 +242,17 @@ void QgsGlobePluginDialog::on_mBaseLayerComboBox_currentIndexChanged( int index 
   }
 }
 
+void QgsGlobePluginDialog::on_mTxtVerticalScale_changed( double value )
+{
+  using namespace osgEarth::Util;
+  // will be available from osgEarth 2.5
+#if 0
+  VerticalScale* scale = new VerticalScale();
+  scale->setScale( value );
+  mGlobeIface->mapNode()->getTerrainEngine()->addEffect( scale );
+#endif
+}
+
 void QgsGlobePluginDialog::moveRow( QTableWidget* widget, bool up )
 {
   //moves QTableWidget row up or down
@@ -316,7 +331,6 @@ void QgsGlobePluginDialog::readElevationDatasources()
 
 void QgsGlobePluginDialog::saveElevationDatasources()
 {
-  bool somethingChanged = false;
   int keysCount = QgsProject::instance()->subkeyList( "Globe-Plugin", "/elevationDatasources/" ).count();
   int rowsCount = elevationDatasourcesWidget->rowCount();
 
@@ -334,7 +348,6 @@ void QgsGlobePluginDialog::saveElevationDatasources()
 
     if ( typeKey != type || uriKey != uri || cacheKey != cache )
     {
-      somethingChanged = true;
       QgsProject::instance()->writeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/type", type );
       QgsProject::instance()->writeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/uri", uri );
       QgsProject::instance()->writeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/cache", cache );
@@ -349,7 +362,6 @@ void QgsGlobePluginDialog::saveElevationDatasources()
   if ( keysCount > rowsCount )
   {
     //elminate superfluous keys
-    somethingChanged = true;
     for ( int i = rowsCount; i < keysCount; ++i )
     {
       QString iNum;
@@ -357,12 +369,6 @@ void QgsGlobePluginDialog::saveElevationDatasources()
       QgsDebugMsg( "deleting " + iNum );
       QgsProject::instance()->removeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/" );
     }
-  }
-
-  if ( somethingChanged )
-  {
-    QgsDebugMsg( "emitting elevationDatasourcesChanged" );
-    emit elevationDatasourcesChanged();
   }
 }
 //END ELEVATION
@@ -426,9 +432,10 @@ void QgsGlobePluginDialog::on_modelBrowse_clicked()
 
 void QgsGlobePluginDialog::on_mScrollSensitivitySlider_valueChanged( int value )
 {
-  if ( mViewer )
+  osgViewer::Viewer* viewer = mGlobeIface->osgViewer();
+  if ( viewer )
   {
-    osgEarth::Util::EarthManipulator* manip = dynamic_cast<osgEarth::Util::EarthManipulator*>( mViewer->getCameraManipulator() );
+    osgEarth::Util::EarthManipulator* manip = dynamic_cast<osgEarth::Util::EarthManipulator*>( viewer->getCameraManipulator() );
     osgEarth::Util::EarthManipulator::Settings* settings = manip->getSettings();
     settings->setScrollSensitivity( value / 10 );
     manip->applySettings( settings );
@@ -437,9 +444,10 @@ void QgsGlobePluginDialog::on_mScrollSensitivitySlider_valueChanged( int value )
 
 void QgsGlobePluginDialog::on_mInvertScrollWheel_stateChanged( int state )
 {
-  if ( mViewer )
+  osgViewer::Viewer* viewer = mGlobeIface->osgViewer();
+  if ( viewer )
   {
-    osgEarth::Util::EarthManipulator* manip = dynamic_cast<osgEarth::Util::EarthManipulator*>( mViewer->getCameraManipulator() );
+    osgEarth::Util::EarthManipulator* manip = dynamic_cast<osgEarth::Util::EarthManipulator*>( viewer->getCameraManipulator() );
     osgEarth::Util::EarthManipulator::Settings* settings = manip->getSettings();
 
     if ( state )
@@ -652,7 +660,7 @@ bool QgsGlobePluginDialog::invertScrollWheel()
 
 void QgsGlobePluginDialog::setStereoConfig()
 {
-  osgViewer::Viewer* viewer = mGlobe->osgViewer();
+  osgViewer::Viewer* viewer = mGlobeIface->osgViewer();
   if ( viewer )
   {
     viewer->getDatabasePager()->clear();
