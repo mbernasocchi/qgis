@@ -90,6 +90,8 @@ void QgsPythonUtilsImpl::initPython( QgisInterface* interface )
   newpaths << pluginpaths;
   runString( "sys.path = [" + newpaths.join( "," ) + "] + sys.path" );
 
+
+  QgsDebugMsg( "newpaths: " + newpaths.join( "," ) );
   // import SIP
   if ( !runString( "import sip",
                    QObject::tr( "Couldn't load SIP module." ) + "\n" + QObject::tr( "Python support will be disabled." ) ) )
@@ -198,8 +200,10 @@ bool QgsPythonUtilsImpl::runString( const QString& command, QString msgOnError, 
 {
   bool res = runStringUnsafe( command, single );
   if ( res )
+  {
+    QgsDebugMsg( "COMAND OK: "+command );
     return true;
-
+  }
   if ( msgOnError.isEmpty() )
   {
     // use some default message if custom hasn't been specified
@@ -212,6 +216,8 @@ bool QgsPythonUtilsImpl::runString( const QString& command, QString msgOnError, 
   QString path, version;
   evalString( "str(sys.path)", path );
   evalString( "sys.version", version );
+
+  QgsDebugMsg( "SYS:PATH= "+path );
 
   QString str = "<font color=\"red\">" + msgOnError + "</font><br><pre>\n" + traceback + "\n</pre>"
                 + QObject::tr( "Python version:" ) + "<br>" + version + "<br><br>"

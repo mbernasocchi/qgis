@@ -472,8 +472,46 @@ int main( int argc, char *argv[] )
 #if defined(ANDROID)
   QgsDebugMsg( QString( "Android: All params stripped" ) );// Param %1" ).arg( argv[0] ) );
   //put all QGIS settings in the same place
-  configpath = QgsApplication::qgisSettingsDirPath();
-  QgsDebugMsg( QString( "Android: configpath set to %1" ).arg( configpath ) );
+  configpath = QDir::homePath() + "/";
+  // this is  "/data/data/org.qgis.qgis/files" in android
+  //  QString pythonHome = getenv( "PYTHON_HOME" );
+  //  QString pythonPath = getenv( "PYTHONPATH" );
+  QString ldLibraryPath = getenv( "LD_LIBRARY_PATH" );
+  QString systemPath = getenv( "PATH" );
+
+  QString pythonBasePath(configpath + "share/python");
+  QString PYTHON_HOME(pythonBasePath);
+  QString PYTHONPATH(QString("%1/lib/python2.7/lib-dynload:%1/lib/python2.7/:%1/lib/python2.7/site-packages:%1/lib").arg(pythonBasePath));
+  QString LD_LIBRARY_PATH(QString("%1/python/lib:%1/lib/python2.7/lib-dynload:%2").arg(pythonBasePath).arg(ldLibraryPath));
+  QString PATH(QString("%1/python/bin:%2").arg(pythonBasePath).arg(systemPath));
+
+  char *envChar;
+  envChar = new char[PYTHON_HOME.toUtf8().length()+1];
+  strcpy( envChar, PYTHON_HOME.toUtf8().constData() );
+  setenv("PYTHON_HOME", envChar, true);
+
+  envChar = new char[PYTHONPATH.toUtf8().length()+1];
+  strcpy( envChar, PYTHONPATH.toUtf8().constData() );
+  setenv("PYTHONPATH", envChar, true);
+
+  envChar = new char[LD_LIBRARY_PATH.toUtf8().length()+1];
+  strcpy( envChar, LD_LIBRARY_PATH.toUtf8().constData() );
+  setenv("LD_LIBRARY_PATH", envChar, true);
+
+  envChar = new char[PATH.toUtf8().length()+1];
+  strcpy( envChar, PATH.toUtf8().constData() );
+  setenv("PATH", envChar, true);
+
+  QString envVar;
+  envVar = getenv( "PYTHON_HOME" );
+  QgsDebugMsg( QString( "set PYTHON_HOME: %1" ).arg( envVar ) );
+  envVar = getenv( "PYTHONPATH" );
+  QgsDebugMsg( QString( "set PYTHONPATH: %1" ).arg( envVar ) );
+  envVar = getenv( "LD_LIBRARY_PATH" );
+  QgsDebugMsg( QString( "set LD_LIBRARY_PATH: %1" ).arg( envVar ) );
+  envVar = getenv( "PATH" );
+  QgsDebugMsg( QString( "set PATH: %1" ).arg( envVar ) );
+
 #elif defined(Q_WS_WIN)
   for ( int i = 1; i < argc; i++ )
   {
