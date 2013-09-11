@@ -182,7 +182,7 @@ class GUI_EXPORT QgsRubberBand: public QgsMapCanvasItem
      *  @param layer the layer containing the feature, used for coord transformation to map
      *               crs. In case of 0 pointer, the coordinates are not going to be transformed.
      */
-    void setToGeometry( QgsGeometry* geom, QgsVectorLayer* layer );
+    void setToGeometry( QgsGeometry* geom, QgsVectorLayer* layer = NULL );
 
     /**
      * Sets this rubber band to a map canvas rectangle

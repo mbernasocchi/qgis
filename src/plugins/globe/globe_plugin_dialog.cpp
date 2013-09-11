@@ -331,6 +331,8 @@ void QgsGlobePluginDialog::readElevationDatasources()
 
 void QgsGlobePluginDialog::saveElevationDatasources()
 {
+  bool somethingChanged = false;
+
   int keysCount = QgsProject::instance()->subkeyList( "Globe-Plugin", "/elevationDatasources/" ).count();
   int rowsCount = elevationDatasourcesWidget->rowCount();
 
@@ -348,6 +350,7 @@ void QgsGlobePluginDialog::saveElevationDatasources()
 
     if ( typeKey != type || uriKey != uri || cacheKey != cache )
     {
+      somethingChanged = true;
       QgsProject::instance()->writeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/type", type );
       QgsProject::instance()->writeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/uri", uri );
       QgsProject::instance()->writeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/cache", cache );
@@ -361,6 +364,7 @@ void QgsGlobePluginDialog::saveElevationDatasources()
 
   if ( keysCount > rowsCount )
   {
+    somethingChanged = true;
     //elminate superfluous keys
     for ( int i = rowsCount; i < keysCount; ++i )
     {
@@ -369,6 +373,11 @@ void QgsGlobePluginDialog::saveElevationDatasources()
       QgsDebugMsg( "deleting " + iNum );
       QgsProject::instance()->removeEntry( "Globe-Plugin", "/elevationDatasources/L" + iNum + "/" );
     }
+  }
+
+  if ( somethingChanged )
+  {
+    emit elevationDatasourcesChanged();
   }
 }
 //END ELEVATION

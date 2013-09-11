@@ -34,6 +34,11 @@ class QgsGlobeFeatureUtils
       return osg::Vec3d( pt.x(), pt.y(), pt.is3D() ? pt.z() : 0.0 );
     }
 
+    static inline QgsPoint qgsPointFromPoint( const osg::Vec3d& pt )
+    {
+      return QgsPoint( pt.x(), pt.y() );
+    }
+
     static inline Polygon* polygonFromQgsPolygon( const QgsPolygon& poly )
     {
       Q_ASSERT( poly.size() > 0 );

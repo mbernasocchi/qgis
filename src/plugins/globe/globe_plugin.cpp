@@ -453,11 +453,15 @@ void GlobePlugin::setupMap()
   mRootNode = new osg::Group();
   mRootNode->addChild( mMapNode );
 
+  //add QGIS layer
+  mTileSource = new QgsOsgEarthTileSource( QStringList(), mQGisIface->mapCanvas() );
+  mTileSource->initialize( "", 0 );
+
   // Add layers to the map
   layersAdded( mQGisIface->mapCanvas()->layers() );
   elevationLayersChanged();
 
-  mMapNode->getTerrainEngine()->addUpdateCallback( new MyTerrainCallback( mOsgViewer ) );
+  mMapNode->getTerrainEngine()->addUpdateCallback( new MyTerrainCallback( mOsgViewer, mMapNode->getTerrain(), mQGisIface->mapCanvas() ) );
 
   // model placement utils
 #ifdef HAVE_OSGEARTH_ELEVATION_QUERY
@@ -995,6 +999,7 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
     if ( tileLayers.size() > 0 )
     {
       mTileSource->addLayers( tileLayers );
+      tileLayersChanged();
     }
   }
 }
@@ -1114,6 +1119,29 @@ void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, boo
     {
       mRootNode->removeChild( mSkyNode );
     }
+  }
+}
+
+void GlobePlugin::tileLayersChanged()
+{
+  if ( mIsGlobeRunning )
+  {
+    osg::ref_ptr<Map> map = mMapNode->getMap();
+
+    if ( map->getNumImageLayers() > 1 )
+    {
+      mOsgViewer->getDatabasePager()->clear();
+    }
+
+    //remove QGIS layer
+    if ( mQgisMapLayer )
+    {
+      map->removeImageLayer( mQgisMapLayer );
+    }
+
+    ImageLayerOptions options( "QGIS" );
+    mQgisMapLayer = new ImageLayer( options, mTileSource );
+    map->addImageLayer( mQgisMapLayer );
   }
 }
 
