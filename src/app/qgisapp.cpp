@@ -6432,10 +6432,13 @@ void QgisApp::loadPythonSupport()
 #ifdef __MINGW32__
   pythonlibName.prepend( "lib" );
 #endif
+  pythonlibName.prepend( QgsApplication::libraryPath() );
   QString version = QString( "%1.%2.%3" ).arg( QGis::QGIS_VERSION_INT / 10000 ).arg( QGis::QGIS_VERSION_INT / 100 % 100 ).arg( QGis::QGIS_VERSION_INT % 100 );
   QgsDebugMsg( QString( "load library %1 (%2)" ).arg( pythonlibName ).arg( version ) );
   QgsDebugMsg( QString( "Looking for python in %1 - %2(%3)" ).arg(QgsApplication::libraryPath()).arg( pythonlibName ).arg( version ) );
   QgsDebugMsg( QString( "PKG: %1").arg(QgsApplication::pkgDataPath()));
+  QString envVar = getenv( "LD_LIBRARY_PATH" );
+  QgsDebugMsg( QString( "LD_LIBRARY_PATH: %1" ).arg( envVar ) );
   QLibrary pythonlib( pythonlibName );
   // It's necessary to set these two load hints, otherwise Python library won't work correctly
   // see http://lists.kde.org/?l=pykde&m=117190116820758&w=2

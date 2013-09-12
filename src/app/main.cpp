@@ -472,6 +472,11 @@ int main( int argc, char *argv[] )
 #if defined(ANDROID)
   QgsDebugMsg( QString( "Android: All params stripped" ) );// Param %1" ).arg( argv[0] ) );
   //put all QGIS settings in the same place
+
+  QDir homedir( QDir::homePath() );
+  homedir.cdUp();
+  QString libpath = homedir.absolutePath() + "/lib/";
+
   configpath = QDir::homePath() + "/";
   // this is  "/data/data/org.qgis.qgis/files" in android
   //  QString pythonHome = getenv( "PYTHON_HOME" );
@@ -482,7 +487,7 @@ int main( int argc, char *argv[] )
   QString pythonBasePath(configpath + "share/python");
   QString PYTHON_HOME(pythonBasePath);
   QString PYTHONPATH(QString("%1/lib/python2.7/lib-dynload:%1/lib/python2.7/:%1/lib/python2.7/site-packages:%1/lib").arg(pythonBasePath));
-  QString LD_LIBRARY_PATH(QString("%1/python/lib:%1/lib/python2.7/lib-dynload:%2").arg(pythonBasePath).arg(ldLibraryPath));
+  QString LD_LIBRARY_PATH(QString("%3:%1/lib:%1/lib/python2.7/lib-dynload:%2").arg(pythonBasePath).arg(ldLibraryPath).arg(libpath));
   QString PATH(QString("%1/python/bin:%2").arg(pythonBasePath).arg(systemPath));
 
   char *envChar;
