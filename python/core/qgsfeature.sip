@@ -105,8 +105,10 @@ class QgsFeature
 {
 %TypeHeaderCode
 #include <qgsfeature.h>
+#ifndef ANDROID
 #if (SIP_VERSION >= 0x040900 && SIP_VERSION < 0x040c01)
 #define sipClass_QVariant ((sipWrapperType *) sipTypeAsPyTypeObject (sipType_QVariant))
+#endif
 #endif
 %End
 
