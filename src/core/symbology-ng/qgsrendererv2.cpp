@@ -37,11 +37,14 @@
 const unsigned char* QgsFeatureRendererV2::_getPoint( QPointF& pt, QgsRenderContext& context, const unsigned char* wkb )
 {
   wkb++; // jump over endian info
-  unsigned int wkbType = *(( int* ) wkb );
+  unsigned int wkbType;
+  memcpy(&wkbType, wkb, sizeof (unsigned int));
   wkb += sizeof( unsigned int );
 
-  double x = *(( double * ) wkb ); wkb += sizeof( double );
-  double y = *(( double * ) wkb ); wkb += sizeof( double );
+  double x;
+  double y;
+  memcpy( &x, wkb, sizeof (double) ); wkb += sizeof (double);
+  memcpy( &y, wkb, sizeof (double) ); wkb += sizeof (double);
 
   if ( wkbType == QGis::WKBPolygon25D )
     wkb += sizeof( double );
@@ -61,9 +64,11 @@ const unsigned char* QgsFeatureRendererV2::_getPoint( QPointF& pt, QgsRenderCont
 const unsigned char* QgsFeatureRendererV2::_getLineString( QPolygonF& pts, QgsRenderContext& context, const unsigned char* wkb )
 {
   wkb++; // jump over endian info
-  unsigned int wkbType = *(( int* ) wkb );
+  unsigned int wkbType;
+  memcpy(&wkbType, wkb, sizeof (unsigned int));
   wkb += sizeof( unsigned int );
-  unsigned int nPoints = *(( int* ) wkb );
+  unsigned int nPoints;
+  memcpy(&nPoints, wkb, sizeof (unsigned int));
   wkb += sizeof( unsigned int );
 
   bool hasZValue = ( wkbType == QGis::WKBLineString25D );
@@ -115,19 +120,16 @@ const unsigned char* QgsFeatureRendererV2::_getLineString( QPolygonF& pts, QgsRe
 
 const unsigned char* QgsFeatureRendererV2::_getPolygon( QPolygonF& pts, QList<QPolygonF>& holes, QgsRenderContext& context, const unsigned char* wkb )
 {
-  wkb++; // jump over endian info
-  unsigned int wkbType = *(( int* ) wkb );
-  wkb += sizeof( unsigned int ); // jump over wkb type
-  unsigned int numRings = *(( int* ) wkb );
-  wkb += sizeof( unsigned int );
+  QgsConstWkbPtr wkbPtr( wkb + 1 );
+
+  unsigned int wkbType;
+  unsigned int numRings;
+  wkbPtr >> wkbType >> numRings;
 
   if ( numRings == 0 )  // sanity check for zero rings in polygon
     return wkb;
 
   bool hasZValue = ( wkbType == QGis::WKBPolygon25D );
-
-  int sizeOfDoubleX = sizeof( double );
-  int sizeOfDoubleY = hasZValue ? 2 * sizeof( double ) : sizeof( double );
 
   double x, y;
   holes.clear();
@@ -140,8 +142,8 @@ const unsigned char* QgsFeatureRendererV2::_getPolygon( QPolygonF& pts, QList<QP
 
   for ( unsigned int idx = 0; idx < numRings; idx++ )
   {
-    unsigned int nPoints = *(( int* )wkb );
-    wkb += sizeof( unsigned int );
+    unsigned int nPoints;
+    wkbPtr >> nPoints;
 
     QPolygonF poly( nPoints );
 
@@ -149,8 +151,9 @@ const unsigned char* QgsFeatureRendererV2::_getPolygon( QPolygonF& pts, QList<QP
     QPointF* ptr = poly.data();
     for ( unsigned int jdx = 0; jdx < nPoints; ++jdx, ++ptr )
     {
-      memcpy( &x, wkb, sizeof( double ) ); wkb += sizeOfDoubleX;
-      memcpy( &y, wkb, sizeof( double ) ); wkb += sizeOfDoubleY;
+      wkbPtr >> x >> y;
+      if ( hasZValue )
+        wkbPtr += sizeof( double );
 
       *ptr = QPointF( x, y );
     }
@@ -181,7 +184,7 @@ const unsigned char* QgsFeatureRendererV2::_getPolygon( QPolygonF& pts, QList<QP
       holes.append( poly );
   }
 
-  return wkb;
+  return wkbPtr;
 }
 
 void QgsFeatureRendererV2::setScaleMethodToSymbol( QgsSymbolV2* symbol, int scaleMethod )
@@ -297,7 +300,9 @@ void QgsFeatureRendererV2::renderFeatureWithSymbol( QgsFeature& feature, QgsSymb
       }
 
       const unsigned char* wkb = geom->asWkb();
-      unsigned int num = *(( int* )( wkb + 5 ) );
+      unsigned int num;
+      memcpy(&num, wkb + 5, sizeof (unsigned int));
+
       const unsigned char* ptr = wkb + 9;
       QPointF pt;
 
@@ -322,7 +327,8 @@ void QgsFeatureRendererV2::renderFeatureWithSymbol( QgsFeature& feature, QgsSymb
       }
 
       const unsigned char* wkb = geom->asWkb();
-      unsigned int num = *(( int* )( wkb + 5 ) );
+      unsigned int num;
+      memcpy(&num, wkb + 5, sizeof (unsigned int));
       const unsigned char* ptr = wkb + 9;
       QPolygonF pts;
 
@@ -347,7 +353,8 @@ void QgsFeatureRendererV2::renderFeatureWithSymbol( QgsFeature& feature, QgsSymb
       }
 
       const unsigned char* wkb = geom->asWkb();
-      unsigned int num = *(( int* )( wkb + 5 ) );
+      unsigned int num;
+      memcpy(&num, wkb + 5, sizeof (unsigned int));
       const unsigned char* ptr = wkb + 9;
       QPolygonF pts;
       QList<QPolygonF> holes;
