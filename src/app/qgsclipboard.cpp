@@ -260,6 +260,11 @@ void QgsClipboard::setData( const QString& mimeType, const QByteArray& data )
 
 bool QgsClipboard::hasFormat( const QString& mimeType )
 {
+#ifdef ANDROID
+  //FIXME: eventually remove this thanks to bugfix in necessitas beta2
+  //see: https://bugs.kde.org/show_bug.cgi?id=304195
+  return false;
+#endif
   return QApplication::clipboard()->mimeData()->hasFormat( mimeType );
 }
 
