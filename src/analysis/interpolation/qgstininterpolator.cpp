@@ -212,13 +212,13 @@ int QgsTINInterpolator::insertData( QgsFeature* f, bool zCoord, int attr, InputT
     case QGis::WKBPoint:
     {
       currentWkbPtr += ( 1 + sizeof( int ) );
-      x = *(( double * )( currentWkbPtr ) );
+      memcpy(&x, currentWkbPtr, sizeof (double));
       currentWkbPtr += sizeof( double );
-      y = *(( double * )( currentWkbPtr ) );
+      memcpy(&y, currentWkbPtr, sizeof (double));
       if ( zCoord && hasZValue )
       {
         currentWkbPtr += sizeof( double );
-        z = *(( double * )( currentWkbPtr ) );
+        memcpy(&z, currentWkbPtr, sizeof (double));
       }
       else
       {
@@ -241,13 +241,13 @@ int QgsTINInterpolator::insertData( QgsFeature* f, bool zCoord, int attr, InputT
       for ( int index = 0; index < *npoints; ++index )
       {
         currentWkbPtr += ( 1 + sizeof( int ) ); //skip endian and point type
-        x = *(( double* )currentWkbPtr );
+        memcpy(&x, currentWkbPtr, sizeof (double));
         currentWkbPtr += sizeof( double );
-        y = *(( double* )currentWkbPtr );
+        memcpy(&y, currentWkbPtr, sizeof (double));
         currentWkbPtr += sizeof( double );
         if ( hasZValue ) //skip z-coordinate for 25D geometries
         {
-          z = *(( double* )currentWkbPtr );
+          memcpy(&z, currentWkbPtr, sizeof (double));
           currentWkbPtr += sizeof( double );
         }
         else
@@ -270,13 +270,13 @@ int QgsTINInterpolator::insertData( QgsFeature* f, bool zCoord, int attr, InputT
       currentWkbPtr += sizeof( int );
       for ( int index = 0; index < *npoints; ++index )
       {
-        x = *(( double * )( currentWkbPtr ) );
+        memcpy(&x, currentWkbPtr, sizeof (double));
         currentWkbPtr += sizeof( double );
-        y = *(( double * )( currentWkbPtr ) );
+        memcpy(&y, currentWkbPtr, sizeof (double));
         currentWkbPtr += sizeof( double );
         if ( zCoord && hasZValue ) //skip z-coordinate for 25D geometries
         {
-          z = *(( double * )( currentWkbPtr ) );
+          memcpy(&z, currentWkbPtr, sizeof (double));
         }
         else
         {
@@ -323,14 +323,14 @@ int QgsTINInterpolator::insertData( QgsFeature* f, bool zCoord, int attr, InputT
         currentWkbPtr += sizeof( int );
         for ( int index2 = 0; index2 < *npoints; ++index2 )
         {
-          x = *(( double* )currentWkbPtr );
+          memcpy(&x, currentWkbPtr, sizeof (double));
           currentWkbPtr += sizeof( double );
-          y = *(( double* )currentWkbPtr );
+          memcpy(&y, currentWkbPtr, sizeof (double));
           currentWkbPtr += sizeof( double );
 
           if ( hasZValue ) //skip z-coordinate for 25D geometries
           {
-            z = *(( double* ) currentWkbPtr );
+            memcpy(&z, currentWkbPtr, sizeof (double));
             currentWkbPtr += sizeof( double );
           }
           else
@@ -374,13 +374,13 @@ int QgsTINInterpolator::insertData( QgsFeature* f, bool zCoord, int attr, InputT
         currentWkbPtr += sizeof( int );
         for ( int index2 = 0; index2 < *npoints; ++index2 )
         {
-          x = *(( double* )currentWkbPtr );
+          memcpy(&x, currentWkbPtr, sizeof (double));
           currentWkbPtr += sizeof( double );
-          y = *(( double* )currentWkbPtr );
+          memcpy(&y, currentWkbPtr, sizeof (double));
           currentWkbPtr += sizeof( double );
           if ( hasZValue ) //skip z-coordinate for 25D geometries
           {
-            z = *(( double* )currentWkbPtr );;
+            memcpy(&z, currentWkbPtr, sizeof (double));;
             currentWkbPtr += sizeof( double );
           }
           else
@@ -430,13 +430,13 @@ int QgsTINInterpolator::insertData( QgsFeature* f, bool zCoord, int attr, InputT
           currentWkbPtr += sizeof( int );
           for ( int index3 = 0; index3 < *npoints; ++index3 )
           {
-            x = *(( double* )currentWkbPtr );
+            memcpy(&x, currentWkbPtr, sizeof (double));
             currentWkbPtr += sizeof( double );
-            y = *(( double* )currentWkbPtr );
+            memcpy(&y, currentWkbPtr, sizeof (double));
             currentWkbPtr += sizeof( double );
             if ( hasZValue ) //skip z-coordinate for 25D geometries
             {
-              z = *(( double* )currentWkbPtr );
+              memcpy(&z, currentWkbPtr, sizeof (double));
               currentWkbPtr += sizeof( double );
             }
             else
