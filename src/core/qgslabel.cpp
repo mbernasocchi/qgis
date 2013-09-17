@@ -544,7 +544,8 @@ void QgsLabel::labelPoint( std::vector<labelpoint>& points, QgsFeature & feature
     {
       Q_ASSERT( 1 + sizeof( wkbType ) + sizeof( int ) <= geomlen );
       geom += 1 + sizeof( wkbType );
-      int nFeatures = *( unsigned int * )geom;
+      unsigned int nFeatures;
+      memcpy( &nFeatures, geom, sizeof( nFeatures ) );
       geom += sizeof( int );
 
       const unsigned char *feature = geom;
@@ -593,10 +594,13 @@ const unsigned char* QgsLabel::labelPoint( labelpoint& point, const unsigned cha
     case QGis::WKBPoint:
     {
       Q_ASSERT( geom + 2*sizeof( double ) <= geomend );
-      double *pts = ( double * )geom;
-      point.p.set( pts[0], pts[1] );
+      double x, y;
+      memcpy( &x, geom, sizeof(x) );
+      geom += sizeof( x );
+      memcpy( &y, geom, sizeof(y) );
+      geom += sizeof( y );
+      point.p.set( x, y );
       point.angle = 0.0;
-      geom += 2 * sizeof( double );
     }
     break;
 
@@ -605,18 +609,24 @@ const unsigned char* QgsLabel::labelPoint( labelpoint& point, const unsigned cha
     case QGis::WKBLineString: // Line center
     {
       Q_ASSERT( geom + sizeof( int ) <= geomend );
-      int nPoints = *( unsigned int * )geom;
-      geom += sizeof( int );
+      unsigned int nPoints;
+      memcpy( &nPoints, geom, sizeof( nPoints ) );
+      geom += sizeof( nPoints );
 
       Q_ASSERT( geom + nPoints*sizeof( double )*dims <= geomend );
 
       // get line center
-      double *pts = ( double * )geom;
       double tl = 0.0;
       for ( int i = 1; i < nPoints; i++ )
       {
-        double dx = pts[dims*i]   - pts[dims*( i-1 )];
-        double dy = pts[dims*i+1] - pts[dims*( i-1 )+1];
+        double x0, x1;
+        memcpy( &x0, geom + ( dims * i * sizeof( x0 ) ), sizeof( x0 ) );
+        memcpy( &x1, geom + ( dims * (i-1) * sizeof( x1 ) ), sizeof( x1 ) );
+        double dx = x0 - x1;
+        double y0, y1;
+        memcpy( &y0, geom + (( (dims * i)+1) * sizeof( y0 ) ), sizeof( y0 ) );
+        memcpy( &y1, geom + ( ((dims * (i-1)) + 1) * sizeof( y1 ) ), sizeof( y1 ) );
+        double dy = y0 - y1;
         tl += sqrt( dx * dx + dy * dy );
       }
       tl /= 2.0;
@@ -625,16 +635,22 @@ const unsigned char* QgsLabel::labelPoint( labelpoint& point, const unsigned cha
       double l = 0.0;
       for ( int i = 1; i < nPoints; i++ )
       {
-        double dx = pts[dims*i]   - pts[dims*( i-1 )];
-        double dy = pts[dims*i+1] - pts[dims*( i-1 )+1];
+        double x0, x1;
+        memcpy( &x0, geom + ( dims * i * sizeof( x0 ) ), sizeof( x0 ) );
+        memcpy( &x1, geom + ((( dims * i)-1) * sizeof( x1 ) ), sizeof( x1 ) );
+        double dx = x0 - x1;
+        double y0, y1;
+        memcpy( &y0, geom + ( dims * (i+1) * sizeof( y0 ) ), sizeof( y0 ) );
+        memcpy( &y1, geom + ( ((dims * (i-1)) + 1) * sizeof( y1 ) ), sizeof( y1 ) );
+        double dy = y0 - y1;
         double dl = sqrt( dx * dx + dy * dy );
 
         if ( l + dl > tl )
         {
           double k = ( tl - l ) / dl;
 
-          point.p.set( pts[dims*( i-1 )]   + k * dx,
-                       pts[dims*( i-1 )+1] + k * dy );
+          point.p.set( x1 + k * dx,
+                       y1 + k * dy );
           point.angle = atan2( dy, dx ) * 180.0 * M_1_PI;
           break;
         }
@@ -651,13 +667,15 @@ const unsigned char* QgsLabel::labelPoint( labelpoint& point, const unsigned cha
     case QGis::WKBPolygon: // centroid of outer ring
     {
       Q_ASSERT( geom + sizeof( int ) <= geomend );
-      int nRings = *( unsigned int * )geom;
+      unsigned int nRings;
+      memcpy( &nRings, geom, sizeof( nRings ) );
       geom += sizeof( int );
 
       for ( int i = 0; i < nRings; ++i )
       {
         Q_ASSERT( geom + sizeof( int ) <= geomend );
-        int nPoints = *( unsigned int * )geom;
+        unsigned int nPoints;
+        memcpy( &nPoints, geom, sizeof( nPoints ) );
         geom += sizeof( int );
 
         Q_ASSERT( geom + nPoints*sizeof( double )*dims <= geomend );
@@ -665,11 +683,13 @@ const unsigned char* QgsLabel::labelPoint( labelpoint& point, const unsigned cha
         if ( i == 0 )
         {
           double sx = 0.0, sy = 0.0;
-          double *pts = ( double* ) geom;
           for ( int j = 0; j < nPoints - 1; j++ )
           {
-            sx += pts[dims*j];
-            sy += pts[dims*j+1];
+            double x, y;
+            memcpy( &x, geom + ( dims * j * sizeof( x ) ), sizeof( x ) );
+            memcpy( &y, geom + ( (dims * j+1) * sizeof( y ) ), sizeof( y ) );
+            sx += x;
+            sy += y;
           }
           point.p.set( sx / ( nPoints - 1 ),
                        sy / ( nPoints - 1 ) );

@@ -288,7 +288,7 @@ double QgsDistanceArea::measure( QgsGeometry* geometry )
     case QGis::WKBMultiLineString25D:
       hasZptr = true;
     case QGis::WKBMultiLineString:
-      count = *(( int* )( wkb + 5 ) );
+      memcpy(&count, wkb + 5, sizeof (unsigned int));
       ptr = wkb + 9;
       for ( i = 0; i < count; i++ )
       {
@@ -308,7 +308,7 @@ double QgsDistanceArea::measure( QgsGeometry* geometry )
     case QGis::WKBMultiPolygon25D:
       hasZptr = true;
     case QGis::WKBMultiPolygon:
-      count = *(( int* )( wkb + 5 ) );
+      memcpy(&count, wkb + 5, sizeof (unsigned int));
       ptr = wkb + 9;
       for ( i = 0; i < count; i++ )
       {
@@ -366,7 +366,7 @@ double QgsDistanceArea::measurePerimeter( QgsGeometry* geometry )
     case QGis::WKBMultiPolygon25D:
       hasZptr = true;
     case QGis::WKBMultiPolygon:
-      count = *(( int* )( wkb + 5 ) );
+      memcpy(&count, wkb + 5, sizeof (unsigned int));
       ptr = wkb + 9;
       for ( i = 0; i < count; i++ )
       {
@@ -391,7 +391,8 @@ double QgsDistanceArea::measurePerimeter( QgsGeometry* geometry )
 const unsigned char* QgsDistanceArea::measureLine( const unsigned char* feature, double* area, bool hasZptr )
 {
   const unsigned char *ptr = feature + 5;
-  unsigned int nPoints = *(( int* )ptr );
+  unsigned int nPoints;
+  memcpy(&nPoints, ptr, sizeof (unsigned int));
   ptr = feature + 9;
 
   QList<QgsPoint> points;
@@ -401,9 +402,9 @@ const unsigned char* QgsDistanceArea::measureLine( const unsigned char* feature,
   // Extract the points from the WKB format into the vector
   for ( unsigned int i = 0; i < nPoints; ++i )
   {
-    x = *(( double * ) ptr );
+    memcpy( &x, ptr, sizeof (double) );
     ptr += sizeof( double );
-    y = *(( double * ) ptr );
+    memcpy( &y, ptr, sizeof (double) );
     ptr += sizeof( double );
     if ( hasZptr )
     {
@@ -505,7 +506,8 @@ const unsigned char* QgsDistanceArea::measurePolygon( const unsigned char* featu
   }
 
   // get number of rings in the polygon
-  unsigned int numRings = *(( int* )( feature + 1 + sizeof( int ) ) );
+  unsigned int numRings;
+  memcpy(&numRings, feature + 1 + sizeof( int ), sizeof (unsigned int));
 
   if ( numRings == 0 )
   {
@@ -528,16 +530,18 @@ const unsigned char* QgsDistanceArea::measurePolygon( const unsigned char* featu
   {
     for ( unsigned int idx = 0; idx < numRings; idx++ )
     {
-      int nPoints = *(( int* )ptr );
+      int nPoints;
+      memcpy(&nPoints, ptr, sizeof (int));
+
       ptr += 4;
 
       // Extract the points from the WKB and store in a pair of
       // vectors.
       for ( int jdx = 0; jdx < nPoints; jdx++ )
       {
-        x = *(( double * ) ptr );
+        memcpy( &x, ptr, sizeof (double) );
         ptr += sizeof( double );
-        y = *(( double * ) ptr );
+        memcpy( &y, ptr, sizeof (double) );
         ptr += sizeof( double );
         if ( hasZptr )
         {

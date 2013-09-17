@@ -38,9 +38,11 @@ const double QgsClipper::SMALL_NUM = 1e-12;
 const unsigned char* QgsClipper::clippedLineWKB( const unsigned char* wkb, const QgsRectangle& clipExtent, QPolygonF& line )
 {
   wkb++; // jump over endian info
-  unsigned int wkbType = *(( int* ) wkb );
+  unsigned int wkbType;
+  memcpy(&wkbType, wkb, sizeof (unsigned int));
   wkb += sizeof( unsigned int );
-  unsigned int nPoints = *(( int* ) wkb );
+  unsigned int nPoints;
+  memcpy(&nPoints, wkb, sizeof (unsigned int));
   wkb += sizeof( unsigned int );
 
   bool hasZValue = ( wkbType == QGis::WKBLineString25D );
