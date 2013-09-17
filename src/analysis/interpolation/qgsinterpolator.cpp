@@ -119,13 +119,13 @@ int QgsInterpolator::addVerticesToCache( QgsGeometry* geom, bool zCoord, double 
     case QGis::WKBPoint:
     {
       currentWkbPtr += ( 1 + sizeof( int ) );
-      theVertex.x = *(( double * )( currentWkbPtr ) );
+      memcpy(&theVertex.x, currentWkbPtr, sizeof (double));
       currentWkbPtr += sizeof( double );
-      theVertex.y = *(( double * )( currentWkbPtr ) );
+      memcpy(&theVertex.y, currentWkbPtr, sizeof (double));
       if ( zCoord && hasZValue )
       {
         currentWkbPtr += sizeof( double );
-        theVertex.z = *(( double * )( currentWkbPtr ) );
+        memcpy(&theVertex.z, currentWkbPtr, sizeof (double));
       }
       else
       {
@@ -143,13 +143,13 @@ int QgsInterpolator::addVerticesToCache( QgsGeometry* geom, bool zCoord, double 
       currentWkbPtr += sizeof( int );
       for ( int index = 0; index < *npoints; ++index )
       {
-        theVertex.x = *(( double * )( currentWkbPtr ) );
+        memcpy(&theVertex.x, currentWkbPtr, sizeof (double));
         currentWkbPtr += sizeof( double );
-        theVertex.y = *(( double * )( currentWkbPtr ) );
+        memcpy(&theVertex.y, currentWkbPtr, sizeof (double));
         currentWkbPtr += sizeof( double );
         if ( zCoord && hasZValue ) //skip z-coordinate for 25D geometries
         {
-          theVertex.z = *(( double * )( currentWkbPtr ) );
+          memcpy(&theVertex.z, currentWkbPtr, sizeof (double));
           currentWkbPtr += sizeof( double );
         }
         else

@@ -761,8 +761,8 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
     case QGis::WKBPoint25D:
     case QGis::WKBPoint:
     {
-      x = *(( double * )( mGeometry + 5 ) );
-      y = *(( double * )( mGeometry + 5 + sizeof( double ) ) );
+      memcpy(&x,  mGeometry + 5, sizeof (double));
+      memcpy(&y,  mGeometry + 5 + sizeof( double ), sizeof (double));
       actdist = point.sqrDist( x, y );
       vertexnr = 0;
       break;
@@ -5267,13 +5267,13 @@ void QgsGeometry::translateVertex( int& wkbPosition, double dx, double dy, bool 
   double x, y, translated_x, translated_y;
 
   //x-coordinate
-  x = *(( double * )( &( mGeometry[wkbPosition] ) ) );
+  memcpy(&x, &( mGeometry[wkbPosition] ), sizeof (double));
   translated_x = x + dx;
   memcpy( &( mGeometry[wkbPosition] ), &translated_x, sizeof( double ) );
   wkbPosition += sizeof( double );
 
   //y-coordinate
-  y = *(( double * )( &( mGeometry[wkbPosition] ) ) );
+  memcpy(&y, &( mGeometry[wkbPosition] ), sizeof (double));
   translated_y = y + dy;
   memcpy( &( mGeometry[wkbPosition] ), &translated_y, sizeof( double ) );
   wkbPosition += sizeof( double );
@@ -5289,8 +5289,8 @@ void QgsGeometry::transformVertex( int& wkbPosition, const QgsCoordinateTransfor
   double x, y, z;
 
 
-  x = *(( double * )( &( mGeometry[wkbPosition] ) ) );
-  y = *(( double * )( &( mGeometry[wkbPosition + sizeof( double )] ) ) );
+  memcpy(&x, &( mGeometry[wkbPosition] ), sizeof (double));
+  memcpy(&y, &( mGeometry[wkbPosition + sizeof( double )] ), sizeof (double));
   z = 0.0; // Ignore Z for now.
 
   ct.transformInPlace( x, y, z );
@@ -6188,7 +6188,8 @@ QgsPolyline QgsGeometry::asPolyline( unsigned char*& ptr, bool hasZValue ) const
 {
   double x, y;
   ptr += 5;
-  unsigned int nPoints = *(( int* )ptr );
+  unsigned int nPoints;
+  memcpy(&nPoints, ptr, sizeof (unsigned int));
   ptr += 4;
 
   QgsPolyline line( nPoints );
@@ -6196,8 +6197,8 @@ QgsPolyline QgsGeometry::asPolyline( unsigned char*& ptr, bool hasZValue ) const
   // Extract the points from the WKB format into the x and y vectors.
   for ( uint i = 0; i < nPoints; ++i )
   {
-    x = *(( double * ) ptr );
-    y = *(( double * )( ptr + sizeof( double ) ) );
+    memcpy(&x, ptr, sizeof (double));
+    memcpy(&y,  ptr + sizeof( double ), sizeof (double));
 
     ptr += 2 * sizeof( double );
 
@@ -6218,7 +6219,9 @@ QgsPolygon QgsGeometry::asPolygon( unsigned char*& ptr, bool hasZValue ) const
   ptr += 5;
 
   // get number of rings in the polygon
-  unsigned int numRings = *(( int* )ptr );
+  unsigned int numRings;
+  memcpy(&numRings, ptr, sizeof (unsigned int));
+
   ptr += 4;
 
   if ( numRings == 0 )  // sanity check for zero rings in polygon
@@ -6228,15 +6231,16 @@ QgsPolygon QgsGeometry::asPolygon( unsigned char*& ptr, bool hasZValue ) const
 
   for ( uint idx = 0; idx < numRings; idx++ )
   {
-    uint nPoints = *(( int* )ptr );
+    uint nPoints;
+    memcpy(&nPoints, ptr, sizeof (uint));
     ptr += 4;
 
     QgsPolyline ring( nPoints );
 
     for ( uint jdx = 0; jdx < nPoints; jdx++ )
     {
-      x = *(( double * ) ptr );
-      y = *(( double * )( ptr + sizeof( double ) ) );
+      memcpy(&x, ptr, sizeof (double));
+      memcpy(&y,  ptr + sizeof( double ), sizeof (double));
 
       ptr += 2 * sizeof( double );
 
@@ -6292,7 +6296,8 @@ QgsMultiPoint QgsGeometry::asMultiPoint() const
   bool hasZValue = ( type == QGis::WKBMultiPoint25D );
 
   unsigned char* ptr = mGeometry + 5;
-  unsigned int nPoints = *(( int* )ptr );
+  unsigned int nPoints;
+  memcpy(&nPoints, ptr, sizeof (unsigned int));
   ptr += 4;
 
   QgsMultiPoint points( nPoints );
@@ -6313,7 +6318,8 @@ QgsMultiPolyline QgsGeometry::asMultiPolyline() const
   bool hasZValue = ( type == QGis::WKBMultiLineString25D );
 
   unsigned char* ptr = mGeometry + 5;
-  unsigned int numLineStrings = *(( int* )ptr );
+  unsigned int numLineStrings;
+  memcpy(&numLineStrings, ptr, sizeof (unsigned int));
   ptr += 4;
 
   QgsMultiPolyline lines( numLineStrings );
@@ -6335,7 +6341,9 @@ QgsMultiPolygon QgsGeometry::asMultiPolygon() const
   bool hasZValue = ( type == QGis::WKBMultiPolygon25D );
 
   unsigned char* ptr = mGeometry + 5;
-  unsigned int numPolygons = *(( int* )ptr );
+
+  unsigned int numPolygons;
+  memcpy(&numPolygons, ptr, sizeof (unsigned int));
   ptr += 4;
 
   QgsMultiPolygon polygons( numPolygons );
