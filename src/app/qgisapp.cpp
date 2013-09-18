@@ -8883,8 +8883,9 @@ void QgisApp::activateDeactivateLayerRelatedActions( QgsMapLayer* layer )
   mActionZoomToLayer->setEnabled( true );
 
   mActionCopyStyle->setEnabled( true );
+#ifndef ANDROID
   mActionPasteStyle->setEnabled( clipboard()->hasFormat( QGSCLIPBOARD_STYLE_MIME ) );
-
+#endif
   /***********Vector layers****************/
   if ( layer->type() == QgsMapLayer::VectorLayer )
   {
