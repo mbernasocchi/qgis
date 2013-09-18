@@ -143,10 +143,8 @@ const unsigned char* QgsFeatureRendererV2::_getPolygon( QPolygonF& pts, QList<QP
 
   for ( unsigned int idx = 0; idx < numRings; idx++ )
   {
-
-
     unsigned int nPoints;
-    memcpy(&numRings, wkb, sizeof (unsigned int));
+    memcpy(&nPoints, wkb, sizeof (unsigned int));
     wkb += sizeof( unsigned int );
 
     QPolygonF poly( nPoints );
