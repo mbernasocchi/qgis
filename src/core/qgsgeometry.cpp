@@ -750,7 +750,7 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
   double actdist = std::numeric_limits<double>::max();
   double x = 0;
   double y = 0;
-  double *tempx, *tempy;
+  double tempx, tempy;
   memcpy( &wkbType, ( mGeometry + 1 ), sizeof( int ) );
   beforeVertex = -1;
   afterVertex = -1;
@@ -775,18 +775,19 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
     case QGis::WKBLineString:
     {
       unsigned char* ptr = mGeometry + 5;
-      int* npoints = ( int* )ptr;
+      int npoints;
+      memcpy( &npoints, ptr, sizeof( npoints ) );
       ptr += sizeof( int );
-      for ( int index = 0; index < *npoints; ++index )
+      for ( int index = 0; index < npoints; ++index )
       {
-        tempx = ( double* )ptr;
+        memcpy( &tempx, ptr, sizeof( tempx ) );
         ptr += sizeof( double );
-        tempy = ( double* )ptr;
-        if ( point.sqrDist( *tempx, *tempy ) < actdist )
+        memcpy( &tempy, ptr, sizeof( tempy ) );
+        if ( point.sqrDist( tempx, tempy ) < actdist )
         {
-          x = *tempx;
-          y = *tempy;
-          actdist = point.sqrDist( *tempx, *tempy );
+          x = tempx;
+          y = tempy;
+          actdist = point.sqrDist( tempx, tempy );
           vertexnr = index;
           if ( index == 0 )//assign the rubber band indices
           {
@@ -796,7 +797,7 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
           {
             beforeVertex = index - 1;
           }
-          if ( index == ( *npoints - 1 ) )
+          if ( index == ( npoints - 1 ) )
           {
             afterVertex = -1;
           }
@@ -817,34 +818,35 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
       hasZValue = true;
     case QGis::WKBPolygon:
     {
-      int* nrings = ( int* )( mGeometry + 5 );
-      int* npoints;
+      int nrings;
+      memcpy( &nrings, mGeometry + 5, sizeof( nrings ) );
+      int npoints;
       unsigned char* ptr = mGeometry + 9;
-      for ( int index = 0; index < *nrings; ++index )
+      for ( int index = 0; index < nrings; ++index )
       {
-        npoints = ( int* )ptr;
+        memcpy( &npoints, ptr, sizeof( npoints ) );
         ptr += sizeof( int );
-        for ( int index2 = 0; index2 < *npoints; ++index2 )
+        for ( int index2 = 0; index2 < npoints; ++index2 )
         {
-          tempx = ( double* )ptr;
+          memcpy( &tempx, ptr, sizeof( tempx ) );
           ptr += sizeof( double );
-          tempy = ( double* )ptr;
-          if ( point.sqrDist( *tempx, *tempy ) < actdist )
+          memcpy( &tempy, ptr, sizeof( tempy ) );
+          if ( point.sqrDist( tempx, tempy ) < actdist )
           {
-            x = *tempx;
-            y = *tempy;
-            actdist = point.sqrDist( *tempx, *tempy );
+            x = tempx;
+            y = tempy;
+            actdist = point.sqrDist( tempx, tempy );
             vertexnr = vertexcounter;
             //assign the rubber band indices
             if ( index2 == 0 )
             {
-              beforeVertex = vertexcounter + ( *npoints - 2 );
+              beforeVertex = vertexcounter + ( npoints - 2 );
               afterVertex = vertexcounter + 1;
             }
-            else if ( index2 == ( *npoints - 1 ) )
+            else if ( index2 == ( npoints - 1 ) )
             {
               beforeVertex = vertexcounter - 1;
-              afterVertex = vertexcounter - ( *npoints - 2 );
+              afterVertex = vertexcounter - ( npoints - 2 );
             }
             else
             {
@@ -872,13 +874,13 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
       for ( int index = 0; index < *npoints; ++index )
       {
         ptr += ( 1 + sizeof( int ) ); //skip endian and point type
-        tempx = ( double* )ptr;
-        tempy = ( double* )( ptr + sizeof( double ) );
-        if ( point.sqrDist( *tempx, *tempy ) < actdist )
+        memcpy( &tempx, ptr, sizeof( tempx ) );
+        memcpy( &tempy, ptr + sizeof( double ), sizeof( tempy ) );
+        if ( point.sqrDist( tempx, tempy ) < actdist )
         {
-          x = *tempx;
-          y = *tempy;
-          actdist = point.sqrDist( *tempx, *tempy );
+          x = tempx;
+          y = tempy;
+          actdist = point.sqrDist( tempx, tempy );
           vertexnr = index;
         }
         ptr += ( 2 * sizeof( double ) );
@@ -894,25 +896,26 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
     case QGis::WKBMultiLineString:
     {
       unsigned char* ptr = mGeometry + 5;
-      int* nlines = ( int* )ptr;
-      int* npoints = 0;
+      int nlines;
+      memcpy( &nlines, ptr, sizeof( nlines ) );
+      int npoints = 0;
       ptr += sizeof( int );
-      for ( int index = 0; index < *nlines; ++index )
+      for ( int index = 0; index < nlines; ++index )
       {
         ptr += ( sizeof( int ) + 1 );
-        npoints = ( int* )ptr;
+        memcpy( &npoints, ptr, sizeof( npoints ) );
         ptr += sizeof( int );
-        for ( int index2 = 0; index2 < *npoints; ++index2 )
+        for ( int index2 = 0; index2 < npoints; ++index2 )
         {
-          tempx = ( double* )ptr;
+          memcpy( &tempx, ptr, sizeof( tempx ) );
           ptr += sizeof( double );
-          tempy = ( double* )ptr;
+          memcpy( &tempy, ptr, sizeof( tempy ) );
           ptr += sizeof( double );
-          if ( point.sqrDist( *tempx, *tempy ) < actdist )
+          if ( point.sqrDist( tempx, tempy ) < actdist )
           {
-            x = *tempx;
-            y = *tempy;
-            actdist = point.sqrDist( *tempx, *tempy );
+            x = tempx;
+            y = tempy;
+            actdist = point.sqrDist( tempx, tempy );
             vertexnr = vertexcounter;
 
             if ( index2 == 0 )//assign the rubber band indices
@@ -923,7 +926,7 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
             {
               beforeVertex = vertexnr - 1;
             }
-            if ( index2 == ( *npoints ) - 1 )
+            if ( index2 == ( npoints ) - 1 )
             {
               afterVertex = -1;
             }
@@ -946,41 +949,42 @@ QgsPoint QgsGeometry::closestVertex( const QgsPoint& point, int& atVertex, int& 
     case QGis::WKBMultiPolygon:
     {
       unsigned char* ptr = mGeometry + 5;
-      int* npolys = ( int* )ptr;
-      int* nrings;
-      int* npoints;
+      int npolys;
+      memcpy( &npolys, ptr, sizeof( npolys ) );
+      int nrings;
+      int npoints;
       ptr += sizeof( int );
-      for ( int index = 0; index < *npolys; ++index )
+      for ( int index = 0; index < npolys; ++index )
       {
         ptr += ( 1 + sizeof( int ) ); //skip endian and polygon type
-        nrings = ( int* )ptr;
+        memcpy( &nrings, ptr, sizeof( nrings ) );
         ptr += sizeof( int );
-        for ( int index2 = 0; index2 < *nrings; ++index2 )
+        for ( int index2 = 0; index2 < nrings; ++index2 )
         {
-          npoints = ( int* )ptr;
+          memcpy( &npoints, ptr, sizeof( npoints ) );
           ptr += sizeof( int );
-          for ( int index3 = 0; index3 < *npoints; ++index3 )
+          for ( int index3 = 0; index3 < npoints; ++index3 )
           {
-            tempx = ( double* )ptr;
+            memcpy( &tempx, ptr, sizeof( tempx ) );
             ptr += sizeof( double );
-            tempy = ( double* )ptr;
-            if ( point.sqrDist( *tempx, *tempy ) < actdist )
+            memcpy( &tempy, ptr, sizeof( tempy ) ) ;
+            if ( point.sqrDist( tempx, tempy ) < actdist )
             {
-              x = *tempx;
-              y = *tempy;
-              actdist = point.sqrDist( *tempx, *tempy );
+              x = tempx;
+              y = tempy;
+              actdist = point.sqrDist( tempx, tempy );
               vertexnr = vertexcounter;
 
               //assign the rubber band indices
               if ( index3 == 0 )
               {
-                beforeVertex = vertexcounter + ( *npoints - 2 );
+                beforeVertex = vertexcounter + ( npoints - 2 );
                 afterVertex = vertexcounter + 1;
               }
-              else if ( index3 == ( *npoints - 1 ) )
+              else if ( index3 == ( npoints - 1 ) )
               {
                 beforeVertex = vertexcounter - 1;
-                afterVertex = vertexcounter - ( *npoints - 2 );
+                afterVertex = vertexcounter - ( npoints - 2 );
               }
               else
               {
@@ -1043,7 +1047,8 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
     case QGis::WKBLineString:
     {
       unsigned char* ptr = mGeometry + 5;
-      int* npoints = ( int* ) ptr;
+      int npoints;
+      memcpy( &npoints, ptr, sizeof( npoints ) );
 
       const int index = atVertex;
 
@@ -1058,7 +1063,7 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
         beforeVertex = index - 1;
       }
 
-      if ( index == ( *npoints - 1 ) )
+      if ( index == ( npoints - 1 ) )
       {
         afterVertex = -1;
       }
@@ -1073,18 +1078,19 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
       hasZValue = true;
     case QGis::WKBPolygon:
     {
-      int* nrings = ( int* )( mGeometry + 5 );
-      int* npoints;
+      int nrings;
+      memcpy( &nrings, mGeometry + 5, sizeof( nrings ) );
+      int npoints;
       unsigned char* ptr = mGeometry + 9;
 
       // Walk through the POLYGON WKB
 
-      for ( int index0 = 0; index0 < *nrings; ++index0 )
+      for ( int index0 = 0; index0 < nrings; ++index0 )
       {
-        npoints = ( int* )ptr;
+        memcpy( &npoints, ptr, sizeof( npoints ) );
         ptr += sizeof( int );
 
-        for ( int index1 = 0; index1 < *npoints; ++index1 )
+        for ( int index1 = 0; index1 < npoints; ++index1 )
         {
           ptr += sizeof( double );
           ptr += sizeof( double );
@@ -1096,13 +1102,13 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
           {
             if ( index1 == 0 )
             {
-              beforeVertex = vertexcounter + ( *npoints - 2 );
+              beforeVertex = vertexcounter + ( npoints - 2 );
               afterVertex = vertexcounter + 1;
             }
-            else if ( index1 == ( *npoints - 1 ) )
+            else if ( index1 == ( npoints - 1 ) )
             {
               beforeVertex = vertexcounter - 1;
-              afterVertex = vertexcounter - ( *npoints - 2 );
+              afterVertex = vertexcounter - ( npoints - 2 );
             }
             else
             {
@@ -1128,17 +1134,18 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
     case QGis::WKBMultiLineString:
     {
       unsigned char* ptr = mGeometry + 5;
-      int* nlines = ( int* )ptr;
-      int* npoints = 0;
+      int nlines;
+      memcpy( &nlines, ptr, sizeof( nlines ) );
+      int npoints = 0;
       ptr += sizeof( int );
 
-      for ( int index0 = 0; index0 < *nlines; ++index0 )
+      for ( int index0 = 0; index0 < nlines; ++index0 )
       {
         ptr += ( sizeof( int ) + 1 );
-        npoints = ( int* )ptr;
+        memcpy( &npoints, ptr, sizeof( npoints ) );
         ptr += sizeof( int );
 
-        for ( int index1 = 0; index1 < *npoints; ++index1 )
+        for ( int index1 = 0; index1 < npoints; ++index1 )
         {
           ptr += sizeof( double );
           ptr += sizeof( double );
@@ -1158,7 +1165,7 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
             {
               beforeVertex = vertexcounter - 1;
             }
-            if ( index1 == ( *npoints ) - 1 )
+            if ( index1 == ( npoints ) - 1 )
             {
               afterVertex = -1;
             }
@@ -1177,23 +1184,24 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
     case QGis::WKBMultiPolygon:
     {
       unsigned char* ptr = mGeometry + 5;
-      int* npolys = ( int* )ptr;
-      int* nrings;
-      int* npoints;
+      int npolys;
+      memcpy( &npolys, ptr, sizeof( npolys ) );
+      int nrings;
+      int npoints;
       ptr += sizeof( int );
 
-      for ( int index0 = 0; index0 < *npolys; ++index0 )
+      for ( int index0 = 0; index0 < npolys; ++index0 )
       {
         ptr += ( 1 + sizeof( int ) ); //skip endian and polygon type
-        nrings = ( int* )ptr;
+        memcpy( &nrings, ptr, sizeof( nrings ) );
         ptr += sizeof( int );
 
-        for ( int index1 = 0; index1 < *nrings; ++index1 )
+        for ( int index1 = 0; index1 < nrings; ++index1 )
         {
-          npoints = ( int* )ptr;
+          memcpy( &npoints, ptr, sizeof( npoints ) );
           ptr += sizeof( int );
 
-          for ( int index2 = 0; index2 < *npoints; ++index2 )
+          for ( int index2 = 0; index2 < npoints; ++index2 )
           {
             ptr += sizeof( double );
             ptr += sizeof( double );
@@ -1208,13 +1216,13 @@ void QgsGeometry::adjacentVertices( int atVertex, int& beforeVertex, int& afterV
 
               if ( index2 == 0 )
               {
-                beforeVertex = vertexcounter + ( *npoints - 2 );
+                beforeVertex = vertexcounter + ( npoints - 2 );
                 afterVertex = vertexcounter + 1;
               }
-              else if ( index2 == ( *npoints - 1 ) )
+              else if ( index2 == ( npoints - 1 ) )
               {
                 beforeVertex = vertexcounter - 1;
-                afterVertex = vertexcounter - ( *npoints - 2 );
+                afterVertex = vertexcounter - ( npoints - 2 );
               }
               else
               {
@@ -3586,11 +3594,11 @@ QgsRectangle QgsGeometry::boundingBox()
   double xmax = -std::numeric_limits<double>::max();
   double ymax = -std::numeric_limits<double>::max();
 
-  double *x;
-  double *y;
-  int *nPoints;
-  int *numRings;
-  int *numPolygons;
+  double x;
+  double y;
+  int nPoints;
+  int numRings;
+  int numPolygons;
   int numLineStrings;
   int idx, jdx, kdx;
   unsigned char *ptr;
@@ -3620,23 +3628,23 @@ QgsRectangle QgsGeometry::boundingBox()
   {
     case QGis::WKBPoint25D:
     case QGis::WKBPoint:
-      x = ( double * )( mGeometry + 5 );
-      y = ( double * )( mGeometry + 5 + sizeof( double ) );
-      if ( *x < xmin )
+      memcpy( &x, mGeometry + 5, sizeof( x ) );
+      memcpy( &y, mGeometry + 5 + sizeof( double ), sizeof( y ) );
+      if ( x < xmin )
       {
-        xmin = *x;
+        xmin = x;
       }
-      if ( *x > xmax )
+      if ( x > xmax )
       {
-        xmax = *x;
+        xmax = x;
       }
-      if ( *y < ymin )
+      if ( y < ymin )
       {
-        ymin = *y;
+        ymin = y;
       }
-      if ( *y > ymax )
+      if ( y > ymax )
       {
-        ymax = *y;
+        ymax = y;
       }
       break;
     case QGis::WKBMultiPoint25D:
@@ -3644,34 +3652,34 @@ QgsRectangle QgsGeometry::boundingBox()
     case QGis::WKBMultiPoint:
     {
       ptr = mGeometry + 1 + sizeof( int );
-      nPoints = ( int * ) ptr;
+      memcpy( &nPoints, ptr, sizeof( nPoints ) );
       ptr += sizeof( int );
-      for ( idx = 0; idx < *nPoints; idx++ )
+      for ( idx = 0; idx < nPoints; idx++ )
       {
-        ptr += ( 1 + sizeof( int ) );
-        x = ( double * ) ptr;
+        ptr +=1 + sizeof( int );
+        memcpy( &x, ptr, sizeof( x ) );
         ptr += sizeof( double );
-        y = ( double * ) ptr;
+        memcpy( &y, ptr, sizeof( y ) );
         ptr += sizeof( double );
         if ( hasZValue )
         {
           ptr += sizeof( double );
         }
-        if ( *x < xmin )
+        if ( x < xmin )
         {
-          xmin = *x;
+          xmin = x;
         }
-        if ( *x > xmax )
+        if ( x > xmax )
         {
-          xmax = *x;
+          xmax = x;
         }
-        if ( *y < ymin )
+        if ( y < ymin )
         {
-          ymin = *y;
+          ymin = y;
         }
-        if ( *y > ymax )
+        if ( y > ymax )
         {
-          ymax = *y;
+          ymax = y;
         }
       }
       break;
@@ -3682,33 +3690,33 @@ QgsRectangle QgsGeometry::boundingBox()
     {
       // get number of points in the line
       ptr = mGeometry + 5;
-      nPoints = ( int * ) ptr;
+      memcpy( &nPoints, ptr, sizeof( nPoints ) );
       ptr = mGeometry + 1 + 2 * sizeof( int );
-      for ( idx = 0; idx < *nPoints; idx++ )
+      for ( idx = 0; idx < nPoints; idx++ )
       {
-        x = ( double * ) ptr;
+        memcpy( &x, ptr, sizeof( x ) );
         ptr += sizeof( double );
-        y = ( double * ) ptr;
+        memcpy( &y, ptr, sizeof( y ) );
         ptr += sizeof( double );
         if ( hasZValue )
         {
           ptr += sizeof( double );
         }
-        if ( *x < xmin )
+        if ( x < xmin )
         {
-          xmin = *x;
+          xmin = x;
         }
-        if ( *x > xmax )
+        if ( x > xmax )
         {
-          xmax = *x;
+          xmax = x;
         }
-        if ( *y < ymin )
+        if ( y < ymin )
         {
-          ymin = *y;
+          ymin = y;
         }
-        if ( *y > ymax )
+        if ( y > ymax )
         {
-          ymax = *y;
+          ymax = y;
         }
       }
       break;
@@ -3723,33 +3731,33 @@ QgsRectangle QgsGeometry::boundingBox()
       {
         // each of these is a wbklinestring so must handle as such
         ptr += 5;   // skip type since we know its 2
-        nPoints = ( int * ) ptr;
+        memcpy( &nPoints, ptr, sizeof( nPoints ) );
         ptr += sizeof( int );
-        for ( idx = 0; idx < *nPoints; idx++ )
+        for ( idx = 0; idx < nPoints; idx++ )
         {
-          x = ( double * ) ptr;
+          memcpy( &x, ptr, sizeof( x ) );
           ptr += sizeof( double );
-          y = ( double * ) ptr;
+          memcpy( &y, ptr, sizeof( y ) );
           ptr += sizeof( double );
           if ( hasZValue )
           {
             ptr += sizeof( double );
           }
-          if ( *x < xmin )
+          if ( x < xmin )
           {
-            xmin = *x;
+            xmin = x;
           }
-          if ( *x > xmax )
+          if ( x > xmax )
           {
-            xmax = *x;
+            xmax = x;
           }
-          if ( *y < ymin )
+          if ( y < ymin )
           {
-            ymin = *y;
+            ymin = y;
           }
-          if ( *y > ymax )
+          if ( y > ymax )
           {
-            ymax = *y;
+            ymax = y;
           }
         }
       }
@@ -3760,39 +3768,40 @@ QgsRectangle QgsGeometry::boundingBox()
     case QGis::WKBPolygon:
     {
       // get number of rings in the polygon
-      numRings = ( int * )( mGeometry + 1 + sizeof( int ) );
+      ptr = mGeometry + 1 + sizeof( int );
+      memcpy( &numRings, ptr, sizeof( numRings ) );
       ptr = mGeometry + 1 + 2 * sizeof( int );
-      for ( idx = 0; idx < *numRings; idx++ )
+      for ( idx = 0; idx < numRings; idx++ )
       {
         // get number of points in the ring
-        nPoints = ( int * ) ptr;
+        memcpy( &nPoints, ptr, sizeof( nPoints ) );
         ptr += 4;
-        for ( jdx = 0; jdx < *nPoints; jdx++ )
+        for ( jdx = 0; jdx < nPoints; jdx++ )
         {
           // add points to a point array for drawing the polygon
-          x = ( double * ) ptr;
+          memcpy( &x, ptr, sizeof( x ) );
           ptr += sizeof( double );
-          y = ( double * ) ptr;
+          memcpy( &y, ptr, sizeof( y ) );
           ptr += sizeof( double );
           if ( hasZValue )
           {
             ptr += sizeof( double );
           }
-          if ( *x < xmin )
+          if ( x < xmin )
           {
-            xmin = *x;
+            xmin = x;
           }
-          if ( *x > xmax )
+          if ( x > xmax )
           {
-            xmax = *x;
+            xmax = x;
           }
-          if ( *y < ymin )
+          if ( y < ymin )
           {
-            ymin = *y;
+            ymin = y;
           }
-          if ( *y > ymax )
+          if ( y > ymax )
           {
-            ymax = *y;
+            ymax = y;
           }
         }
       }
@@ -3804,47 +3813,47 @@ QgsRectangle QgsGeometry::boundingBox()
     {
       // get the number of polygons
       ptr = mGeometry + 5;
-      numPolygons = ( int * ) ptr;
+      memcpy( &numPolygons, ptr, sizeof( numPolygons ) );
       ptr += 4;
 
-      for ( kdx = 0; kdx < *numPolygons; kdx++ )
+      for ( kdx = 0; kdx < numPolygons; kdx++ )
       {
         //skip the endian and mGeometry type info and
         // get number of rings in the polygon
         ptr += 5;
-        numRings = ( int * ) ptr;
+        memcpy( &numRings, ptr, sizeof( numRings ) );
         ptr += 4;
-        for ( idx = 0; idx < *numRings; idx++ )
+        for ( idx = 0; idx < numRings; idx++ )
         {
           // get number of points in the ring
-          nPoints = ( int * ) ptr;
+          memcpy( &nPoints, ptr, sizeof( nPoints ) );
           ptr += 4;
-          for ( jdx = 0; jdx < *nPoints; jdx++ )
+          for ( jdx = 0; jdx < nPoints; jdx++ )
           {
             // add points to a point array for drawing the polygon
-            x = ( double * ) ptr;
+            memcpy( &x, ptr, sizeof( x ) );
             ptr += sizeof( double );
-            y = ( double * ) ptr;
+            memcpy( &y, ptr, sizeof( y ) );
             ptr += sizeof( double );
             if ( hasZValue )
             {
               ptr += sizeof( double );
             }
-            if ( *x < xmin )
+            if ( x < xmin )
             {
-              xmin = *x;
+              xmin = x;
             }
-            if ( *x > xmax )
+            if ( x > xmax )
             {
-              xmax = *x;
+              xmax = x;
             }
-            if ( *y < ymin )
+            if ( y < ymin )
             {
-              ymin = *y;
+              ymin = y;
             }
-            if ( *y > ymax )
+            if ( y > ymax )
             {
-              ymax = *y;
+              ymax = y;
             }
           }
         }
@@ -3994,13 +4003,13 @@ QString QgsGeometry::exportToWkt() const
 
   QGis::WkbType wkbType;
   bool hasZValue = false;
-  double *x, *y;
+  double x, y;
 
   QString mWkt; // TODO: rename
 
   // Will this really work when mGeometry[0] == 0 ???? I (gavin) think not.
   //wkbType = (mGeometry[0] == 1) ? mGeometry[1] : mGeometry[4];
-  memcpy( &wkbType, &( mGeometry[1] ), sizeof( int ) );
+  memcpy( &wkbType, mGeometry+1, sizeof( int ) );
 
   switch ( wkbType )
   {
@@ -4008,11 +4017,11 @@ QString QgsGeometry::exportToWkt() const
     case QGis::WKBPoint:
     {
       mWkt += "POINT(";
-      x = ( double * )( mGeometry + 5 );
-      mWkt += qgsDoubleToString( *x );
+      memcpy( &x,  mGeometry + 5, sizeof( x ) );
+      mWkt += qgsDoubleToString( x );
       mWkt += " ";
-      y = ( double * )( mGeometry + 5 + sizeof( double ) );
-      mWkt += qgsDoubleToString( *y );
+      memcpy( &y,  mGeometry + 5, sizeof( double ) );
+      mWkt += qgsDoubleToString( y );
       mWkt += ")";
       return mWkt;
     }
@@ -4023,26 +4032,27 @@ QString QgsGeometry::exportToWkt() const
     {
       QgsDebugMsg( "LINESTRING found" );
       unsigned char *ptr;
-      int *nPoints;
+      int nPoints;
       int idx;
 
       mWkt += "LINESTRING(";
       // get number of points in the line
       ptr = mGeometry + 5;
-      nPoints = ( int * ) ptr;
+      memcpy( &nPoints, ptr, sizeof( nPoints ) );
       ptr = mGeometry + 1 + 2 * sizeof( int );
-      for ( idx = 0; idx < *nPoints; ++idx )
+      for ( idx = 0; idx < nPoints; ++idx )
       {
         if ( idx != 0 )
         {
           mWkt += ", ";
         }
-        x = ( double * ) ptr;
-        mWkt += qgsDoubleToString( *x );
+
+        memcpy( &x, ptr, sizeof( x ) );
+        mWkt += qgsDoubleToString( x );
         mWkt += " ";
         ptr += sizeof( double );
-        y = ( double * ) ptr;
-        mWkt += qgsDoubleToString( *y );
+        memcpy( &y, ptr, sizeof( y ) );
+        mWkt += qgsDoubleToString( y );
         ptr += sizeof( double );
         if ( hasZValue )
         {
@@ -4060,21 +4070,21 @@ QString QgsGeometry::exportToWkt() const
       QgsDebugMsg( "POLYGON found" );
       unsigned char *ptr;
       int idx, jdx;
-      int *numRings, *nPoints;
+      int numRings, nPoints;
 
       mWkt += "POLYGON(";
       // get number of rings in the polygon
-      numRings = ( int * )( mGeometry + 1 + sizeof( int ) );
-      if ( !( *numRings ) )  // sanity check for zero rings in polygon
+      memcpy( &numRings, mGeometry + 1 + sizeof( int ), sizeof( numRings ) );
+      if ( !( numRings ) )  // sanity check for zero rings in polygon
       {
         return QString();
       }
       int *ringStart; // index of first point for each ring
       int *ringNumPoints; // number of points in each ring
-      ringStart = new int[*numRings];
-      ringNumPoints = new int[*numRings];
+      ringStart = new int[numRings];
+      ringNumPoints = new int[numRings];
       ptr = mGeometry + 1 + 2 * sizeof( int ); // set pointer to the first ring
-      for ( idx = 0; idx < *numRings; idx++ )
+      for ( idx = 0; idx < numRings; idx++ )
       {
         if ( idx != 0 )
         {
@@ -4082,22 +4092,22 @@ QString QgsGeometry::exportToWkt() const
         }
         mWkt += "(";
         // get number of points in the ring
-        nPoints = ( int * ) ptr;
-        ringNumPoints[idx] = *nPoints;
+        memcpy( &nPoints, ptr, sizeof( nPoints ) );
+        ringNumPoints[idx] = nPoints;
         ptr += 4;
 
-        for ( jdx = 0; jdx < *nPoints; jdx++ )
+        for ( jdx = 0; jdx < nPoints; jdx++ )
         {
           if ( jdx != 0 )
           {
             mWkt += ",";
           }
-          x = ( double * ) ptr;
-          mWkt += qgsDoubleToString( *x );
+          memcpy( &x, ptr, sizeof( x ) );
+          mWkt += qgsDoubleToString( x );
           mWkt += " ";
           ptr += sizeof( double );
-          y = ( double * ) ptr;
-          mWkt += qgsDoubleToString( *y );
+          memcpy( &y, ptr, sizeof( y ) );
+          mWkt += qgsDoubleToString( y );
           ptr += sizeof( double );
           if ( hasZValue )
           {
@@ -4118,24 +4128,24 @@ QString QgsGeometry::exportToWkt() const
     {
       unsigned char *ptr;
       int idx;
-      int *nPoints;
+      int nPoints;
 
       mWkt += "MULTIPOINT(";
-      nPoints = ( int* )( mGeometry + 5 );
+      memcpy( &nPoints, mGeometry + 5, sizeof( nPoints ) );
       ptr = mGeometry + 5 + sizeof( int );
-      for ( idx = 0; idx < *nPoints; ++idx )
+      for ( idx = 0; idx < nPoints; ++idx )
       {
         ptr += ( 1 + sizeof( int ) );
         if ( idx != 0 )
         {
           mWkt += ", ";
         }
-        x = ( double * )( ptr );
-        mWkt += qgsDoubleToString( *x );
+        memcpy( &x, ptr, sizeof( x ) );
+        mWkt += qgsDoubleToString( x );
         mWkt += " ";
         ptr += sizeof( double );
-        y = ( double * )( ptr );
-        mWkt += qgsDoubleToString( *y );
+        memcpy( &y, ptr, sizeof( y ) );
+        mWkt += qgsDoubleToString( y );
         ptr += sizeof( double );
         if ( hasZValue )
         {
@@ -4153,7 +4163,7 @@ QString QgsGeometry::exportToWkt() const
       QgsDebugMsg( "MULTILINESTRING found" );
       unsigned char *ptr;
       int idx, jdx, numLineStrings;
-      int *nPoints;
+      int nPoints;
 
       mWkt += "MULTILINESTRING(";
       numLineStrings = ( int )( mGeometry[5] );
@@ -4166,20 +4176,20 @@ QString QgsGeometry::exportToWkt() const
         }
         mWkt += "(";
         ptr += 5; // skip type since we know its 2
-        nPoints = ( int * ) ptr;
+        memcpy( &nPoints, ptr, sizeof( nPoints ) );
         ptr += sizeof( int );
-        for ( idx = 0; idx < *nPoints; idx++ )
+        for ( idx = 0; idx < nPoints; idx++ )
         {
           if ( idx != 0 )
           {
             mWkt += ", ";
           }
-          x = ( double * ) ptr;
-          mWkt += qgsDoubleToString( *x );
+          memcpy( &x, ptr, sizeof( x ) );
+          mWkt += qgsDoubleToString( x );
           ptr += sizeof( double );
           mWkt += " ";
-          y = ( double * ) ptr;
-          mWkt += qgsDoubleToString( *y );
+          memcpy( &y, ptr, sizeof( x ) );
+          mWkt += qgsDoubleToString( y );
           ptr += sizeof( double );
           if ( hasZValue )
           {
@@ -4199,13 +4209,13 @@ QString QgsGeometry::exportToWkt() const
       QgsDebugMsg( "MULTIPOLYGON found" );
       unsigned char *ptr;
       int idx, jdx, kdx;
-      int *numPolygons, *numRings, *nPoints;
+      int numPolygons, numRings, nPoints;
 
       mWkt += "MULTIPOLYGON(";
       ptr = mGeometry + 5;
-      numPolygons = ( int * ) ptr;
+      memcpy( &numPolygons, ptr, sizeof( numPolygons ) );
       ptr = mGeometry + 9;
-      for ( kdx = 0; kdx < *numPolygons; kdx++ )
+      for ( kdx = 0; kdx < numPolygons; kdx++ )
       {
         if ( kdx != 0 )
         {
@@ -4213,29 +4223,29 @@ QString QgsGeometry::exportToWkt() const
         }
         mWkt += "(";
         ptr += 5;
-        numRings = ( int * ) ptr;
+        memcpy( &numRings, ptr, sizeof( numRings ) );
         ptr += 4;
-        for ( idx = 0; idx < *numRings; idx++ )
+        for ( idx = 0; idx < numRings; idx++ )
         {
           if ( idx != 0 )
           {
             mWkt += ",";
           }
           mWkt += "(";
-          nPoints = ( int * ) ptr;
+          memcpy( &nPoints, ptr, sizeof( nPoints ) );
           ptr += 4;
-          for ( jdx = 0; jdx < *nPoints; jdx++ )
+          for ( jdx = 0; jdx < nPoints; jdx++ )
           {
             if ( jdx != 0 )
             {
               mWkt += ",";
             }
-            x = ( double * ) ptr;
-            mWkt += qgsDoubleToString( *x );
+            memcpy( &x, ptr, sizeof( x ) );
+            mWkt += qgsDoubleToString( x );
             ptr += sizeof( double );
             mWkt += " ";
-            y = ( double * ) ptr;
-            mWkt += qgsDoubleToString( *y );
+            memcpy( &y, ptr, sizeof( x ) );
+            mWkt += qgsDoubleToString( y );
             ptr += sizeof( double );
             if ( hasZValue )
             {
@@ -4571,12 +4581,12 @@ bool QgsGeometry::exportWkbToGeos() const
     return true;
   }
 
-  double *x;
-  double *y;
-  int *nPoints;
-  int *numRings;
-  int *numPolygons;
-  int *numLineStrings;
+  double x;
+  double y;
+  int nPoints;
+  int numRings;
+  int numPolygons;
+  int numLineStrings;
   int idx, jdx, kdx;
   unsigned char *ptr;
   QgsPoint pt;
@@ -4593,10 +4603,10 @@ bool QgsGeometry::exportWkbToGeos() const
       case QGis::WKBPoint25D:
       case QGis::WKBPoint:
       {
-        x = ( double * )( mGeometry + 5 );
-        y = ( double * )( mGeometry + 5 + sizeof( double ) );
+        memcpy( &x, mGeometry + 5, sizeof( x ) );
+        memcpy( &y, mGeometry + 5 + sizeof( double ), sizeof( x ) );
 
-        mGeos = createGeosPoint( QgsPoint( *x, *y ) );
+        mGeos = createGeosPoint( QgsPoint( x, y ) );
         mDirtyGeos = false;
         break;
       }
@@ -4608,20 +4618,20 @@ bool QgsGeometry::exportWkbToGeos() const
         QVector<GEOSGeometry *> points;
 
         ptr = mGeometry + 5;
-        nPoints = ( int * ) ptr;
+        memcpy( &nPoints, ptr, sizeof( nPoints ) );
         ptr = mGeometry + 1 + 2 * sizeof( int );
-        for ( idx = 0; idx < *nPoints; idx++ )
+        for ( idx = 0; idx < nPoints; idx++ )
         {
           ptr += ( 1 + sizeof( int ) );
-          x = ( double * ) ptr;
+          memcpy( &x, ptr, sizeof( x ) );
           ptr += sizeof( double );
-          y = ( double * ) ptr;
+          memcpy( &y, ptr, sizeof( y ) );
           ptr += sizeof( double );
           if ( hasZValue )
           {
             ptr += sizeof( double );
           }
-          points << createGeosPoint( QgsPoint( *x, *y ) );
+          points << createGeosPoint( QgsPoint( x, y ) );
         }
         mGeos = createGeosCollection( GEOS_MULTIPOINT, points );
         mDirtyGeos = false;
@@ -4637,20 +4647,20 @@ bool QgsGeometry::exportWkbToGeos() const
         QgsPolyline sequence;
 
         ptr = mGeometry + 5;
-        nPoints = ( int * ) ptr;
+        memcpy( &nPoints, ptr, sizeof( nPoints ) );
         ptr = mGeometry + 1 + 2 * sizeof( int );
-        for ( idx = 0; idx < *nPoints; idx++ )
+        for ( idx = 0; idx < nPoints; idx++ )
         {
-          x = ( double * ) ptr;
+          memcpy( &x, ptr, sizeof( x ) );
           ptr += sizeof( double );
-          y = ( double * ) ptr;
+          memcpy( &y, ptr, sizeof( y ) );
           ptr += sizeof( double );
           if ( hasZValue )
           {
             ptr += sizeof( double );
           }
 
-          sequence << QgsPoint( *x, *y );
+          sequence << QgsPoint( x, y );
         }
         mDirtyGeos = false;
         mGeos = createGeosLineString( sequence );
@@ -4662,27 +4672,27 @@ bool QgsGeometry::exportWkbToGeos() const
       case QGis::WKBMultiLineString:
       {
         QVector<GEOSGeometry*> lines;
-        numLineStrings = ( int* )( mGeometry + 5 );
+        memcpy( &numLineStrings, mGeometry + 5, sizeof( int ) );
         ptr = ( mGeometry + 9 );
-        for ( jdx = 0; jdx < *numLineStrings; jdx++ )
+        for ( jdx = 0; jdx < numLineStrings; jdx++ )
         {
           QgsPolyline sequence;
 
           // each of these is a wbklinestring so must handle as such
           ptr += 5;   // skip type since we know its 2
-          nPoints = ( int * ) ptr;
+          memcpy( &nPoints, ptr, sizeof( nPoints ) );
           ptr += sizeof( int );
-          for ( idx = 0; idx < *nPoints; idx++ )
+          for ( idx = 0; idx < nPoints; idx++ )
           {
-            x = ( double * ) ptr;
+            memcpy( &x, ptr, sizeof( x ) );
             ptr += sizeof( double );
-            y = ( double * ) ptr;
+            memcpy( &y, ptr, sizeof( y ) );
             ptr += sizeof( double );
             if ( hasZValue )
             {
               ptr += sizeof( double );
             }
-            sequence << QgsPoint( *x, *y );
+            sequence << QgsPoint( x, y );
           }
           lines << createGeosLineString( sequence );
         }
@@ -4698,32 +4708,32 @@ bool QgsGeometry::exportWkbToGeos() const
         QgsDebugMsgLevel( "Polygon found", 3 );
 
         // get number of rings in the polygon
-        numRings = ( int * )( mGeometry + 1 + sizeof( int ) );
+        memcpy( &numRings, mGeometry + 1 + sizeof( int ), sizeof( numRings ) );
         ptr = mGeometry + 1 + 2 * sizeof( int );
 
         QVector<GEOSGeometry*> rings;
 
-        for ( idx = 0; idx < *numRings; idx++ )
+        for ( idx = 0; idx < numRings; idx++ )
         {
           //QgsDebugMsg("Ring nr: "+QString::number(idx));
 
           QgsPolyline sequence;
 
           // get number of points in the ring
-          nPoints = ( int * ) ptr;
+          memcpy( &nPoints, ptr, sizeof( nPoints ) );
           ptr += 4;
-          for ( jdx = 0; jdx < *nPoints; jdx++ )
+          for ( jdx = 0; jdx < nPoints; jdx++ )
           {
             // add points to a point array for drawing the polygon
-            x = ( double * ) ptr;
+            memcpy( &x, ptr, sizeof( x ) );
             ptr += sizeof( double );
-            y = ( double * ) ptr;
+            memcpy( &y, ptr, sizeof( y ) );
             ptr += sizeof( double );
             if ( hasZValue )
             {
               ptr += sizeof( double );
             }
-            sequence << QgsPoint( *x, *y );
+            sequence << QgsPoint( x, y );
           }
 
           rings << createGeosLinearRing( sequence );
@@ -4743,9 +4753,9 @@ bool QgsGeometry::exportWkbToGeos() const
 
         // get the number of polygons
         ptr = mGeometry + 5;
-        numPolygons = ( int * ) ptr;
+        memcpy( &numPolygons, ptr, sizeof( numPolygons ) );
         ptr = mGeometry + 9;
-        for ( kdx = 0; kdx < *numPolygons; kdx++ )
+        for ( kdx = 0; kdx < numPolygons; kdx++ )
         {
           //QgsDebugMsg("Polygon nr: "+QString::number(kdx));
           QVector<GEOSGeometry*> rings;
@@ -4753,29 +4763,29 @@ bool QgsGeometry::exportWkbToGeos() const
           //skip the endian and mGeometry type info and
           // get number of rings in the polygon
           ptr += 5;
-          numRings = ( int * ) ptr;
+          memcpy( &numRings, ptr, sizeof( numRings ) );
           ptr += 4;
-          for ( idx = 0; idx < *numRings; idx++ )
+          for ( idx = 0; idx < numRings; idx++ )
           {
             //QgsDebugMsg("Ring nr: "+QString::number(idx));
 
             QgsPolyline sequence;
 
             // get number of points in the ring
-            nPoints = ( int * ) ptr;
+            memcpy( &nPoints, ptr, sizeof( nPoints ) );
             ptr += 4;
-            for ( jdx = 0; jdx < *nPoints; jdx++ )
+            for ( jdx = 0; jdx < nPoints; jdx++ )
             {
               // add points to a point array for drawing the polygon
-              x = ( double * ) ptr;
+              memcpy( &x, ptr, sizeof( x ) );
               ptr += sizeof( double );
-              y = ( double * ) ptr;
+              memcpy( &y, ptr, sizeof( y ) );
               ptr += sizeof( double );
               if ( hasZValue )
               {
                 ptr += sizeof( double );
               }
-              sequence << QgsPoint( *x, *y );
+              sequence << QgsPoint( x, y );
             }
 
             rings << createGeosLinearRing( sequence );
@@ -6173,14 +6183,15 @@ int QgsGeometry::mergeGeometriesMultiTypeSplit( QVector<GEOSGeometry*>& splitRes
 QgsPoint QgsGeometry::asPoint( unsigned char*& ptr, bool hasZValue ) const
 {
   ptr += 5;
-  double* x = ( double * )( ptr );
-  double* y = ( double * )( ptr + sizeof( double ) );
+  double x, y;
+  memcpy( &x, ptr, sizeof( x ) );
+  memcpy( &y, ptr + sizeof( double ), sizeof( y ) );
   ptr += 2 * sizeof( double );
 
   if ( hasZValue )
     ptr += sizeof( double );
 
-  return QgsPoint( *x, *y );
+  return QgsPoint( x, y );
 }
 
 
