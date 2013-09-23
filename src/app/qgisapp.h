@@ -73,6 +73,7 @@ class QgsDecorationItem;
 
 class QgsMessageLogViewer;
 class QgsMessageBar;
+class QgsMessageBarItem;
 
 class QgsScaleComboBox;
 
@@ -622,6 +623,11 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
 #endif
 
   private slots:
+#ifdef ANDROID
+    void showBusyRenderingMessage();
+    void showBusyRenderingMessageDelayed();
+    void hideBusyRenderingMessage();
+#endif
     //! validate a SRS
     void validateSrs( QgsCoordinateReferenceSystem &crs );
 
@@ -1428,6 +1434,14 @@ class QgisApp : public QMainWindow, private Ui::MainWindow
     /** Timer for map tips
      */
     QTimer *mpMapTipsTimer;
+
+    /** Timer for showbusy for rendering
+     */
+#ifdef ANDROID
+    QTimer *mBusyRenderingTimer;
+    //! Map canvas is rendering message
+    QgsMessageBarItem *mBusyRenderingMessage;
+#endif
 
     /** Point of last mouse position in map coordinates (used with MapTips)
      */
