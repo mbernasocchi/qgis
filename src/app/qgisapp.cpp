@@ -741,6 +741,10 @@ QgisApp::QgisApp( QSplashScreen *splash, bool restorePlugins, QWidget * parent, 
 
 #ifdef ANDROID
   toggleFullScreen();
+  mBusyRenderingTimer = new QTimer(this);
+  mBusyRenderingMessage = 0;
+  connect( mMapCanvas, SIGNAL( renderStarting() ), this, SLOT( showBusyRenderingMessageDelayed() ) );
+  connect( mMapCanvas, SIGNAL( renderComplete( QPainter* ) ), this, SLOT( hideBusyRenderingMessage() ) );
 #endif
 
 } // QgisApp ctor
@@ -9450,6 +9454,41 @@ void QgisApp::tapAndHoldTriggered( QTapAndHoldGesture *gesture )
     QApplication::postEvent( receiver, new QMouseEvent( QEvent::MouseButtonPress, receiver->mapFromGlobal( pos ), Qt::RightButton, Qt::RightButton, Qt::NoModifier ) );
     QApplication::postEvent( receiver, new QMouseEvent( QEvent::MouseButtonRelease, receiver->mapFromGlobal( pos ), Qt::RightButton, Qt::RightButton, Qt::NoModifier ) );
   }
+}
+#endif
+
+#ifdef ANDROID
+void QgisApp::showBusyRenderingMessage()
+{
+    //create a busy indicator
+    if ( ! mBusyRenderingMessage )
+    {
+        mBusyRenderingMessage = messageBar()->createMessage("Canvas rendering");
+        QProgressBar* progress = new QProgressBar();
+        progress->setRange(0,0);
+        mBusyRenderingMessage->layout()->addWidget(progress);
+        messageBar()->pushWidget(mBusyRenderingMessage, QgsMessageBar::INFO);
+    }
+}
+
+void QgisApp::showBusyRenderingMessageDelayed()
+{
+    //after how many seconds should the bar be shown
+    int delay = 1;
+    mBusyRenderingTimer->setInterval(delay*1000);
+    mBusyRenderingTimer->setSingleShot(true);
+    connect(mBusyRenderingTimer, SIGNAL(timeout()), SLOT(showBusyRenderingMessage()));
+    mBusyRenderingTimer->start();
+}
+
+void QgisApp::hideBusyRenderingMessage()
+{
+    mBusyRenderingTimer->stop();
+    if ( mBusyRenderingMessage )
+    {
+        messageBar()->popWidget(mBusyRenderingMessage);
+        mBusyRenderingMessage = 0;
+    }
 }
 #endif
 
