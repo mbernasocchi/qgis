@@ -103,6 +103,7 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     , mOsgViewer( 0 )
     , mViewerWidget( 0 )
     , mBaseLayer( 0 )
+    , mDockWidget( 0 )
     , mQgisMapLayer( 0 )
     , mTileSource( 0 )
     , mElevationManager( NULL )
@@ -349,9 +350,11 @@ void GlobePlugin::run()
     mOsgViewer->run();
 #endif
 
+    mDockWidget = new QDockWidget( tr( "Globe" ), mQGisIface->mainWindow() );
     mViewerWidget = new osgEarth::QtGui::ViewerWidget( mOsgViewer );
-    mViewerWidget->setGeometry( 100, 100, 1024, 800 );
-    mViewerWidget->show();
+    mDockWidget->setWidget( mViewerWidget );
+    mDockWidget->show();
+    mQGisIface->addDockWidget( Qt::BottomDockWidgetArea, mDockWidget );
 
     if ( settings.value( "/Plugin-Globe/anti-aliasing", true ).toBool() )
     {
@@ -393,7 +396,7 @@ void GlobePlugin::run()
   }
   else
   {
-    mViewerWidget->show();
+    mDockWidget->show();
   }
 }
 
@@ -1151,6 +1154,8 @@ void GlobePlugin::reset()
   {
     delete mViewerWidget;
     mViewerWidget = 0;
+    delete mDockWidget;
+    mDockWidget = 0;
   }
   if ( mOsgViewer )
   {

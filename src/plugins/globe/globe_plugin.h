@@ -24,7 +24,10 @@
 #include "qgsosgearthtilesource.h"
 #include "globe_plugin_dialog.h"
 #include "qgsrubberband.h"
+
 #include <QObject>
+#include <QDockWidget>
+
 #include <osgViewer/Viewer>
 #include <osgEarth/MapNode>
 #include <osgEarth/ImageLayer>
@@ -273,6 +276,8 @@ class GlobePlugin : public QObject, public QgisPlugin
     osgViewer::Viewer* mOsgViewer;
     //! QT viewer widget
     osgEarth::QtGui::ViewerWidget* mViewerWidget;
+    //! Dockable dialog
+    QDockWidget* mDockWidget;
     //! Settings Dialog
     QgsGlobePluginDialog *mSettingsDialog;
     //! OSG root node
