@@ -55,6 +55,8 @@ class GUI_EXPORT QgsMapToolTouch : public QgsMapTool
     bool mDragging;
     //! Flag to indicate a pinch gesture is taking place
     bool mPinching;
+    //! Needed as workaround to https://bugreports.qt-project.org/browse/QTBUG-15145
+    QPoint mPinchStartPoint;
     bool gestureEvent( QGestureEvent *event );
     void pinchTriggered( QPinchGesture *gesture );
 };
