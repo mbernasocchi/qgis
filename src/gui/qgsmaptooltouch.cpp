@@ -15,6 +15,7 @@
 
 #include "qgsmaptooltouch.h"
 #include "qgsmapcanvas.h"
+#include "qgsmapcanvasmap.h"
 #include "qgscursors.h"
 #include "qgsmaptopixel.h"
 #include <QBitmap>
@@ -30,6 +31,7 @@ QgsMapToolTouch::QgsMapToolTouch( QgsMapCanvas* canvas )
 //  QBitmap panBmp = QBitmap::fromData( QSize( 16, 16 ), pan_bits );
 //  QBitmap panBmpMask = QBitmap::fromData( QSize( 16, 16 ), pan_mask_bits );
 //  mCursor = QCursor( panBmp, panBmpMask, 5, 5 );
+
 }
 
 QgsMapToolTouch::~QgsMapToolTouch()
@@ -106,8 +108,27 @@ bool QgsMapToolTouch::gestureEvent( QGestureEvent *event )
 
 void QgsMapToolTouch::pinchTriggered( QPinchGesture *gesture )
 {
+  QPoint currentPos = mCanvas->mapFromGlobal( gesture->centerPoint().toPoint() );
+  QgsMapCanvasMap * map = mCanvas->map();
+  if ( gesture->state() == Qt::GestureStarted )
+  {
+        mPinchStartPoint = currentPos;
+        qDebug() << "GestureStarted" << mPinchStartPoint;
+  }
+  if ( gesture->state() == Qt::GestureUpdated )
+  {
+      QPoint newPos = currentPos - mPinchStartPoint;
+//      mCanvas->panAction( newPos );
+      if ( ! ( 0.98 < gesture->totalScaleFactor()  && gesture->totalScaleFactor() < 1.02 ) )
+      {
+          qDebug() << "scale" << map->scale();
+          map->setTransformOriginPoint(currentPos);
+          map->setScale(gesture->totalScaleFactor());
+      }
+  }
   if ( gesture->state() == Qt::GestureFinished )
   {
+    qDebug() << "GestureFinished";
     //a very small totalScaleFactor indicates a two finger tap (pinch gesture without pinching)
     if ( 0.98 < gesture->totalScaleFactor()  && gesture->totalScaleFactor() < 1.02 )
     {
@@ -115,14 +136,14 @@ void QgsMapToolTouch::pinchTriggered( QPinchGesture *gesture )
     }
     else
     {
-      //Transfor global coordinates to widget coordinates
-      QPoint pos = gesture->centerPoint().toPoint();
-      pos = mCanvas->mapFromGlobal( pos );
-      // transform the mouse pos to map coordinates
-      QgsPoint center  = mCanvas->getCoordinateTransform()->toMapPoint( pos.x(), pos.y() );
-      QgsRectangle r = mCanvas->extent();
-      r.scale( 1 / gesture->totalScaleFactor(), &center );
-      mCanvas->setExtent( r );
+      qDebug() << "GestureFinished" << currentPos << mPinchStartPoint;
+//      mCanvas->panActionEnd( currentPos );
+      QgsRectangle extent = mCanvas->extent();
+      QgsPoint center  = mCanvas->getCoordinateTransform()->toMapPoint( currentPos.x(), currentPos.y() );
+      //reset the "live zooming"
+      map->setScale(1);
+      extent.scale( 1 / gesture->totalScaleFactor(), &center );
+      mCanvas->setExtent( extent );
       mCanvas->refresh();
     }
     mPinching = false;
