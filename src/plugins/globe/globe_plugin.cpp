@@ -1179,6 +1179,7 @@ void GlobePlugin::unload()
 
   delete mQActionPointer;
   mQGisIface->unregisterMapLayerPropertiesFactory( mLayerPropertiesFactory );
+  delete mLayerPropertiesFactory;
 }
 
 void GlobePlugin::help()
