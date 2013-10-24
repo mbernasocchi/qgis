@@ -4968,35 +4968,32 @@ bool QgsSpatiaLiteProvider::getTableSummaryAbstractInterface( gaiaVectorLayerPtr
 bool QgsSpatiaLiteProvider::updateLayerStatistics( bool forcedUpdate )
 {
   const char* tbl = mTableName.toUtf8().constData();
-  const char* col = mGeometryColumn.toUtf8().constData();
-  char* errMsg = NULL;
-  int ret;
   bool successful = false;
 
-  QString sql = QString( "UPDATE geometry_columns_time "
-                         "SET last_update = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
-                         "WHERE Lower(f_table_name) = Lower('%1') "
-                         "AND Lower(f_geometry_column) = Lower('%2');" )
-                .arg( mTableName )
-                .arg( mGeometryColumn );
   if ( forcedUpdate )
-    ret = sqlite3_exec( sqliteHandle, sql.toUtf8().constData(), 0, 0, &errMsg );
-  else
-    ret = SQLITE_OK;
+  {
+    gaiaVectorLayersListPtr list = gaiaGetVectorLayersList(
+                                     sqliteHandle, tbl, NULL, GAIA_VECTORS_LIST_PESSIMISTIC );
 
-  if ( ret == SQLITE_OK )
-  {
-    ret = update_layer_statistics( sqliteHandle, tbl, col );
-    if ( ret == 0 )
-      QgsMessageLog::logMessage( tr( "SQLite error. Could not update layer statistics." ), tr( "SpatiaLite" ) );
-    else
-      successful = true;
+    if ( list != NULL )
+    {
+      gaiaVectorLayerPtr lyr = list->First;
+      do
+      {
+        getTableSummaryAbstractInterface( lyr );
+        lyr = lyr->Next;
+      }
+      while ( lyr );
+    }
+
+    gaiaFreeVectorLayersList( list );
   }
+
+  int ret = update_layer_statistics( sqliteHandle, tbl, NULL );
+  if ( ret == 0 )
+    QgsMessageLog::logMessage( tr( "SQLite error. Could not update layer statistics." ), tr( "SpatiaLite" ) );
   else
-  {
-    QgsMessageLog::logMessage( tr( "SQLite error: %2\nSQL: %1" ).arg( sql ).arg( errMsg ), tr( "SpatiaLite" ) );
-    sqlite3_free( errMsg );
-  }
+    successful = true;
 
   return successful;
 }
