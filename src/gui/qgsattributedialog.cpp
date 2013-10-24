@@ -414,7 +414,6 @@ void QgsAttributeDialog::init()
       if ( mLayer->isEditable() )
       {
         buttonBox->setStandardButtons( QDialogButtonBox::Ok | QDialogButtonBox::Cancel );
-        connect( buttonBox, SIGNAL( accepted() ), mDialog, SLOT( accept() ) );
         connect( buttonBox, SIGNAL( accepted() ), this, SLOT( accept() ) );
       }
       else
@@ -527,6 +526,7 @@ QgsAttributeDialog::~QgsAttributeDialog()
 
 void QgsAttributeDialog::accept()
 {
+  mDialog->accept();
   if ( !mLayer->isEditable() || !mFeature )
     return;
 
