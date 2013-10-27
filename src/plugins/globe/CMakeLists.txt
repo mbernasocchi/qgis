@@ -23,6 +23,8 @@ SET (GLOBE_PLUGIN_SRCS
      qgsglobeinterface.cpp
      qgsglobelayerpropertiesfactory.cpp
      qgsglobevectorlayerpropertiespage.cpp
+     globefeatureidentify.cpp
+     globefrustumhighlight.cpp
 )
 IF (NOT HAVE_OSGEARTHQT)
     SET(GLOBE_PLUGIN_SRCS
@@ -57,6 +59,9 @@ SET (GLOBE_PLUGIN_HDRS
      qgsglobelayerpropertiesfactory.h
      qgsglobevectorlayerpropertiespage.h
      qgsglobevectorlayerconfig.h
+     globefeatureidentify.h
+     globefrustumhighlight.h
+
 )
 
 SET (GLOBE_PLUGIN_RCCS  globe_plugin.qrc)

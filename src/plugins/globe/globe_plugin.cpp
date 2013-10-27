@@ -25,6 +25,8 @@
 #include "qgsosgearthtilesource.h"
 #include "qgsosgearthfeaturesource.h"
 #include "qgsglobestyleutils.h"
+#include "globefeatureidentify.h"
+#include "globefrustumhighlight.h"
 #ifdef HAVE_OSGEARTHQT
 #include <osgEarthQt/ViewerWidget>
 #else
@@ -73,6 +75,7 @@
 #include <osgEarthDrivers/cache_filesystem/FileSystemCache>
 #endif
 #include <osgEarthDrivers/model_feature_geom/FeatureGeomModelOptions>
+#include <osgEarthUtil/FeatureQueryTool>
 #include <osgEarthFeatures/FeatureDisplayLayout>
 
 #include "qgsglobelayerpropertiesfactory.h"
@@ -388,7 +391,7 @@ void GlobePlugin::run()
                                );
 #endif
 
-    osgEarth::Util::FeatureQueryTool* featureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new FeatureHighlightSyncCallback( mQGisIface->mapCanvas() ) );
+    osgEarth::Util::FeatureQueryTool* featureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() ) );
 
     featureQueryTool->addCallback( new FeatureHighlightCallback() );
 
@@ -464,7 +467,16 @@ void GlobePlugin::setupMap()
   layersAdded( mQGisIface->mapCanvas()->layers() );
   elevationLayersChanged();
 
-  mMapNode->getTerrainEngine()->addUpdateCallback( new MyTerrainCallback( mOsgViewer, mMapNode->getTerrain(), mQGisIface->mapCanvas() ) );
+  // Create the frustum highlight callback
+  QColor color( Qt::black );
+  color.setAlpha( 50 );
+
+  mMapNode->getTerrainEngine()->addUpdateCallback(
+    new GlobeFrustumHighlightCallback(
+      mOsgViewer
+      , mMapNode->getTerrain()
+      , mQGisIface->mapCanvas()
+      , color ) );
 
   // model placement utils
 #ifdef HAVE_OSGEARTH_ELEVATION_QUERY

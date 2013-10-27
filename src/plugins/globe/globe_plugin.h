@@ -50,7 +50,6 @@ using namespace osgEarth::Util::Controls;
 #include <osgEarthUtil/ObjectPlacer>
 #endif
 
-#include <osgEarthUtil/FeatureQueryTool>
 #include <qgslogger.h>
 #include "qgsosgearthfeaturesource.h"
 #include "qgsvectorlayer.h"
@@ -68,104 +67,6 @@ namespace osgEarth { namespace Util { class SkyNode; } }
 
 class GlobePlugin : public QObject, public QgisPlugin
 {
-    struct FeatureHighlightSyncCallback : public osgEarth::Util::FeatureQueryTool::Callback
-    {
-      FeatureHighlightSyncCallback( QgsMapCanvas* mapCanvas )
-          : mRubberBand( mapCanvas, QGis::Polygon )
-      {
-        QColor color( Qt::green );
-        color.setAlpha( 190 );
-
-        mRubberBand.setColor( color );
-      }
-
-      virtual void onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args )
-      {
-        Q_UNUSED( args )
-        FeatureSource* featSource = index->getFeatureSource();
-        const QgsGlobeFeatureSource* globeSource = dynamic_cast<const QgsGlobeFeatureSource*>( featSource );
-
-        if ( globeSource )
-        {
-          QgsFeature feat;
-          QgsVectorLayer* lyr = globeSource->layer();
-
-          lyr->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
-
-          if ( feat.isValid() )
-            mRubberBand.setToGeometry( feat.geometry(), lyr );
-          else
-            mRubberBand.reset( QGis::Polygon );
-        }
-        else
-        {
-          QgsDebugMsg( "Clicked feature was not on a QGIS layer" );
-        }
-      }
-
-      QgsRubberBand mRubberBand;
-    };
-
-    struct MyTerrainCallback : public osg::NodeCallback
-    {
-      MyTerrainCallback( osg::View* view, Terrain* terrain, QgsMapCanvas* mapCanvas )
-          : osg::NodeCallback()
-          , mView( view )
-          , mTerrain( terrain )
-          , mRubberBand( mapCanvas, QGis::Polygon )
-          , mSrs( SpatialReference::create( mapCanvas->mapRenderer()->destinationCrs().toWkt().toStdString() ) )
-      {
-        QColor color( Qt::red );
-        color.setAlpha( 190 );
-
-        mRubberBand.setColor( color );
-      }
-
-      // NodeCallback interface
-    public:
-      virtual void operator()( osg::Node* node, osg::NodeVisitor* nv )
-      {
-        Q_UNUSED( node )
-        Q_UNUSED( nv )
-
-        const osg::Viewport::value_type &width = mView->getCamera()->getViewport()->width();
-        const osg::Viewport::value_type &height = mView->getCamera()->getViewport()->height();
-
-        mTerrain->getWorldCoordsUnderMouse( mView, 0,     0,      mTmpCorners[0] );
-        mTerrain->getWorldCoordsUnderMouse( mView, 0,     height - 1, mTmpCorners[1] );
-        mTerrain->getWorldCoordsUnderMouse( mView, width - 1, height - 1, mTmpCorners[2] );
-        mTerrain->getWorldCoordsUnderMouse( mView, width - 1, 0,      mTmpCorners[3] );
-
-        for ( int i = 0; i < 4; i++ )
-        {
-          if ( mTmpCorners[i] != mCorners[i] )
-          {
-            mRubberBand.reset( QGis::Polygon );
-            for ( int j = 0; j < 4; j++ )
-            {
-              osg::Vec3d localCoords;
-              mCorners[j] = mTmpCorners[j];
-              mSrs->transformFromWorld( mCorners[j], localCoords );
-
-              const QgsPoint&pt = QgsGlobeFeatureUtils::qgsPointFromPoint( localCoords );
-
-              // mRubberBand.addPoint( pt, j == 3 ? true : false );
-              mRubberBand.addPoint( pt );
-            }
-            break;
-          }
-        }
-      }
-
-    private:
-      osg::View* mView;
-      Terrain* mTerrain;
-      osg::Vec3d mCorners[4];
-      osg::Vec3d mTmpCorners[4];
-      QgsRubberBand mRubberBand;
-      SpatialReference* mSrs;
-    };
-
     Q_OBJECT
 
   public:
