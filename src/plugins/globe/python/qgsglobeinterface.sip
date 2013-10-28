@@ -43,6 +43,10 @@ visible on the mapcanvas.
 
     osgEarth::MapNode* mapNode();
 
+    void enableFrustumHighlight( bool status );
+
+    void enableFeatureIdentification( bool status );
+
   private:
     // Instances will only be created from the globe plugin itself
     QgsGlobeInterface();

@@ -26,7 +26,7 @@
 #include "qgsosgearthfeaturesource.h"
 #include "qgsglobestyleutils.h"
 #include "globefeatureidentify.h"
-#include "globefrustumhighlight.h"
+
 #ifdef HAVE_OSGEARTHQT
 #include <osgEarthQt/ViewerWidget>
 #else
@@ -391,11 +391,8 @@ void GlobePlugin::run()
                                );
 #endif
 
-    osgEarth::Util::FeatureQueryTool* featureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() ) );
-
-    featureQueryTool->addCallback( new FeatureHighlightCallback() );
-
-    mOsgViewer->addEventHandler( featureQueryTool );
+    mFeatureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() ) );
+    mFeatureQueryTool->addCallback( new FeatureHighlightCallback() );
   }
   else
   {
@@ -470,13 +467,12 @@ void GlobePlugin::setupMap()
   // Create the frustum highlight callback
   QColor color( Qt::black );
   color.setAlpha( 50 );
+  mFrustumHighlightCallback = new GlobeFrustumHighlightCallback(
+    mOsgViewer
+    , mMapNode->getTerrain()
+    , mQGisIface->mapCanvas()
+    , color );
 
-  mMapNode->getTerrainEngine()->addUpdateCallback(
-    new GlobeFrustumHighlightCallback(
-      mOsgViewer
-      , mMapNode->getTerrain()
-      , mQGisIface->mapCanvas()
-      , color ) );
 
   // model placement utils
 #ifdef HAVE_OSGEARTH_ELEVATION_QUERY
@@ -1248,8 +1244,20 @@ void GlobePlugin::copyFolder( QString sourceFolder, QString destFolder )
   }
 }
 
-void GlobePlugin::updateOutline()
+void GlobePlugin::enableFrustumHighlight( bool status )
 {
+  if ( status )
+    mMapNode->getTerrainEngine()->addUpdateCallback( mFrustumHighlightCallback );
+  else
+    mMapNode->getTerrainEngine()->removeUpdateCallback( mFrustumHighlightCallback );
+}
+
+void GlobePlugin::enableFeatureIdentification( bool status )
+{
+  if ( status )
+    mOsgViewer->addEventHandler( mFeatureQueryTool );
+  else
+    mOsgViewer->removeEventHandler( mFeatureQueryTool );
 }
 
 void GlobePlugin::layerSettingsChanged( QgsMapLayer* layer )

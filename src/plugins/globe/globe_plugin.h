@@ -54,6 +54,8 @@ using namespace osgEarth::Util::Controls;
 #include "qgsosgearthfeaturesource.h"
 #include "qgsvectorlayer.h"
 #include "qgsglobefeatureutils.h"
+#include "globefrustumhighlight.h"
+#include "globefeatureidentify.h"
 
 class QAction;
 class QToolBar;
@@ -129,7 +131,9 @@ class GlobePlugin : public QObject, public QgisPlugin
 
     osgEarth::MapNode* mapNode() { return mMapNode; }
 
-    void updateOutline();
+    void enableFrustumHighlight( bool status );
+
+    void enableFeatureIdentification( bool status );
 
   public slots:
     //! Open the 3D viewer window (if not yet open)
@@ -221,6 +225,12 @@ class GlobePlugin : public QObject, public QgisPlugin
 
   private:
     QgsGlobeInterface mGlobeInterface;
+
+
+
+
+    GlobeFrustumHighlightCallback* mFrustumHighlightCallback;
+    osgEarth::Util::FeatureQueryTool* mFeatureQueryTool;
 };
 
 class FlyToExtentHandler : public osgGA::GUIEventHandler

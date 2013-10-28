@@ -43,3 +43,13 @@ void QgsGlobeInterface::syncExtent()
 {
   mGlobe->syncExtent();
 }
+
+void QgsGlobeInterface::enableFrustumHighlight( bool status )
+{
+  mGlobe->enableFrustumHighlight( status );
+}
+
+void QgsGlobeInterface::enableFeatureIdentification( bool status )
+{
+  mGlobe->enableFeatureIdentification( status );
+}

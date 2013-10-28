@@ -37,7 +37,9 @@ class QgsGlobeInterface : public QgsPluginInterface
 
     void syncExtent();
 
+    void enableFrustumHighlight( bool status );
 
+    void enableFeatureIdentification( bool status );
 
   private:
     GlobePlugin* mGlobe;
