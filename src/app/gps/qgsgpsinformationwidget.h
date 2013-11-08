@@ -52,6 +52,8 @@ class QgsGPSInformationWidget: public QWidget, private Ui::QgsGPSInformationWidg
     void layerEditStateChanged();
 //   void setTrackColor( ); // no longer used
     void on_mBtnTrackColor_clicked( );
+    void on_mBtnMarkerColor_clicked( );
+    void on_mSliderMarkerSize_valueChanged( int theValue );
     void on_mSpinTrackWidth_valueChanged( int theValue );
     void on_mBtnPosition_clicked( );
     void on_mBtnSignal_clicked( );
@@ -99,6 +101,7 @@ class QgsGPSInformationWidget: public QWidget, private Ui::QgsGPSInformationWidg
     QFile * mLogFile;
     QTextStream mLogFileTextStream;
     QColor mTrackColor;
+    QColor mMarkerColor;
 };
 
 #endif // QGSGPSINFORMATIONWIDGET_H

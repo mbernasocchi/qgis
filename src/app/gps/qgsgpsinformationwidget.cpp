@@ -170,6 +170,7 @@ QgsGPSInformationWidget::QgsGPSInformationWidget( QgsMapCanvas * thepCanvas, QWi
   mSliderMarkerSize->setValue( mySettings.value( "/gps/markerSize", "12" ).toInt() );
   mSpinTrackWidth->setValue( mySettings.value( "/gps/trackWidth", "2" ).toInt() );
   mTrackColor = mySettings.value( "/gps/trackColor", QColor( Qt::red ) ).value<QColor>();
+  mMarkerColor = mySettings.value( "/gps/markerColor", QColor( Qt::black ) ).value<QColor>();
   QString myPortMode = mySettings.value( "/gps/portMode", "scanPorts" ).toString();
 
   mSpinMapExtentMultiplier->setValue( mySettings.value( "/gps/mapExtentMultiplier", "50" ).toInt() );
@@ -253,6 +254,7 @@ QgsGPSInformationWidget::~QgsGPSInformationWidget()
   mySettings.setValue( "/gps/lastPort", mCboDevices->itemData( mCboDevices->currentIndex() ).toString() );
   mySettings.setValue( "/gps/trackWidth", mSpinTrackWidth->value() );
   mySettings.setValue( "/gps/trackColor", mTrackColor );
+  mySettings.setValue( "/gps/markerColor", mMarkerColor );
   mySettings.setValue( "/gps/markerSize", mSliderMarkerSize->value() );
   mySettings.setValue( "/gps/showMarker", mGroupShowMarker->isChecked() );
   mySettings.setValue( "/gps/autoAddVertices", mCbxAutoAddVertices->isChecked() );
@@ -320,6 +322,29 @@ void QgsGPSInformationWidget::on_mBtnTrackColor_clicked( )
     {
       mpRubberBand->setColor( myColor );
     }
+  }
+}
+
+void QgsGPSInformationWidget::on_mSliderMarkerSize_valueChanged( int theValue )
+{
+  if ( mpMapMarker )
+  {
+    mpMapMarker->setSize( theValue );
+    mpMapMarker->updatePosition();
+  }
+}
+
+void QgsGPSInformationWidget::on_mBtnMarkerColor_clicked( )
+{
+  QColor myColor = QColorDialog::getColor( mMarkerColor, this );
+  if ( myColor.isValid() )  // check that a color was picked
+  {
+      mMarkerColor = myColor;
+      if ( mpMapMarker )
+      {
+        mpMapMarker->setColor( myColor );
+        mpMapMarker->updatePosition();
+      }
   }
 }
 
@@ -715,7 +740,7 @@ void QgsGPSInformationWidget::displayGPSInformation( const QgsGPSInformation& in
       {
         mpMapMarker = new QgsGpsMarker( mpCanvas );
       }
-      mpMapMarker->setSize( mSliderMarkerSize->value() );
+
       mpMapMarker->setCenter( myNewCenter );
     }
   }
