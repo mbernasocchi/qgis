@@ -19,7 +19,7 @@
 #include "qgsmapcanvasitem.h"
 #include "qgscoordinatereferencesystem.h"
 #include "qgspoint.h"
-#include <QSvgRenderer>
+#include <QColor>
 
 class QPainter;
 
@@ -42,16 +42,19 @@ class QgsGpsMarker : public QgsMapCanvasItem
 
     void setSize( int theSize );
 
+    void setColor( QColor theColor );
+
   protected:
 
     //! coordinates of the point in the center
     QgsPoint mCenter;
     //! Size of the marker - e.g. 8 will draw it as 8x8
     int mSize;
+    //! Color of the marker
+    QColor mColor;
 
   private:
     QgsCoordinateReferenceSystem mWgs84CRS;
-    QSvgRenderer mSvg;
 
 };
 
