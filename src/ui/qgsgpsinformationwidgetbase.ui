@@ -247,7 +247,7 @@ gray = no data
    <item row="4" column="0">
     <widget class="QStackedWidget" name="mStackedWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="stackedWidgetPage1">
       <layout class="QGridLayout" name="gridLayout_11">
@@ -653,10 +653,10 @@ gray = no data
          <widget class="QWidget" name="scrollAreaWidgetContents">
           <property name="geometry">
            <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>287</width>
-            <height>638</height>
+            <x>-98</x>
+            <y>-129</y>
+            <width>291</width>
+            <height>648</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_7">
@@ -1007,6 +1007,13 @@ gray = no data
                 </property>
                </widget>
               </item>
+              <item row="3" column="0">
+               <widget class="QRadioButton" name="radNeverRecenter">
+                <property name="text">
+                 <string>never</string>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="0">
                <layout class="QHBoxLayout" name="horizontalLayout">
                 <property name="leftMargin">
@@ -1042,13 +1049,6 @@ gray = no data
                 </item>
                </layout>
               </item>
-              <item row="3" column="0">
-               <widget class="QRadioButton" name="radNeverRecenter">
-                <property name="text">
-                 <string>never</string>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="0">
                <widget class="QRadioButton" name="radRecenterMap">
                 <property name="text">
@@ -1080,75 +1080,94 @@ gray = no data
               <property name="verticalSpacing">
                <number>2</number>
               </property>
-              <item row="0" column="0" colspan="3">
-               <widget class="QSlider" name="mSliderMarkerSize">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimum">
-                 <number>8</number>
-                </property>
-                <property name="maximum">
-                 <number>128</number>
-                </property>
-                <property name="singleStep">
-                 <number>4</number>
-                </property>
-                <property name="pageStep">
-                 <number>8</number>
-                </property>
-                <property name="sliderPosition">
-                 <number>10</number>
-                </property>
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="tickPosition">
-                 <enum>QSlider::TicksBelow</enum>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="0">
-               <widget class="QLabel" name="label">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Small</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <spacer name="horizontalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>10</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="1" column="2">
-               <widget class="QLabel" name="label_2">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Large</string>
-                </property>
-               </widget>
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
+                <item>
+                 <layout class="QVBoxLayout" name="verticalLayout_2">
+                  <item>
+                   <widget class="QSlider" name="mSliderMarkerSize">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="minimum">
+                     <number>8</number>
+                    </property>
+                    <property name="maximum">
+                     <number>128</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>4</number>
+                    </property>
+                    <property name="pageStep">
+                     <number>8</number>
+                    </property>
+                    <property name="sliderPosition">
+                     <number>10</number>
+                    </property>
+                    <property name="orientation">
+                     <enum>Qt::Horizontal</enum>
+                    </property>
+                    <property name="tickPosition">
+                     <enum>QSlider::TicksBelow</enum>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <layout class="QHBoxLayout" name="horizontalLayout_9">
+                    <item>
+                     <widget class="QLabel" name="label">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="text">
+                       <string>Small</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="horizontalSpacer_2">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>20</width>
+                        <height>10</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="label_2">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="text">
+                       <string>Large</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="mBtnMarkerColor">
+                  <property name="text">
+                   <string>Color</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </item>
              </layout>
             </widget>
@@ -1217,7 +1236,6 @@ gray = no data
   <tabstop>mSpinTrackWidth</tabstop>
   <tabstop>mBtnTrackColor</tabstop>
   <tabstop>mGroupShowMarker</tabstop>
-  <tabstop>mSliderMarkerSize</tabstop>
   <tabstop>radRecenterMap</tabstop>
   <tabstop>radRecenterWhenNeeded</tabstop>
   <tabstop>mSpinMapExtentMultiplier</tabstop>
