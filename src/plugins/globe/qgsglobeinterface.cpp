@@ -34,6 +34,11 @@ osgViewer::Viewer* QgsGlobeInterface::osgViewer()
   return mGlobe->osgViewer();
 }
 
+MapNode* QgsGlobeInterface::mapNode()
+{
+  return mGlobe->mapNode();
+}
+
 void QgsGlobeInterface::syncExtent()
 {
   mGlobe->syncExtent();

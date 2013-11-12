@@ -20,6 +20,8 @@
 
 #include <osgViewer/Viewer>
 
+#include <osgEarth/MapNode>
+
 class GlobePlugin;
 
 class QgsGlobeInterface : public QgsPluginInterface
@@ -31,7 +33,11 @@ class QgsGlobeInterface : public QgsPluginInterface
 
     osgViewer::Viewer* osgViewer();
 
+    osgEarth::MapNode* mapNode();
+
     void syncExtent();
+
+
 
   private:
     GlobePlugin* mGlobe;

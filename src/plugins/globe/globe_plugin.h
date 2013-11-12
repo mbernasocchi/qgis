@@ -121,6 +121,7 @@ class GlobePlugin : public QObject, public QgisPlugin
     //! Recursive copy folder
     static void copyFolder( QString sourceFolder, QString destFolder );
 
+    osgEarth::MapNode* mapNode() { return mMapNode; }
   public slots:
     //! Open the 3D viewer window (if not yet open)
     void run();
