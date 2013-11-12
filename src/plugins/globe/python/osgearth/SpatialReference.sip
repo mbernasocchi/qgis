@@ -17,6 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+namespace osgEarth
+{
+
     /** 
      * SpatialReference holds information describing the reference ellipsoid/datum
      * and the projection of geospatial data.
@@ -51,7 +54,7 @@
          *      If true, the SpatialReference object is responsible for releasing the handle
          *      upon destruction.
          */
-        static SpatialReference* createFromHandle( void* ogrHandle, bool xferOwnership =false );
+        static osgEarth::SpatialReference* createFromHandle( void* ogrHandle, bool xferOwnership =false );
 
 
     public: // Basic transformations.
@@ -63,7 +66,7 @@
 /*
         virtual bool transform(
             const Vec3d&       input,
-            const SpatialReference* outputSRS,
+            const osgEarth::SpatialReference* outputSRS,
             Vec3d&             output) const;
 */
         /**
@@ -73,7 +76,7 @@
 /*
         virtual bool transform(
             std::vector<Vec3d>& input,
-            const SpatialReference*  outputSRS ) const;
+            const osgEarth::SpatialReference*  outputSRS ) const;
 /*
 
         /**
@@ -82,7 +85,7 @@
         bool transform2D(
             double                  x,
             double                  y,
-            const SpatialReference* outputSRS,
+            const osgEarth::SpatialReference* outputSRS,
             double&                 out_x,
             double&                 out_y ) const;
 
@@ -97,7 +100,7 @@
          */
         double transformUnits(
             double                  distance,
-            const SpatialReference* outputSRS ) const;
+            const osgEarth::SpatialReference* outputSRS ) const;
 
 
     public: // World transformations.
@@ -136,14 +139,14 @@
          * the source extent.
          */
         virtual bool transformExtentToMBR(
-            const SpatialReference* to_srs,
+            const osgEarth::SpatialReference* to_srs,
             double&                 in_out_xmin,
             double&                 in_out_ymin,
             double&                 in_out_xmax,
             double&                 in_out_ymax ) const;
 
         virtual bool transformExtentPoints(
-            const SpatialReference* to_srs,
+            const osgEarth::SpatialReference* to_srs,
             double in_xmin, double in_ymin,
             double in_xmax, double in_ymax,
             double* x, double* y,
@@ -232,24 +235,24 @@
         const Units& getUnits() const;
 */
         /** Whether the two SRS are completely equivalent. */
-        virtual bool isEquivalentTo( const SpatialReference* rhs ) const;
+        virtual bool isEquivalentTo( const osgEarth::SpatialReference* rhs ) const;
 
         /** Whether the two SRS are horizonally equivalent (ignoring the vertical datums) */
-        bool isHorizEquivalentTo( const SpatialReference* rhs ) const;
+        bool isHorizEquivalentTo( const osgEarth::SpatialReference* rhs ) const;
 
         /** Whether this SRS has the same vertical datum as another. */
-        bool isVertEquivalentTo( const SpatialReference* rhs ) const;
+        bool isVertEquivalentTo( const osgEarth::SpatialReference* rhs ) const;
 
         /** Gets a reference to this SRS's underlying geographic SRS. */
-        const SpatialReference* getGeographicSRS() const;
+        const osgEarth::SpatialReference* getGeographicSRS() const;
 
         /** Gets a reference to this SRS's underlying geodetic SRS. This is the same as the
             geographic SRS [see getGeographicSRS()] but with a geodetic vertical datum (in
             which Z is expressed as height above the geodetic ellipsoid). */
-        const SpatialReference* getGeodeticSRS() const;
+        const osgEarth::SpatialReference* getGeodeticSRS() const;
 
         /** Gets the ECEF reference system associated with this SRS' ellipsoid. */
-        const SpatialReference* getECEF() const;
+        const osgEarth::SpatialReference* getECEF() const;
 
         /** Gets the vertical datum. If null, this SRS uses a default geodetic vertical datum */
 /*
@@ -266,22 +269,22 @@
         /** Creates and returns a local trangent plane SRS at the given reference location.
             The reference location is expressed in this object's SRS, but it tangent to
             the globe at getGeographicSRS(). LTP units are in meters. */
-        const SpatialReference* createTangentPlaneSRS( const Vec3d& refPos ) const;
+        const osgEarth::SpatialReference* createTangentPlaneSRS( const Vec3d& refPos ) const;
 
         /** Creates a transverse mercator projection centered at the specified longitude. */
 /*
-        const SpatialReference* createTransMercFromLongitude( const Angular& lon ) const;
+        const osgEarth::SpatialReference* createTransMercFromLongitude( const Angular& lon ) const;
 */
         /** Creates a UTM (universal transverse mercator) projection in the UTM zone
             containing the specified longitude. NOTE: this is slightly faster than using
             basic tmerc (transverse mercator) above. */
 /*
-        const SpatialReference* createUTMFromLonLat( const Angle& lon, const Angle& lat ) const;
+        const osgEarth::SpatialReference* createUTMFromLonLat( const Angle& lon, const Angle& lat ) const;
 */
         /** Creates a copy of this SRS, but flags the new SRS so that it will operate in
             Plate Carre mode for the purposes of world coordinate conversion. The SRS is
             otherwise mathematically equivalent to its vanilla counterpart. */
-        const SpatialReference* createPlateCarreGeographicSRS() const;
+        const osgEarth::SpatialReference* createPlateCarreGeographicSRS() const;
 
         /** Creates a new CSN based on this spatial reference. */
 /*
@@ -314,9 +317,9 @@
     protected:
 
 /*
-        SpatialReference( void* handle, const std::string& type );
+       osgEarth:: SpatialReference( void* handle, const std::string& type );
 */
         SpatialReference( void* handle, bool ownsHandle =true );
         void init();
     };
-
+};

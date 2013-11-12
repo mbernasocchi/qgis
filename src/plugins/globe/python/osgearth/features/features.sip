@@ -2,6 +2,6 @@
         version=0,
         keyword_arguments="Optional")
 
-%Import ../osgearth.sip
+%Import osgearth/osgearth.sip
 
 %Include Feature.sip

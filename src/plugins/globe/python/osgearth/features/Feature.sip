@@ -34,7 +34,7 @@ using namespace osgEarth::Features;
         const GeoExtent& getExtent() const;
 
         /** Gets the spatial reference system of feature shapes in this class. */
-        const SpatialReference* getSRS() const;
+        const osgEarth::SpatialReference* getSRS() const;
 
         bool getTiled() const;
         void setTiled(bool tiled);
@@ -116,7 +116,7 @@ using namespace osgEarth::Features;
 %End
     public:
 /*
-        Feature( Geometry* geom, const SpatialReference* srs, const Style& style =Style(), FeatureID fid =0 );
+        Feature( Geometry* geom, const osgEarth::SpatialReference* srs, const Style& style =Style(), FeatureID fid =0 );
 */
         /** Copy contructor */
 /*
@@ -142,14 +142,14 @@ using namespace osgEarth::Features;
         /**
          * The spatial reference of the geometry in this feature.
          */
-        const SpatialReference* getSRS() const;
-        void setSRS( const SpatialReference* srs );
+        const osgEarth::SpatialReference* getSRS() const;
+        void setSRS( const osgEarth::SpatialReference* srs );
 
         /**
          * Computes the bound of this feature in the specified SRS.
          */
 /*
-        bool getWorldBound( const SpatialReference* srs, osg::BoundingSphered& out_bound ) const;
+        bool getWorldBound( const osgEarth::SpatialReference* srs, osg::BoundingSphered& out_bound ) const;
 */
         /**
          * Gets a polytope, in world coordinates (proj or ECEF) that bounds the
@@ -157,7 +157,7 @@ using namespace osgEarth::Features;
          * intersecting the feature with the terrain graph.
          */
 /*
-        bool getWorldBoundingPolytope( const SpatialReference* srs, osg::Polytope& out_polytope ) const;
+        bool getWorldBoundingPolytope( const osgEarth::SpatialReference* srs, osg::Polytope& out_polytope ) const;
 */
 
 /*
@@ -218,9 +218,9 @@ using namespace osgEarth::Features;
 
     public:
         /**
-         * Transforms this Feature to the given SpatialReference
+         * Transforms this Feature to the given osgEarth::SpatialReference
          */
-        void transform( const SpatialReference* srs );
+        void transform( const osgEarth::SpatialReference* srs );
 
     protected:
         Feature( FeatureID fid =0 );

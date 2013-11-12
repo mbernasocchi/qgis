@@ -32,7 +32,7 @@ using namespace osg;
          * Constructs a GeoPoint.
          */
         GeoPoint(
-            const SpatialReference* srs,
+            const osgEarth::SpatialReference* srs,
             double x,
             double y,
             double z,
@@ -44,7 +44,7 @@ using namespace osg;
          * above the terrain).
          */
         GeoPoint(
-            const SpatialReference* srs,
+            const osgEarth::SpatialReference* srs,
             double x,
             double y );
 
@@ -52,7 +52,7 @@ using namespace osg;
          * Constructs a GeoPoint from a vec3.
          */
         GeoPoint(
-            const SpatialReference* srs,
+            const osgEarth::SpatialReference* srs,
             const Vec3d&       xyz,
             const AltitudeMode&     mode );
 
@@ -61,7 +61,7 @@ using namespace osg;
          * the specified spatial reference.
          */
         GeoPoint(
-            const SpatialReference* srs,
+            const osgEarth::SpatialReference* srs,
             const GeoPoint&         rhs );
 
         /**
@@ -77,7 +77,7 @@ using namespace osg;
         /**
          * Constructs a geopoint from serialization
          */
-        GeoPoint( const Config& conf, const SpatialReference* srs =0 );
+        GeoPoint( const osgEarth::Config& conf, const osgEarth::SpatialReference* srs =0 );
 
         /** dtor */
         virtual ~GeoPoint();
@@ -86,12 +86,12 @@ using namespace osg;
          * Sets the SRS and coords
          */
         void set(
-            const SpatialReference* srs,
+            const osgEarth::SpatialReference* srs,
             const Vec3d&       xyz,
             const AltitudeMode&     mode );
 
         void set(
-            const SpatialReference* srs,
+            const osgEarth::SpatialReference* srs,
             double                  x,
             double                  y,
             double                  z,
@@ -109,40 +109,40 @@ using namespace osg;
 
         const Vec3d& vec3d() const;
 
-        const SpatialReference* getSRS() const;
+        const osgEarth::SpatialReference* getSRS() const;
 
         const AltitudeMode& altitudeMode() const;
 
         /**
          * Returns a copy of this geopoint transformed into another SRS.
          */
-        GeoPoint transform(const SpatialReference* outSRS) const;
+        GeoPoint transform(const osgEarth::SpatialReference* outSRS) const;
 
         /**
          * Transforms this geopoint into another SRS.
          */
-        bool transform(const SpatialReference* outSRS, GeoPoint& output) const;
+        bool transform(const osgEarth::SpatialReference* outSRS, GeoPoint& output) const;
 
         /**
          * Transforms this geopoint's Z coordinate (in place)
          */
-        bool transformZ(const AltitudeMode& altMode, const TerrainHeightProvider* t );
+        bool transformZ(const AltitudeMode& altMode, const osgEarth::TerrainHeightProvider* t );
 
         /**
          * Transforms and returns the geopoints Z coordinate.
          */
 /*
-        bool transformZ(const AltitudeMode& altMode, const TerrainHeightProvider* t, double& out_z) const;
+        bool transformZ(const AltitudeMode& altMode, const osgEarth::TerrainHeightProvider* t, double& out_z) const;
 */
         /**
          * Transforms this geopoint's Z to be absolute w.r.t. the vertical datum
          */
-        bool makeAbsolute(const TerrainHeightProvider* t);
+        bool makeAbsolute(const osgEarth::TerrainHeightProvider* t);
 
         /**
          * Transforms this geopoint's Z to be terrain-relative.
          */
-        bool makeRelative(const TerrainHeightProvider* t);
+        bool makeRelative(const osgEarth::TerrainHeightProvider* t);
 
         /**
          * Transforms this GeoPoint to geographic (lat/long) coords in place.
@@ -162,12 +162,12 @@ using namespace osg;
          * object that will be used if the point needs to be converted to absolute
          * altitude
          */
-        bool toWorld( Vec3d& out_world, const TerrainHeightProvider* terrain ) const;
+        bool toWorld( Vec3d& out_world, const osgEarth::TerrainHeightProvider* terrain ) const;
 
         /**
          * Converts world coordinates into a geopoint
          */
-        bool fromWorld(const SpatialReference* srs, const Vec3d& world);
+        bool fromWorld(const osgEarth::SpatialReference* srs, const Vec3d& world);
 
         /**
          * geopoint into absolute world coords.
@@ -187,7 +187,7 @@ using namespace osg;
         bool operator != (const GeoPoint& rhs) const;
         bool isValid() const;
 
-        Config getConfig() const;
+        osgEarth::Config getConfig() const;
 
     public:
         static GeoPoint INVALID;
@@ -226,7 +226,7 @@ using namespace osgEarth;
         void setRadius( double value );
 
         /** SRS of the center point */
-        const SpatialReference* getSRS() const;
+        const osgEarth::SpatialReference* getSRS() const;
 
         /** equality test */
         bool operator == ( const GeoCircle& rhs ) const;
@@ -238,10 +238,10 @@ using namespace osgEarth;
         bool isValid() const;
 
         /** transform the GeoCircle to another SRS */
-        GeoCircle transform( const SpatialReference* srs ) const;
+        GeoCircle transform( const osgEarth::SpatialReference* srs ) const;
 
         /** transform the GeoCircle to another SRS */
-        bool transform( const SpatialReference* srs, GeoCircle& out_circle ) const;
+        bool transform( const osgEarth::SpatialReference* srs, GeoCircle& out_circle ) const;
 
         /** does this GeoCircle intersect another? */
         bool intersects( const GeoCircle& rhs ) const;
@@ -268,18 +268,18 @@ using namespace osgEarth;
 
         /** Contructs a valid extent */
         GeoExtent(
-            const SpatialReference* srs,
+            const osgEarth::SpatialReference* srs,
             double west, double south,
             double east, double north );
 
         /** Contructs an invalid extent that you can grow with the expandToInclude method */
-        GeoExtent( const SpatialReference* srs );
+        GeoExtent( const osgEarth::SpatialReference* srs );
 
         /** Copy ctor */
         GeoExtent( const GeoExtent& rhs );
 
         /** create from Bounds object */
-        GeoExtent( const SpatialReference* srs, const Bounds& bounds );
+        GeoExtent( const osgEarth::SpatialReference* srs, const Bounds& bounds );
 
         /** dtor */
         virtual ~GeoExtent();
@@ -288,7 +288,7 @@ using namespace osgEarth;
         bool operator != ( const GeoExtent& rhs ) const;
 
         /** Gets the spatial reference system underlying this extent. */
-        const SpatialReference* getSRS() const;
+        const osgEarth::SpatialReference* getSRS() const;
 
         double west() const;
         double east() const;
@@ -343,13 +343,13 @@ using namespace osgEarth;
          * globe.) Consider using Profile:clampAndTransformExtent() instead of using
          * this method directly.
          */
-        GeoExtent transform( const SpatialReference* to_srs ) const;
+        GeoExtent transform( const osgEarth::SpatialReference* to_srs ) const;
 
         /**
          * Same as transform(srs) but puts the result in the output extent
          */
 /*
-        bool transform( const SpatialReference* to_srs, GeoExtent& output ) const;
+        bool transform( const osgEarth::SpatialReference* to_srs, GeoExtent& output ) const;
 */
         /**
          * Returns true if the specified point falls within the bounds of the extent.
@@ -360,9 +360,9 @@ using namespace osgEarth;
          *      SRS of input x and y coordinates; if null, the method assumes x and y
          *      are in the same SRS as this object.
          */
-        bool contains(double x, double y, const SpatialReference* srs =0) const;
+        bool contains(double x, double y, const osgEarth::SpatialReference* srs =0) const;
 
-        bool contains(const Vec3d& xy, const SpatialReference* srs =0) const;
+        bool contains(const Vec3d& xy, const osgEarth::SpatialReference* srs =0) const;
 
         /**
          * Returns true if the point falls within this extent.

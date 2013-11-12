@@ -41,6 +41,7 @@ Synchronize the extent currently visible on the globe with the extent currently
 visible on the mapcanvas.
 %End
 
+    osgEarth::MapNode* mapNode();
 
   private:
     // Instances will only be created from the globe plugin itself

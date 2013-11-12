@@ -5,6 +5,8 @@
 %Include Camera.sip
 %Include Node.sip
 %Include Object.sip
+%Include Group.sip
+%Include stdstring.sip
 %Include Vec2f.sip
 %Include Vec2d.sip
 %Include Vec3f.sip
