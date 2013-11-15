@@ -105,8 +105,8 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     , mQActionSettingsPointer( NULL )
     , mOsgViewer( 0 )
     , mViewerWidget( 0 )
-    , mBaseLayer( 0 )
     , mDockWidget( 0 )
+    , mBaseLayer( 0 )
     , mQgisMapLayer( 0 )
     , mTileSource( 0 )
     , mElevationManager( NULL )
@@ -1121,7 +1121,7 @@ void GlobePlugin::setBaseMap( QString url )
   }
 }
 
-void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbience )
+void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbient )
 {
   if ( mRootNode )
   {

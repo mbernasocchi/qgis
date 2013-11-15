@@ -642,11 +642,11 @@ void QgsGlobePluginDialog::saveMapSettings()
   // Let globe update the current view
   if ( mBaseLayerGroupBox->isChecked() )
   {
-    mGlobe->setBaseMap( mBaseLayerURL->text() );
+    mGlobeIface->setBaseMap( mBaseLayerURL->text() );
   }
   else
   {
-    mGlobe->setBaseMap( QString::null );
+    mGlobeIface->setBaseMap( QString::null );
   }
 
   settings.setValue( "/Plugin-Globe/skyEnabled", mSkyGroupBox->isChecked() );
@@ -654,7 +654,7 @@ void QgsGlobePluginDialog::saveMapSettings()
   settings.setValue( "/Plugin-Globe/skyDateTime", mSkyDateTime->dateTime() );
 
   // Adjust sky of a running globe viewer
-  mGlobe->setSkyParameters( mSkyGroupBox->isChecked(), mSkyDateTime->dateTime(), mSkyAutoAmbient->isChecked() );
+  mGlobeIface->setSkyParameters( mSkyGroupBox->isChecked(), mSkyDateTime->dateTime(), mSkyAutoAmbient->isChecked() );
 }
 
 float QgsGlobePluginDialog::scrollSensitivity()

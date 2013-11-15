@@ -93,7 +93,7 @@ class GlobePlugin : public QObject, public QgisPlugin
     //! Set a different base map (QString::NULL will disable the base map)
     void setBaseMap( QString url );
     //! Called when the extents of the map change
-    void setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbience );
+    void setSkyParameters(bool enabled, const QDateTime& dateTime, bool autoAmbient );
     //! Called when the extents of the map change
     void extentsChanged();
     //! Sync globe extent to mapCanavas

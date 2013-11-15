@@ -53,3 +53,13 @@ void QgsGlobeInterface::enableFeatureIdentification( bool status )
 {
   mGlobe->enableFeatureIdentification( status );
 }
+
+void QgsGlobeInterface::setBaseMap( QString url )
+{
+  mGlobe->setBaseMap( url );
+}
+
+void QgsGlobeInterface::setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbient )
+{
+  mGlobe->setSkyParameters( enabled, dateTime, autoAmbient );
+}

@@ -24,6 +24,8 @@
 
 class GlobePlugin;
 
+class QDateTime;
+
 class QgsGlobeInterface : public QgsPluginInterface
 {
     Q_OBJECT
@@ -40,6 +42,10 @@ class QgsGlobeInterface : public QgsPluginInterface
     void enableFrustumHighlight( bool status );
 
     void enableFeatureIdentification( bool status );
+
+    void setBaseMap( QString url );
+
+    void setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbient );
 
   private:
     GlobePlugin* mGlobe;
