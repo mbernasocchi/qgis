@@ -397,6 +397,8 @@ void GlobePlugin::run()
       osgEarth::Util::Viewpoint( osg::Vec3d( -90, 0, 0 ), 0.0, -90.0, 2e7 ),
       1.0 );
 
+    manip->home( 0 );
+
     // add our handlers
     mOsgViewer->addEventHandler( new FlyToExtentHandler( this ) );
     mOsgViewer->addEventHandler( new KeyboardControlHandler( manip ) );
@@ -631,7 +633,6 @@ void GlobePlugin::setupControls()
     settings->bindScroll( osgEarth::Util::EarthManipulator::ACTION_ZOOM_OUT, osgGA::GUIEventAdapter::SCROLL_DOWN );
   }
   manip->applySettings( settings );
-
 
   osg::Image* yawPitchWheelImg = osgDB::readImageFile( imgDir + "/YawPitchWheel.png" );
   ImageControl* yawPitchWheel = new ImageControl( yawPitchWheelImg );
