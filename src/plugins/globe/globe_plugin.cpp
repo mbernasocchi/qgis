@@ -1122,7 +1122,7 @@ void GlobePlugin::setBaseMap( QString url )
   }
 }
 
-void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbient )
+void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbience )
 {
   if ( mRootNode )
   {

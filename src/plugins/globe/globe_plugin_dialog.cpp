@@ -36,10 +36,6 @@
 #include <QNetworkReply>
 
 #include <osg/DisplaySettings>
-// will be available for osgEarth 2.5
-#if 0
-#include <osgEarthUtil/VerticalScale>
-#endif
 
 //constructor
 QgsGlobePluginDialog::QgsGlobePluginDialog( QgsGlobeInterface* globeIface , QWidget* parent, Qt::WFlags fl )
@@ -61,6 +57,10 @@ QgsGlobePluginDialog::QgsGlobePluginDialog( QgsGlobeInterface* globeIface , QWid
   updateStereoDialog(); //update the dialog gui
   loadVideoSettings();
   loadMapSettings();
+
+#if OSGEARTH_VERSION_LESS_THAN( 2, 5, 0 )
+  mTxtVerticalScale->setVisible( false );
+#endif
 
   elevationPath->setText( QDir::homePath() );
 }
@@ -242,16 +242,16 @@ void QgsGlobePluginDialog::on_mBaseLayerComboBox_currentIndexChanged( int index 
   }
 }
 
+#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
 void QgsGlobePluginDialog::on_mTxtVerticalScale_changed( double value )
 {
   using namespace osgEarth::Util;
   // will be available from osgEarth 2.5
-#if 0
   VerticalScale* scale = new VerticalScale();
   scale->setScale( value );
   mGlobeIface->mapNode()->getTerrainEngine()->addEffect( scale );
-#endif
 }
+#endif
 
 void QgsGlobePluginDialog::moveRow( QTableWidget* widget, bool up )
 {
