@@ -33,7 +33,7 @@ class QgsGlobeInterface : QgsPluginInterface
 
 
   public:
-    osgViewer::Viewer* osgViewer();
+//    osgViewer::Viewer* osgViewer();
 
     void syncExtent();
 %Docstring
@@ -41,7 +41,7 @@ Synchronize the extent currently visible on the globe with the extent currently
 visible on the mapcanvas.
 %End
 
-    osgEarth::MapNode* mapNode();
+//    osgEarth::MapNode* mapNode();
 
     void enableFrustumHighlight( bool status );
 

@@ -22,11 +22,13 @@
 
 #include <osgEarth/MapNode>
 
+#include <qglobal.h>
+
 class GlobePlugin;
 
 class QDateTime;
 
-class QgsGlobeInterface : public QgsPluginInterface
+class GLOBE_EXPORT QgsGlobeInterface : public QgsPluginInterface
 {
     Q_OBJECT
 

@@ -20,7 +20,7 @@
 
 #include "qgsvectorlayerpropertiespage.h"
 
-class QgsMapLayerPropertiesFactory
+class GUI_EXPORT QgsMapLayerPropertiesFactory
 {
   public:
     QgsMapLayerPropertiesFactory();

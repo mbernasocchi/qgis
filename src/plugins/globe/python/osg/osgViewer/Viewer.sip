@@ -25,14 +25,7 @@ class Viewer : osgViewer::View
 
 //        Viewer(const osgViewer::Viewer& viewer, const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
 
-        void setCameraWithFocus(Camera* camera);
-%Docstring
-Set the specified camera for this viewer.
-
-@param camera   The camera to set
-%End
-
-        Camera* getCameraWithFocus();
+//        Camera* getCameraWithFocus();
 
         virtual ~Viewer();
 

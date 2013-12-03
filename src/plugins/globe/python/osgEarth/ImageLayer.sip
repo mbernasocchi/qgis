@@ -114,21 +114,21 @@ namespace osgEarth
      * Internal utility class for post-processing image tiles that come from
      * a TileSource
      */
-    class ImageLayerTileProcessor
-    {
-%TypeHeaderCode
-#include<osgEarth/ImageLayer>
-%End
-    public:
-        ImageLayerTileProcessor( const osgEarth::ImageLayerOptions& options =osgEarth::ImageLayerOptions() );
-
-        /** dtor */
-        virtual ~ImageLayerTileProcessor();
-
+//    class ImageLayerTileProcessor
+//    {
+//%TypeHeaderCode
+//#include<osgEarth/ImageLayer>
+//%End
+//    public:
+//        ImageLayerTileProcessor( const osgEarth::ImageLayerOptions& options =osgEarth::ImageLayerOptions() );
+//
+//        /** dtor */
+//        virtual ~ImageLayerTileProcessor();
+//
 //        void init( const osgEarth::ImageLayerOptions& options, const osgDB::Options* dbOptions, bool layerInTargetProfile );
-
+//
 //        void process( osg::ref_ptr<osg::Image>& image ) const;
-    };
+//    };
 
     //--------------------------------------------------------------------
 

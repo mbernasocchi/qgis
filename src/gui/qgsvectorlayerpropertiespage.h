@@ -20,7 +20,7 @@
 
 class QgsVectorLayer;
 
-class QgsVectorLayerPropertiesPage : public QWidget
+class GUI_EXPORT QgsVectorLayerPropertiesPage : public QWidget
 {
     Q_OBJECT
   public:

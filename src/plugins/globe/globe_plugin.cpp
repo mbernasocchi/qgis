@@ -1604,7 +1604,7 @@ QGISEXTERN void unload( QgisPlugin * thePluginPointer )
   delete thePluginPointer;
 }
 
-QGISEXTERN QgsPluginInterface* GlobePlugin::pluginInterface()
+QgsPluginInterface* GlobePlugin::pluginInterface()
 {
   return &mGlobeInterface;
 }

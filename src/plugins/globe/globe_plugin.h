@@ -67,7 +67,7 @@ using namespace osgEarth::Features;
 namespace osgEarth { namespace QtGui { class ViewerWidget; } }
 namespace osgEarth { namespace Util { class SkyNode; } }
 
-class GlobePlugin : public QObject, public QgisPlugin
+class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 {
     Q_OBJECT
 

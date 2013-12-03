@@ -35,7 +35,7 @@ if "%OSGEO4W_ROOT%"=="" (
 	)
 )
 
-if not exist "%BUILDDIR%" mkdir %BUILDDIR%
+if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
 if not exist "%BUILDDIR%" (echo "could not create build directory %BUILDDIR%" & goto error)
 
 if not exist "%OSGEO4W_ROOT%\bin\o4w_env.bat" (echo "o4w_env.bat not found" & goto error)
@@ -82,7 +82,7 @@ set CMAKE_OPT=^
 
 :devenv
 set PYTHONPATH=
-path %PF86%\CMake 2.8\bin;%PATH%;c:\cygwin\bin
+path %PF86%\CMake 2.8\bin;%PATH%;c:\cygwin\bin;C:\Progra~2\GnuWin32\bin
 if "%DEVENV%"=="" (echo "DEVENV not found" & goto error)
 
 PROMPT qgis%VERSION%$g 
@@ -123,14 +123,14 @@ goto error
 
 :build
 echo Logging to %LOG%
-echo BEGIN: %DATE% %TIME%>>%LOG% 2>&1
+echo BEGIN: %DATE% %TIME%>>"%LOG%" 2>&1
 if errorlevel 1 (echo "could not write to log %LOG%" & goto error)
 
 set >buildenv.log
 
 if exist CMakeCache.txt goto skipcmake
 
-echo CMAKE: %DATE% %TIME%>>%LOG% 2>&1
+echo CMAKE: %DATE% %TIME%>>"%LOG%" 2>&1
 if errorlevel 1 goto error
 
 set LIB=%LIB%;%OSGEO4W_ROOT%\lib
@@ -146,7 +146,7 @@ cmake %CMAKE_OPT% ^
 	-D WITH_ASTYLE=TRUE ^
 	-D WITH_GLOBE=TRUE ^
 	-D WITH_TOUCH=TRUE ^
-	-D WITH_ORACLE=TRUE ^
+	-D WITH_ORACLE=FALSE ^
 	-D WITH_GRASS=TRUE ^
 	-D CMAKE_BUILD_TYPE=%BUILDCONF% ^
 	-D CMAKE_CONFIGURATION_TYPES=%BUILDCONF% ^
@@ -164,42 +164,44 @@ cmake %CMAKE_OPT% ^
 	-D CMAKE_INSTALL_PREFIX=%O4W_ROOT%/apps/%PACKAGENAME% ^
 	-D FCGI_INCLUDE_DIR=%O4W_ROOT%/include ^
 	-D FCGI_LIBRARY=%O4W_ROOT%/lib/libfcgi.lib ^
-	%SRCDIR%>>%LOG% 2>&1
+    -D BISON_EXECUTABLE=C:/Progra~2/GnuWin32/bin/bison.exe ^
+    -D FLEX_EXECUTABLE=C:/Progra~2/GnuWin32/bin/flex.exe ^
+	"%SRCDIR%">>"%LOG%" 2>&1
 if errorlevel 1 (echo "cmake failed" & goto error)
 
 REM bail out if python or grass was not found
-grep -Eq "^(Python not being built|Could not find GRASS)" %LOG%
+grep -Eq "^(Python not being built|Could not find GRASS)" "%LOG%"
 if not errorlevel 1 (echo "python or grass not found" & goto error)
 
 :skipcmake
 
-echo ZERO_CHECK: %DATE% %TIME%>>%LOG% 2>&1
-%DEVENV% qgis%VERSION%.sln /Project ZERO_CHECK /Build %BUILDCONF% /Out %LOG%>>%LOG% 2>&1
+echo ZERO_CHECK: %DATE% %TIME%>>"%LOG%" 2>&1
+%DEVENV% qgis%VERSION%.sln /Project ZERO_CHECK /Build %BUILDCONF% /Out "%LOG%">>"%LOG%" 2>&1
 if errorlevel 1 (echo "ZERO_CHECK failed" & goto error)
 
-echo ALL_BUILD: %DATE% %TIME%>>%LOG% 2>&1
-%DEVENV% qgis%VERSION%.sln /Project ALL_BUILD /Build %BUILDCONF% /Out %LOG%>>%LOG% 2>&1
+echo ALL_BUILD: %DATE% %TIME%>>"%LOG%" 2>&1
+%DEVENV% qgis%VERSION%.sln /Project ALL_BUILD /Build %BUILDCONF% /Out "%LOG%">>"%LOG%" 2>&1
 if errorlevel 1 (echo "ALL_BUILD failed" & goto error)
 
 if not exist ..\skiptests (
-	echo RUN_TESTS: %DATE% %TIME%>>%LOG% 2>&1
-	%DEVENV% qgis%VERSION%.sln /Project Nightly /Build %BUILDCONF% /Out %LOG%>>%LOG% 2>&1
+	echo RUN_TESTS: %DATE% %TIME%>>"%LOG%" 2>&1
+	%DEVENV% qgis%VERSION%.sln /Project Nightly /Build %BUILDCONF% /Out "%LOG%">>"%LOG%" 2>&1
 	if errorlevel 1 echo "TESTS WERE NOT SUCCESSFUL."
 )
 
 set PKGDIR=%OSGEO4W_ROOT%\apps\%PACKAGENAME%
 
 if exist %PKGDIR% (
-	echo REMOVE: %DATE% %TIME%>>%LOG% 2>&1
+	echo REMOVE: %DATE% %TIME%>>"%LOG%" 2>&1
 	rmdir /s /q %PKGDIR%
 )
 
-echo INSTALL: %DATE% %TIME%>>%LOG% 2>&1
-%DEVENV% qgis%VERSION%.sln /Project INSTALL /Build %BUILDCONF% /Out %LOG%>>%LOG% 2>&1
+echo INSTALL: %DATE% %TIME%>>"%LOG%" 2>&1
+%DEVENV% qgis%VERSION%.sln /Project INSTALL /Build %BUILDCONF% /Out "%LOG%">>"%LOG%" 2>&1
 if errorlevel 1 (echo INSTALL failed & goto error)
 
 :package
-echo PACKAGE: %DATE% %TIME%>>%LOG% 2>&1
+echo PACKAGE: %DATE% %TIME%>>"%LOG%" 2>&1
 
 cd ..
 sed -e 's/@package@/%PACKAGENAME%/g' -e 's/@version@/%VERSION%/g' -e 's/@grassversion@/%GRASS_VERSION%/g' postinstall-dev.bat >%OSGEO4W_ROOT%\etc\postinstall\%PACKAGENAME%.bat
@@ -230,7 +232,7 @@ tar -C %OSGEO4W_ROOT% -cjf %ARCH%/release/qgis/%PACKAGENAME%/%PACKAGENAME%-%VERS
 	apps/qt4/plugins/sqldrivers/qsqlspatialite.dll ^
 	etc/postinstall/%PACKAGENAME%.bat ^
 	etc/preremove/%PACKAGENAME%.bat ^
-	>>%LOG% 2>&1
+	>>"%LOG%" 2>&1
 if errorlevel 1 (echo tar failed & goto error)
 
 goto end
@@ -242,8 +244,8 @@ exit
 
 :error
 echo BUILD ERROR %ERRORLEVEL%: %DATE% %TIME%
-echo BUILD ERROR %ERRORLEVEL%: %DATE% %TIME%>>%LOG% 2>&1
+echo BUILD ERROR %ERRORLEVEL%: %DATE% %TIME%>>"%LOG%" 2>&1
 if exist %PACKAGENAME%-%VERSION%-%PACKAGE%.tar.bz2 del %PACKAGENAME%-%VERSION%-%PACKAGE%.tar.bz2
 
 :end
-echo FINISHED: %DATE% %TIME% >>%LOG% 2>&1
+echo FINISHED: %DATE% %TIME% >>"%LOG%" 2>&1

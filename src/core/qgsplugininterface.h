@@ -18,7 +18,7 @@
 
 #include <QObject>
 
-class QgsPluginInterface : public QObject
+class CORE_EXPORT QgsPluginInterface : public QObject
 {
     Q_OBJECT
 

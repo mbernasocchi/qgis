@@ -17,6 +17,13 @@ INCLUDE_DIRECTORIES(
   ../../../core
 )
 
+IF(WIN32)
+  IF(MSVC)
+    ADD_DEFINITIONS("-DGLOBE_EXPORT=${DLLIMPORT}")
+  ENDIF(MSVC)
+ENDIF(WIN32)
+
+
 SET(SIP_INCLUDES ${SIP_INCLUDES} ${QGIS_GLOBE_PYTHON_DIRECTORY})
 
 SET(SIP_DISABLE_FEATURES ${SIP_DISABLE_FEATURES} QSETINT_CONVERSION)
@@ -25,53 +32,53 @@ SET(SIP_DISABLE_FEATURES ${SIP_DISABLE_FEATURES} QSETTYPE_CONVERSION)
 ##########################
 # osg modules
 ##########################
-SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OSG_PYTHON_OUTPUT_DIRECTORY})
-SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSG_PYTHON_OUTPUT_DIRECTORY})
-FILE(GLOB sip_files_osg osg/osg/*.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osg})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osg.api)
-ADD_SIP_PYTHON_MODULE(osg.osg osg/osg/osg.sip ${OSG_LIBRARY})
+#SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OSG_PYTHON_OUTPUT_DIRECTORY})
+#SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSG_PYTHON_OUTPUT_DIRECTORY})
+#FILE(GLOB sip_files_osg osg/osg/*.sip)
+#SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osg})
+#SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osg.api)
+#ADD_SIP_PYTHON_MODULE(osg.osg osg/osg/osg.sip ${OSG_LIBRARY})
 
-FILE(GLOB sip_files_osgViewer osgViewer/*.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgViewer})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgViewer.api)
-ADD_SIP_PYTHON_MODULE(osg.osgViewer osg/osgViewer/osgViewer.sip ${OSG_LIBRARY} ${OSGVIEWER_LIBRARY})
+#FILE(GLOB sip_files_osgViewer osgViewer/*.sip)
+#SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgViewer})
+#SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgViewer.api)
+#ADD_SIP_PYTHON_MODULE(osg.osgViewer osg/osgViewer/osgViewer.sip ${OSG_LIBRARY} ${OSGVIEWER_LIBRARY})
 
-FILE(GLOB sip_files_osgGA osg/osgGA/*.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgGA})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgGA.api)
-ADD_SIP_PYTHON_MODULE(osg.osgGA osg/osgGA/osgGA.sip ${OSG_LIBRARY} ${OSGGA_LIBRARY})
+#FILE(GLOB sip_files_osgGA osg/osgGA/*.sip)
+#SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgGA})
+#SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgGA.api)
+#ADD_SIP_PYTHON_MODULE(osg.osgGA osg/osgGA/osgGA.sip ${OSG_LIBRARY} ${OSGGA_LIBRARY})
 
 ##########################
 # osgearth modules
 ##########################
-SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
-SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
-FILE(GLOB_RECURSE sip_files_osgearth osgEarth/*.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.api)
-ADD_SIP_PYTHON_MODULE(osgEarth.osgEarth osgEarth/osgEarth.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGDB_LIBRARY})
+#SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
+#SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OSGEARTH_PYTHON_OUTPUT_DIRECTORY})
+#FILE(GLOB_RECURSE sip_files_osgearth osgEarth/*.sip)
+#SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth})
+#SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.api)
+#ADD_SIP_PYTHON_MODULE(osgEarth.osgEarth osgEarth/osgEarth.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGDB_LIBRARY})
 
-FILE(GLOB_RECURSE sip_files_osgearth_features osgEarth/Features/*.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_features} ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Features.api)
-ADD_SIP_PYTHON_MODULE(osgEarth.Features osgEarth/Features/Features.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+#FILE(GLOB_RECURSE sip_files_osgearth_features osgEarth/Features/*.sip)
+#SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_features} ${sip_files_osgearth})
+#SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Features.api)
+#ADD_SIP_PYTHON_MODULE(osgEarth.Features osgEarth/Features/Features.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
 
-FILE(GLOB_RECURSE sip_files_osgearth_symbology osgEarth/Symbology/*.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_symbology} ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Symbology.api)
-ADD_SIP_PYTHON_MODULE(osgEarth.Symbology osgEarth/Symbology/Symbology.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
+#FILE(GLOB_RECURSE sip_files_osgearth_symbology osgEarth/Symbology/*.sip)
+#SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_symbology} ${sip_files_osgearth})
+#SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Symbology.api)
+#ADD_SIP_PYTHON_MODULE(osgEarth.Symbology osgEarth/Symbology/Symbology.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY})
 
-FILE(GLOB_RECURSE sip_files_osgearth_util osgearth/Util/*.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_util} ${sip_files_osgearth})
-SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Util.api)
-ADD_SIP_PYTHON_MODULE(osgEarth.Util osgEarth/Util/Util.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGGA_LIBRARY})
+#FILE(GLOB_RECURSE sip_files_osgearth_util osgearth/Util/*.sip)
+#SET(SIP_EXTRA_FILES_DEPEND ${sip_files_osgearth_util} ${sip_files_osgearth})
+#SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/osgEarth.Util.api)
+#ADD_SIP_PYTHON_MODULE(osgEarth.Util osgEarth/Util/Util.sip ${OSGEARTH_LIBS} ${OSG_LIBRARY} ${OSGGA_LIBRARY})
 
 # globe module
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QGIS_GLOBE_PYTHON_OUTPUT_DIRECTORY})
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${QGIS_GLOBE_PYTHON_OUTPUT_DIRECTORY})
 FILE(GLOB_RECURSE sip_files_globe *.sip)
-SET(SIP_EXTRA_FILES_DEPEND ${sip_files_globe} ${sip_files_osg} ${sip_files_osgearth_symbology})
+SET(SIP_EXTRA_FILES_DEPEND ${sip_files_globe})
 SET(SIP_EXTRA_OPTIONS ${PYQT4_SIP_FLAGS} -o -a ${CMAKE_BINARY_DIR}/python/qgis.globe.api)
 ADD_SIP_PYTHON_MODULE(qgis.globe globe.sip globeplugin)
 
@@ -80,9 +87,9 @@ SET(PY_FILES
   __init__.py
 )
 
-ADD_CUSTOM_TARGET(osgpyutils ALL)
-INSTALL(FILES ${PY_FILES} DESTINATION "${OSG_PYTHON_DIR}")
-INSTALL(FILES ${PY_FILES} DESTINATION "${OSGEARTH_PYTHON_DIR}")
+#ADD_CUSTOM_TARGET(osgpyutils ALL)
+#INSTALL(FILES ${PY_FILES} DESTINATION "${OSG_PYTHON_DIR}")
+#INSTALL(FILES ${PY_FILES} DESTINATION "${OSGEARTH_PYTHON_DIR}")
 
 # stage to output to make available when QGIS is run from build directory
 FOREACH(pyfile ${PY_FILES})
