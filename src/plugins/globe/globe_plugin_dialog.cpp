@@ -247,9 +247,6 @@ void QgsGlobePluginDialog::on_mTxtVerticalScale_changed( double value )
 {
   using namespace osgEarth::Util;
   // will be available from osgEarth 2.5
-  VerticalScale* scale = new VerticalScale();
-  scale->setScale( value );
-  mGlobeIface->mapNode()->getTerrainEngine()->addEffect( scale );
 }
 #endif
 

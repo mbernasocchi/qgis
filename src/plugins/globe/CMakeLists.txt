@@ -69,6 +69,8 @@ SET (GLOBE_PLUGIN_RCCS  globe_plugin.qrc)
 ########################################################
 # Build
 
+ADD_DEFINITIONS("-DGLOBE_EXPORT=")
+
 IF(WIN32)
   IF(MSVC)
     ADD_DEFINITIONS("-DGLOBE_EXPORT=${DLLEXPORT}")
@@ -118,7 +120,7 @@ TARGET_LINK_LIBRARIES(globeplugin
   ${OSGVIEWER_LIBRARY}
   ${OSGEARTH_LIBS}
   ${OPENTHREADS_LIBRARY}
-#  osgdb_osgearth_feature_qgis
+  osgdb_osgearth_feature_qgis
 )
 
 ###################################################
