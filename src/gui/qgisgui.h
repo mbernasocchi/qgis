@@ -17,8 +17,7 @@
 
 #include <Qt>
 #include <QPair>
-
-class QStringList;
+#include <QStringList>
 
 /** \ingroup gui
  * /namespace QgisGui
@@ -84,7 +83,7 @@ namespace QgisGui
    * the file type
    * @note added in 1.6
    */
-  QPair<QString, QString> GUI_EXPORT getSaveAsImageName( QWidget * theParent, QString theMessage, QString defaultFilename = QString::null );
+  QPair<QString, QString> getSaveAsImageName( QWidget * theParent, QString theMessage, QString defaultFilename = QString::null );
 
   /**
 

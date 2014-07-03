@@ -87,7 +87,6 @@ SET(QGIS_CORE_SRCS
   qgsgeometryvalidator.cpp
   qgsgml.cpp
   qgsgmlschema.cpp
-  qgshttptransaction.cpp
   qgslabel.cpp
   qgslabelattributes.cpp
   qgslabelsearchtree.cpp
@@ -329,7 +328,6 @@ SET(QGIS_CORE_MOC_HDRS
   qgsdataprovider.h
   qgsgml.h
   qgsgmlschema.h
-  qgshttptransaction.h
   qgsmaplayer.h
   qgsmaplayerregistry.h
   qgsmaprenderer.h
@@ -454,7 +452,6 @@ SET(QGIS_CORE_HDRS
   qgsgml.h
   qgsgmlschema.h
   qgsgeometrycache.h
-  qgshttptransaction.h
   qgslabel.h
   qgslabelattributes.h
   qgslabelsearchtree.h
