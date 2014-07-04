@@ -30,7 +30,6 @@
 #include <QActionGroup>
 #include <QTextStream>
 #include <QTimer>
-#include <QWebPage>
 #include <QDesktopServices>
 
 #include "qgis.h"
@@ -97,7 +96,6 @@ QgsPluginManager::QgsPluginManager( QWidget * parent, bool pluginsAreEnabled, Qt
 
   // Preset widgets
   leFilter->setFocus( Qt::MouseFocusReason );
-  wvDetails->page()->setLinkDelegationPolicy( QWebPage::DelegateAllLinks );
 
   // Don't restore the last used tab from QSettings
   mOptionsListWidget->setCurrentRow( 0 );

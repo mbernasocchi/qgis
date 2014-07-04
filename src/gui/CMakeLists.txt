@@ -98,10 +98,6 @@ editorwidgets/qgsvaluemapwidgetfactory.cpp
 editorwidgets/qgsvaluerelationconfigdlg.cpp
 editorwidgets/qgsvaluerelationwidget.cpp
 editorwidgets/qgsvaluerelationwidgetfactory.cpp
-editorwidgets/qgswebviewconfigdlg.cpp
-editorwidgets/qgswebviewwidget.cpp
-editorwidgets/qgswebviewwidgetfactory.cpp
-editorwidgets/qgswebviewwidgetfactory.cpp
 
 
 layertree/qgscustomlayerorderwidget.cpp
@@ -156,7 +152,6 @@ qgsfilterlineedit.cpp
 qgsformannotationitem.cpp
 qgsgenericprojectionselector.cpp
 qgshighlight.cpp
-qgshtmlannotationitem.cpp
 qgslegendinterface.cpp
 qgsludialog.cpp
 qgsmanageconnectionsdialog.cpp
@@ -206,6 +201,16 @@ qgstextannotationitem.cpp
 qgsvertexmarker.cpp
 qgsunitselectionwidget.cpp
 )
+
+IF (WITH_QTWEBKIT)
+  SET(QGIS_GUI_SRCS ${QGIS_GUI_SRCS}
+    editorwidgets/qgswebviewconfigdlg.cpp
+    editorwidgets/qgswebviewwidget.cpp
+    editorwidgets/qgswebviewwidgetfactory.cpp
+    editorwidgets/qgswebviewwidgetfactory.cpp
+    qgshtmlannotationitem.cpp
+  )
+ENDIF (WITH_QTWEBKIT)
 
 IF (WITH_TOUCH)
   SET(QGIS_GUI_SRCS
@@ -298,8 +303,6 @@ editorwidgets/qgsvaluemapconfigdlg.h
 editorwidgets/qgsvaluemapwidget.h
 editorwidgets/qgsvaluerelationconfigdlg.h
 editorwidgets/qgsvaluerelationwidget.h
-editorwidgets/qgswebviewconfigdlg.h
-editorwidgets/qgswebviewwidget.h
 
 layertree/qgscustomlayerorderwidget.h
 layertree/qgslayertreemapcanvasbridge.h
@@ -342,7 +345,6 @@ qgsfieldproxymodel.h
 qgsfilterlineedit.h
 qgsformannotationitem.h
 qgsgenericprojectionselector.h
-qgshtmlannotationitem.h
 qgslegendinterface.h
 qgslonglongvalidator.h
 qgsludialog.h
@@ -382,6 +384,14 @@ qgsslider.h
 qgssublayersdialog.h
 qgsunitselectionwidget.h
 )
+
+IF (WITH_QTWEBKIT)
+  SET( QGIS_GUI_MOC_HDRS ${QGIS_GUI_MOC_HDRS}
+    editorwidgets/qgswebviewconfigdlg.h
+    editorwidgets/qgswebviewwidget.h
+    qgshtmlannotationitem.h
+  )
+ENDIF (WITH_QTWEBKIT)
 
 QT4_WRAP_CPP(QGIS_GUI_MOC_SRCS ${QGIS_GUI_MOC_HDRS})
 
@@ -457,7 +467,6 @@ qgssublayersdialog.h
 qgsvectorlayertools.h
 qgsvertexmarker.h
 qgsnumericsortlistviewitem.h
-qgsannotationitem.h
 qgstextannotationitem.h
 qgssvgannotationitem.h
 qgscomposerruler.h
@@ -525,9 +534,6 @@ editorwidgets/qgsvaluemapwidgetfactory.h
 editorwidgets/qgsvaluerelationconfigdlg.h
 editorwidgets/qgsvaluerelationwidget.h
 editorwidgets/qgsvaluerelationwidgetfactory.h
-editorwidgets/qgswebviewconfigdlg.h
-editorwidgets/qgswebviewwidget.h
-editorwidgets/qgswebviewwidgetfactory.h
 
 layertree/qgscustomlayerorderwidget.h
 layertree/qgslayertreemapcanvasbridge.h
@@ -536,6 +542,15 @@ layertree/qgslayertreeview.h
 
 raster/qgsrasterrendererwidget.h
 )
+
+IF (WITH_QTWEBKIT)
+  SET(QGIS_GUI_HDRS ${QGIS_GUI_HDRS}
+    editorwidgets/qgswebviewconfigdlg.h
+    editorwidgets/qgswebviewwidget.h
+    editorwidgets/qgswebviewwidgetfactory.h
+    qgsannotationitem.h
+  )
+ENDIF (WITH_QTWEBKIT)
 
 IF (WITH_TOUCH)
   SET(QGIS_GUI_HDRS

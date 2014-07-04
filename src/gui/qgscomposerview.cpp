@@ -887,6 +887,7 @@ void QgsComposerView::mouseReleaseEvent( QMouseEvent* e )
       }
       break;
 
+#ifdef WITH_QTWEBKIT
     case AddHtml:
       if ( !composition() || !mRubberBandItem || ( mRubberBandItem->rect().width() < 0.1 && mRubberBandItem->rect().height() < 0.1 ) )
       {
@@ -913,6 +914,7 @@ void QgsComposerView::mouseReleaseEvent( QMouseEvent* e )
         removeRubberBand();
         emit actionFinished();
       }
+#endif
     default:
       break;
   }

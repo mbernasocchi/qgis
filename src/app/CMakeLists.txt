@@ -29,7 +29,6 @@ SET(QGIS_APP_SRCS
   qgsdecorationgriddialog.cpp
   qgsdxfexportdialog.cpp
   qgsformannotationdialog.cpp
-  qgshtmlannotationdialog.cpp
   qgsdelattrdialog.cpp
   qgsdiagramproperties.cpp
   qgsdisplayangle.cpp
@@ -49,8 +48,8 @@ SET(QGIS_APP_SRCS
   qgsmaptooladdfeature.cpp
   qgsmaptooladdpart.cpp
   qgsmaptooladdring.cpp
-  qgsmaptoolfillring.cpp
   qgsmaptoolannotation.cpp
+  qgsmaptoolfillring.cpp
   qgsmaptoolcapture.cpp
   qgsmaptoolchangelabelproperties.cpp
   qgsmaptooldeletering.cpp
@@ -58,7 +57,6 @@ SET(QGIS_APP_SRCS
   qgsmaptooledit.cpp
   qgsmaptoolfeatureaction.cpp
   qgsmaptoolformannotation.cpp
-  qgsmaptoolhtmlannotation.cpp
   qgsmaptoolpinlabels.cpp
   qgsmaptoolshowhidelabels.cpp
   qgsmaptoolidentifyaction.cpp
@@ -113,7 +111,6 @@ SET(QGIS_APP_SRCS
   composer/qgsattributeselectiondialog.cpp
   composer/qgscomposer.cpp
   composer/qgscomposerarrowwidget.cpp
-  composer/qgscomposerhtmlwidget.cpp
   composer/qgscomposeritemwidget.cpp
   composer/qgscomposerlabelwidget.cpp
   composer/qgscomposerpicturewidget.cpp
@@ -151,6 +148,14 @@ SET(QGIS_APP_SRCS
   qgsnewspatialitelayerdialog.cpp
 )
 
+IF (WITH_QTWEBKIT)
+  SET(QGIS_APP_SRCS ${QGIS_APP_SRCS}
+    qgshtmlannotationdialog.cpp
+    qgsmaptoolhtmlannotation.cpp
+    composer/qgscomposerhtmlwidget.cpp
+  )
+ENDIF (WITH_QTWEBKIT)
+
 SET (QGIS_APP_MOC_HDRS
   qgisapp.h
   qgisappinterface.h
@@ -186,7 +191,6 @@ SET (QGIS_APP_MOC_HDRS
   qgsfieldcalculator.h
   qgsfieldsproperties.h
   qgsformannotationdialog.h
-  qgshtmlannotationdialog.h
   qgsidentifyresultsdialog.h
   qgslabeldialog.h
   qgslabelengineconfigdialog.h
@@ -251,7 +255,6 @@ SET (QGIS_APP_MOC_HDRS
   composer/qgsattributeselectiondialog.h
   composer/qgscomposer.h
   composer/qgscomposerarrowwidget.h
-  composer/qgscomposerhtmlwidget.h
   composer/qgscomposeritemwidget.h
   composer/qgscomposerlabelwidget.h
   composer/qgscomposerlegendwidget.h
@@ -282,7 +285,14 @@ SET (QGIS_APP_MOC_HDRS
   pluginmanager/qgspluginitemdelegate.h
 
   qgsnewspatialitelayerdialog.h
+)
+
+IF (WITH_QTWEBKIT)
+  SET( QGIS_APP_MOC_HDRS ${QGIS_APP_MOC_HDRS}
+    qgshtmlannotationdialog.h
+    composer/qgscomposerhtmlwidget.h
   )
+ENDIF(WITH_QTWEBKIT)
 
 IF(WITH_INTERNAL_QWTPOLAR)
   IF(QWT_VERSION_STR VERSION_LESS "6.0.0")

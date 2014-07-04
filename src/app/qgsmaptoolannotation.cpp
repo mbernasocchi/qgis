@@ -18,8 +18,10 @@
 #include "qgsmaptoolannotation.h"
 #include "qgsformannotationdialog.h"
 #include "qgsformannotationitem.h"
-#include "qgshtmlannotationitem.h"
-#include "qgshtmlannotationdialog.h"
+#ifdef WITH_QTWEBKIT
+  #include "qgshtmlannotationitem.h"
+  #include "qgshtmlannotationdialog.h"
+#endif
 #include "qgslogger.h"
 #include "qgsmapcanvas.h"
 #include "qgstextannotationdialog.h"
@@ -65,12 +67,13 @@ QDialog* QgsMapToolAnnotation::createItemEditor( QgsAnnotationItem *item )
   {
     return new QgsFormAnnotationDialog( fItem );
   }
-
+#ifdef WITH_QTWEBKIT
   QgsHtmlAnnotationItem* hItem = dynamic_cast<QgsHtmlAnnotationItem*>( item );
   if ( hItem )
   {
     return new QgsHtmlAnnotationDialog( hItem );
   }
+#endif
 
   QgsSvgAnnotationItem* sItem = dynamic_cast<QgsSvgAnnotationItem*>( item );
   if ( sItem )

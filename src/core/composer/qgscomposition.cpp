@@ -17,7 +17,9 @@
 #include "qgscomposition.h"
 #include "qgscomposerarrow.h"
 #include "qgscomposerframe.h"
-#include "qgscomposerhtml.h"
+#ifdef WITH_QTWEBKIT
+  #include "qgscomposerhtml.h"
+#endif
 #include "qgscomposerlabel.h"
 #include "qgscomposerlegend.h"
 #include "qgscomposermap.h"
@@ -27,6 +29,7 @@
 #include "qgscomposerscalebar.h"
 #include "qgscomposershape.h"
 #include "qgscomposerlabel.h"
+#include "qgscomposermultiframe.h"
 #include "qgscomposerattributetable.h"
 #include "qgsaddremovemultiframecommand.h"
 #include "qgscomposermultiframecommand.h"
@@ -477,6 +480,7 @@ const QgsComposerMap* QgsComposition::getComposerMapById( int id ) const
   return 0;
 }
 
+#ifdef WITH_QTWEBKIT
 const QgsComposerHtml* QgsComposition::getComposerHtmlByItem( QgsComposerItem *item ) const
 {
   // an html item will be a composer frame and if it is we can try to get
@@ -495,6 +499,7 @@ const QgsComposerHtml* QgsComposition::getComposerHtmlByItem( QgsComposerItem *i
   }
   return 0;
 }
+#endif
 
 const QgsComposerItem* QgsComposition::getComposerItemById( QString theId ) const
 {
@@ -1161,6 +1166,7 @@ void QgsComposition::addItemsFromXML( const QDomElement& elem, const QDomDocumen
   }
   // html
   //TODO - fix this. pasting html items has no effect
+#ifdef WITH_QTWEBKIT
   QDomNodeList composerHtmlList = elem.elementsByTagName( "ComposerHtml" );
   for ( int i = 0; i < composerHtmlList.size(); ++i )
   {
@@ -1178,6 +1184,7 @@ void QgsComposition::addItemsFromXML( const QDomElement& elem, const QDomDocumen
       frame->setZValue( frame->zValue() + zOrderOffset );
     }*/
   }
+#endif
 
   // groups (must be last as it references uuids of above items)
   //TODO - pasted groups lose group properties, since the uuids of group items
@@ -2205,6 +2212,7 @@ void QgsComposition::addComposerTable( QgsComposerAttributeTable* table )
   emit composerTableAdded( table );
 }
 
+#ifdef WITH_QTWEBKIT
 void QgsComposition::addComposerHtmlFrame( QgsComposerHtml* html, QgsComposerFrame* frame )
 {
   addItem( frame );
@@ -2214,6 +2222,7 @@ void QgsComposition::addComposerHtmlFrame( QgsComposerHtml* html, QgsComposerFra
 
   emit composerHtmlFrameAdded( html, frame );
 }
+#endif
 
 void QgsComposition::removeComposerItem( QgsComposerItem* item, bool createCommand )
 {
@@ -2373,11 +2382,13 @@ void QgsComposition::sendItemAddedSignal( QgsComposerItem* item )
   {
     //emit composerFrameAdded( multiframe, frame, );
     QgsComposerMultiFrame* mf = frame->multiFrame();
+#ifdef WITH_QTWEBKIT
     QgsComposerHtml* html = dynamic_cast<QgsComposerHtml*>( mf );
     if ( html )
     {
       emit composerHtmlFrameAdded( html, frame );
     }
+#endif
     emit selectedItemChanged( frame );
     return;
   }

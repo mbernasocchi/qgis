@@ -42,7 +42,9 @@ class QgsMapRenderer;
 class QDomElement;
 class QgsComposerArrow;
 class QgsComposerMouseHandles;
-class QgsComposerHtml;
+#ifdef WITH_QTWEBKIT
+  class QgsComposerHtml;
+#endif
 class QgsComposerItem;
 class QgsComposerLabel;
 class QgsComposerLegend;
@@ -219,6 +221,7 @@ class CORE_EXPORT QgsComposition : public QGraphicsScene
      @return QgsComposerMap or 0 pointer if the composer map item does not exist*/
     const QgsComposerMap* getComposerMapById( int id ) const;
 
+#ifdef WITH_QTWEBKIT
     /**Returns the composer html with specified id (a string as named in the
       composer user interface item properties).
       @note Added in QGIS 2.0
@@ -226,6 +229,7 @@ class CORE_EXPORT QgsComposition : public QGraphicsScene
       @return QgsComposerHtml pointer or 0 pointer if no such item exists.
      */
     const QgsComposerHtml* getComposerHtmlByItem( QgsComposerItem *item ) const;
+#endif
 
     /**Returns a composer item given its text identifier.
        Ids are not necessarely unique, but this function returns only one element.
@@ -401,8 +405,11 @@ class CORE_EXPORT QgsComposition : public QGraphicsScene
     void addComposerShape( QgsComposerShape* shape );
     /**Adds a composer table to the graphics scene and advices composer to create a widget for it (through signal)*/
     void addComposerTable( QgsComposerAttributeTable* table );
+
+#ifdef WITH_QTWEBKIT
     /**Adds composer html frame and advices composer to create a widget for it (through signal)*/
     void addComposerHtmlFrame( QgsComposerHtml* html, QgsComposerFrame* frame );
+#endif
 
     /**Remove item from the graphics scene. Additionally to QGraphicsScene::removeItem, this function considers undo/redo command*/
     void removeComposerItem( QgsComposerItem* item, bool createCommand = true );
@@ -594,8 +601,11 @@ class CORE_EXPORT QgsComposition : public QGraphicsScene
     void selectedItemChanged( QgsComposerItem* selected );
     /**Is emitted when new composer arrow has been added to the view*/
     void composerArrowAdded( QgsComposerArrow* arrow );
+
+#ifdef WITH_QTWEBKIT
     /**Is emitted when a new composer html has been added to the view*/
     void composerHtmlFrameAdded( QgsComposerHtml* html, QgsComposerFrame* frame );
+#endif
     /**Is emitted when new composer label has been added to the view*/
     void composerLabelAdded( QgsComposerLabel* label );
     /**Is emitted when new composer map has been added to the view*/

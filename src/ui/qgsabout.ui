@@ -191,13 +191,7 @@ p, li { white-space: pre-wrap; }
             </layout>
            </item>
            <item>
-            <widget class="QWebView" name="txtVersion" native="true">
-             <property name="url" stdset="0">
-              <url>
-               <string>about:blank</string>
-              </url>
-             </property>
-            </widget>
+            <widget class="QTextBrowser" name="txtVersion"/>
            </item>
            <item>
             <spacer name="spacer_2">
@@ -365,13 +359,7 @@ p, li { white-space: pre-wrap; }
             <number>0</number>
            </property>
            <item>
-            <widget class="QWebView" name="txtTranslators" native="true">
-             <property name="url" stdset="0">
-              <url>
-               <string>about:blank</string>
-              </url>
-             </property>
-            </widget>
+            <widget class="QTextBrowser" name="txtTranslators"/>
            </item>
           </layout>
          </widget>
@@ -441,13 +429,6 @@ p, li { white-space: pre-wrap; }
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QWebView</class>
-   <extends>QWidget</extends>
-   <header>QtWebKit/QWebView</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="../../images/images.qrc"/>
  </resources>

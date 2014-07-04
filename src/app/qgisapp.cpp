@@ -131,7 +131,9 @@
 #include "qgsfeature.h"
 #include "qgsformannotationitem.h"
 #include "qgsfieldcalculator.h"
-#include "qgshtmlannotationitem.h"
+#ifdef WITH_QTWEBKIT
+  #include "qgshtmlannotationitem.h"
+#endif
 #include "qgsgenericprojectionselector.h"
 #include "qgsgpsinformationwidget.h"
 #include "qgsguivectorlayertools.h"
@@ -281,7 +283,9 @@
 #include "qgsvaluerelationwidgetfactory.h"
 #include "qgsuuidwidgetfactory.h"
 #include "qgsphotowidgetfactory.h"
-#include "qgswebviewwidgetfactory.h"
+#ifdef WITH_QTWEBKIT
+  #include "qgswebviewwidgetfactory.h"
+#endif
 #include "qgscolorwidgetfactory.h"
 #include "qgsrelationreferencefactory.h"
 #include "qgsdatetimeeditfactory.h"
@@ -680,7 +684,9 @@ QgisApp::QgisApp( QSplashScreen *splash, bool restorePlugins, QWidget * parent, 
   editorWidgetRegistry->registerWidget( "ValueRelation", new QgsValueRelationWidgetFactory( tr( "Value Relation" ) ) );
   editorWidgetRegistry->registerWidget( "UuidGenerator", new QgsUuidWidgetFactory( tr( "Uuid Generator" ) ) );
   editorWidgetRegistry->registerWidget( "Photo", new QgsPhotoWidgetFactory( tr( "Photo" ) ) );
+#ifdef WITH_QTWEBKIT
   editorWidgetRegistry->registerWidget( "WebView", new QgsWebViewWidgetFactory( tr( "Web View" ) ) );
+#endif
   editorWidgetRegistry->registerWidget( "Color", new QgsColorWidgetFactory( tr( "Color" ) ) );
   editorWidgetRegistry->registerWidget( "RelationReference", new QgsRelationReferenceFactory( context, tr( "Relation Reference" ) ) );
   editorWidgetRegistry->registerWidget( "DateTime", new QgsDateTimeEditFactory( tr( "Date/Time" ) ) );
@@ -2120,12 +2126,16 @@ void QgisApp::createCanvasTools()
   mMapTools.mTextAnnotation->setAction( mActionTextAnnotation );
   mMapTools.mFormAnnotation = new QgsMapToolFormAnnotation( mMapCanvas );
   mMapTools.mFormAnnotation->setAction( mActionFormAnnotation );
+#ifdef WITH_QTWEBKIT
   mMapTools.mHtmlAnnotation = new QgsMapToolHtmlAnnotation( mMapCanvas );
   mMapTools.mHtmlAnnotation->setAction( mActionHtmlAnnotation );
+#endif
   mMapTools.mSvgAnnotation = new QgsMapToolSvgAnnotation( mMapCanvas );
   mMapTools.mSvgAnnotation->setAction( mActionSvgAnnotation );
+#ifdef WITH_QTWEBKIT
   mMapTools.mAnnotation = new QgsMapToolAnnotation( mMapCanvas );
   mMapTools.mAnnotation->setAction( mActionAnnotation );
+#endif
   mMapTools.mAddFeature = new QgsMapToolAddFeature( mMapCanvas );
   mMapTools.mAddFeature->setAction( mActionAddFeature );
   mMapTools.mMoveFeature = new QgsMapToolMoveFeature( mMapCanvas );
@@ -5384,13 +5394,14 @@ bool QgisApp::loadAnnotationItemsFromProject( const QDomDocument& doc )
     QgsFormAnnotationItem* newFormItem = new QgsFormAnnotationItem( mMapCanvas );
     newFormItem->readXML( doc, formItemList.at( i ).toElement() );
   }
-
+#ifdef WITH_QTWEBKIT
   QDomNodeList htmlItemList = doc.elementsByTagName( "HtmlAnnotationItem" );
   for ( int i = 0; i < htmlItemList.size(); ++i )
   {
     QgsHtmlAnnotationItem* newHtmlItem = new QgsHtmlAnnotationItem( mMapCanvas );
     newHtmlItem->readXML( doc, htmlItemList.at( i ).toElement() );
   }
+#endif
 
   QDomNodeList svgItemList = doc.elementsByTagName( "SVGAnnotationItem" );
   for ( int i = 0; i < svgItemList.size(); ++i )

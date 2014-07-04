@@ -45,13 +45,15 @@
 #include <QDockWidget>
 #include <QMenuBar>
 #include <QPushButton>
-#include <QWebView>
+#ifdef WITH_QTWEBKIT
+  #include <QWebView>
+  #include <QWebFrame>
+#endif
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QComboBox>
-#include <QWebFrame>
 
 //graph
 #include <qwt_plot.h>
@@ -60,7 +62,7 @@
 #include <qwt_legend.h>
 #include "qgsvectorcolorrampv2.h" // for random colors
 
-
+#ifdef WITH_QTWEBKIT
 QgsIdentifyResultsWebView::QgsIdentifyResultsWebView( QWidget *parent ) : QWebView( parent )
 {
   setSizePolicy( QSizePolicy::MinimumExpanding, QSizePolicy::Minimum );
@@ -186,14 +188,6 @@ QSize QgsIdentifyResultsWebView::sizeHint() const
   return s;
 }
 
-QgsIdentifyResultsFeatureItem::QgsIdentifyResultsFeatureItem( const QgsFields &fields, const QgsFeature &feature, const QgsCoordinateReferenceSystem &crs, const QStringList & strings )
-    : QTreeWidgetItem( strings )
-    , mFields( fields )
-    , mFeature( feature )
-    , mCrs( crs )
-{
-}
-
 void QgsIdentifyResultsWebViewItem::setHtml( const QString &html )
 {
   mWebView->setHtml( html );
@@ -246,6 +240,15 @@ void QgsIdentifyResultsWebViewItem::loadFinished( bool ok )
 //     actions (if any)
 //       action
 //     name value
+#endif
+
+QgsIdentifyResultsFeatureItem::QgsIdentifyResultsFeatureItem( const QgsFields &fields, const QgsFeature &feature, const QgsCoordinateReferenceSystem &crs, const QStringList & strings )
+    : QTreeWidgetItem( strings )
+    , mFields( fields )
+    , mFeature( feature )
+    , mCrs( crs )
+{
+}
 
 QgsIdentifyResultsDialog::QgsIdentifyResultsDialog( QgsMapCanvas *canvas, QWidget *parent, Qt::WindowFlags f )
     : QDialog( parent, f )
@@ -734,6 +737,7 @@ void QgsIdentifyResultsDialog::addFeature( QgsRasterLayer *layer,
     }
   }
 
+#ifdef WITH_QTWEBKIT
   if ( currentFormat == QgsRaster::IdentifyFormatHtml || currentFormat == QgsRaster::IdentifyFormatText )
   {
     QgsIdentifyResultsWebViewItem *attrItem = new QgsIdentifyResultsWebViewItem( lstResults );
@@ -749,11 +753,14 @@ void QgsIdentifyResultsDialog::addFeature( QgsRasterLayer *layer,
   }
   else
   {
+#endif
     for ( QMap<QString, QString>::const_iterator it = attributes.begin(); it != attributes.end(); ++it )
     {
       featItem->addChild( new QTreeWidgetItem( QStringList() << it.key() << it.value() ) );
     }
+#ifdef WITH_QTWEBKIT
   }
+#endif
 
   if ( derivedAttributes.size() >= 0 )
   {
@@ -1323,6 +1330,7 @@ void QgsIdentifyResultsDialog::handleCurrentItemChanged( QTreeWidgetItem *curren
     return;
   }
 
+#ifdef WITH_QTWEBKIT
   // An item may be printed if a child is QgsIdentifyResultsWebViewItem
   for ( int i = 0; i < current->childCount(); i++ )
   {
@@ -1333,6 +1341,7 @@ void QgsIdentifyResultsDialog::handleCurrentItemChanged( QTreeWidgetItem *curren
       break;
     }
   }
+#endif
 
   QTreeWidgetItem *layItem = layerItem( current );
   if ( current == layItem )
@@ -1732,6 +1741,7 @@ void QgsIdentifyResultsDialog::printCurrentItem()
   if ( !item )
     return;
 
+#ifdef WITH_QTWEBKIT
   // There should only be one HTML item / result
   QgsIdentifyResultsWebViewItem *wv = 0;
   for ( int i = 0; i < item->childCount() && !wv; i++ )
@@ -1746,6 +1756,7 @@ void QgsIdentifyResultsDialog::printCurrentItem()
   }
 
   wv->webView()->print();
+#endif
 }
 
 void QgsIdentifyResultsDialog::on_cmbIdentifyMode_currentIndexChanged( int index )

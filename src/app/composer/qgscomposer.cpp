@@ -30,7 +30,9 @@
 #include "qgscomposerarrowwidget.h"
 #include "qgscomposerframe.h"
 #include "qgscomposerhtml.h"
-#include "qgscomposerhtmlwidget.h"
+#ifdef WITH_QTWEBKIT
+  #include "qgscomposerhtmlwidget.h"
+#endif
 #include "qgscomposerlabel.h"
 #include "qgscomposerlabelwidget.h"
 #include "qgscomposerlegend.h"
@@ -3180,8 +3182,10 @@ void QgsComposer::addComposerHtmlFrame( QgsComposerHtml* html, QgsComposerFrame*
     return;
   }
 
+#ifdef WITH_QTWEBKIT
   QgsComposerHtmlWidget* hWidget = new QgsComposerHtmlWidget( html, frame );
   mItemWidgetMap.insert( frame, hWidget );
+#endif
 }
 
 void QgsComposer::deleteItem( QgsComposerItem* item )
