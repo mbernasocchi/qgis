@@ -386,7 +386,7 @@ void QgsDataSourceURI::clearSchema()
   mSchema = "";
 }
 
-QString QgsDataSourceURI::escape( const QString &theVal, QChar delim = '\'' ) const
+QString QgsDataSourceURI::escape( const QString &theVal, QChar delim = QChar( '\'' ) ) const
 {
   QString val = theVal;
 
