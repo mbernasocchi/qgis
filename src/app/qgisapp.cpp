@@ -902,13 +902,11 @@ QgisApp::~QgisApp()
   delete mMapTools.mAddPart;
   delete mMapTools.mAddRing;
   delete mMapTools.mFillRing;
-  delete mMapTools.mAnnotation;
   delete mMapTools.mChangeLabelProperties;
   delete mMapTools.mDeletePart;
   delete mMapTools.mDeleteRing;
   delete mMapTools.mFeatureAction;
   delete mMapTools.mFormAnnotation;
-  delete mMapTools.mHtmlAnnotation;
   delete mMapTools.mIdentify;
   delete mMapTools.mMeasureAngle;
   delete mMapTools.mMeasureArea;
@@ -933,6 +931,10 @@ QgisApp::~QgisApp()
   delete mMapTools.mSplitParts;
   delete mMapTools.mSvgAnnotation;
   delete mMapTools.mTextAnnotation;
+#ifdef WITH_QTWEBKIT
+  delete mMapTools.mAnnotation;
+  delete mMapTools.mHtmlAnnotation;
+#endif
 
   delete mpMaptip;
 
@@ -4505,7 +4507,9 @@ void QgisApp::addFormAnnotation()
 
 void QgisApp::addHtmlAnnotation()
 {
+#ifdef WITH_QTWEBKIT
   mMapCanvas->setMapTool( mMapTools.mHtmlAnnotation );
+#endif
 }
 
 void QgisApp::addTextAnnotation()
@@ -4520,7 +4524,9 @@ void QgisApp::addSvgAnnotation()
 
 void QgisApp::modifyAnnotation()
 {
+#ifdef WITH_QTWEBKIT
   mMapCanvas->setMapTool( mMapTools.mAnnotation );
+#endif
 }
 
 void QgisApp::labelingFontNotFound( QgsVectorLayer* vlayer, const QString& fontfamily )
