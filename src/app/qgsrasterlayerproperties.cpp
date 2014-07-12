@@ -214,8 +214,10 @@ QgsRasterLayerProperties::QgsRasterLayerProperties( QgsMapLayer* lyr, QgsMapCanv
                                  .arg( pyramidSentence2 ).arg( pyramidSentence3 )
                                  .arg( pyramidSentence4 ).arg( pyramidSentence5 ) );
 
+#ifndef ANDROID
   tableTransparency->horizontalHeader()->setResizeMode( 0, QHeaderView::Stretch );
   tableTransparency->horizontalHeader()->setResizeMode( 1, QHeaderView::Stretch );
+#endif
 
   //resampling
   mResamplingGroupBox->setSaveCheckedState( true );
