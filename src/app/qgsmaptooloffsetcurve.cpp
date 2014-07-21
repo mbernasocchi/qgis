@@ -452,7 +452,7 @@ void QgsMapToolOffsetCurve::configureSnapper( QgsSnapper& s )
         QgsSnapper::SnapLayer sl;
         sl.mLayer = vl;
         QSettings settings;
-        sl.mTolerance = settings.value( "/qgis/digitizing/search_radius_vertex_edit", 10 ).toDouble();
+        sl.mTolerance = settings.value( "/qgis/digitizing/search_radius_vertex_edit", QGis::DEFAULT_SEARCH_RADIUS_VERTEX_EDIT ).toDouble();
         sl.mUnitType = ( QgsTolerance::UnitType ) settings.value( "/qgis/digitizing/search_radius_vertex_edit_unit", QgsTolerance::Pixels ).toInt();
         sl.mSnapTo = QgsSnapper::SnapToSegment;
         snapLayers.push_back( sl );

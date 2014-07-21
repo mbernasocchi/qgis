@@ -74,6 +74,11 @@ const CORE_EXPORT QString GEO_NONE = "NONE";
 
 const double QGis::DEFAULT_IDENTIFY_RADIUS = 0.5;
 const double QGis::DEFAULT_SEARCH_RADIUS_MM = 2.;
+#ifdef ANDROID
+const int    QGis::DEFAULT_SEARCH_RADIUS_VERTEX_EDIT = 30;
+#else
+const int    QGis::DEFAULT_SEARCH_RADIUS_VERTEX_EDIT = 10;
+#endif
 
 //! Default threshold between map coordinates and device coordinates for map2pixel simplification
 const float QGis::DEFAULT_MAPTOPIXEL_THRESHOLD = 1.0f;

@@ -272,6 +272,11 @@ class CORE_EXPORT QGis
      *  @note added in 2.3 */
     static const double DEFAULT_SEARCH_RADIUS_MM;
 
+    /** Default value for vertex search radius edit in pixels
+     * @note added in 2.5
+     */
+    static const int DEFAULT_SEARCH_RADIUS_VERTEX_EDIT;
+
     //! Default threshold between map coordinates and device coordinates for map2pixel simplification
     static const float DEFAULT_MAPTOPIXEL_THRESHOLD;
 

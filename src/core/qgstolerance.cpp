@@ -14,6 +14,8 @@
  ***************************************************************************/
 
 #include "qgstolerance.h"
+#include "qgis.h"
+
 #include <QSettings>
 #include <QPoint>
 #include <cmath>
@@ -36,7 +38,7 @@ double QgsTolerance::toleranceInMapUnits( double tolerance, QgsMapLayer* layer, 
 double QgsTolerance::vertexSearchRadius( QgsMapLayer *layer, const QgsMapSettings &mapSettings )
 {
   QSettings settings;
-  double tolerance = settings.value( "/qgis/digitizing/search_radius_vertex_edit", 10 ).toDouble();
+  double tolerance = settings.value( "/qgis/digitizing/search_radius_vertex_edit", QGis::DEFAULT_SEARCH_RADIUS_VERTEX_EDIT ).toDouble();
   UnitType units = ( QgsTolerance::UnitType ) settings.value( "/qgis/digitizing/search_radius_vertex_edit_unit", QgsTolerance::Pixels ).toInt();
   return toleranceInMapUnits( tolerance, layer, mapSettings, units );
 }
