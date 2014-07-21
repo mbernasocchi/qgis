@@ -1009,8 +1009,8 @@ int main( int argc, char *argv[] )
 
 #if defined(ANDROID)
   // fix for Qt Ministro hiding app's menubar in favor of native Android menus
-  qgis->menuBar()->setNativeMenuBar( false );
-  qgis->menuBar()->setVisible( true );
+  qgis->menuBar()->setNativeMenuBar( true );
+  qgis->menuBar()->setVisible( false );
 #endif
 
   int retval = myApp.exec();
