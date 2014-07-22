@@ -83,8 +83,8 @@ class TestQgsSpatialIndex : public QObject
       // create copy of the index
       QgsSpatialIndex indexCopy( *index );
 
-      QVERIFY( index->refs() == 2 );
-      QVERIFY( indexCopy.refs() == 2 );
+      QVERIFY( index->refs().load() == 2 );
+      QVERIFY( indexCopy.refs().load() == 2 );
 
       // test that copied index works
       QList<QgsFeatureId> fids1 = indexCopy.intersects( QgsRectangle( 0, 0, 10, 10 ) );
@@ -92,16 +92,16 @@ class TestQgsSpatialIndex : public QObject
       QVERIFY( fids1[0] == 1 );
 
       // check that the index is still shared
-      QVERIFY( index->refs() == 2 );
-      QVERIFY( indexCopy.refs() == 2 );
+      QVERIFY( index->refs().load() == 2 );
+      QVERIFY( indexCopy.refs().load() == 2 );
 
       // do a modification
       QgsFeature f2( _pointFeatures()[1] );
       indexCopy.deleteFeature( f2 );
 
       // check that the index is not shared anymore
-      QVERIFY( index->refs() == 1 );
-      QVERIFY( indexCopy.refs() == 1 );
+      QVERIFY( index->refs().load() == 1 );
+      QVERIFY( indexCopy.refs().load() == 1 );
 
       delete index;
 

@@ -99,7 +99,7 @@ void Regression1141::diacriticalTest()
   QgsDebugMsg( QString( "CODESET:%1" ).arg( cs ? cs : "unset" ) );
   if ( !cs || strcmp( cs, "UTF-8" ) != 0 )
   {
-    QSKIP( "This test requires a UTF-8 locale", SkipSingle );
+    QSKIP( "This test requires a UTF-8 locale" );
     return;
   }
 #endif
