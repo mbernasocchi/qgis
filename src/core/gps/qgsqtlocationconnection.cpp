@@ -27,8 +27,8 @@ QgsQtLocationConnection::QgsQtLocationConnection( ): QgsGPSConnection( new QLoca
   //needed to fix https://sourceforge.net/p/necessitas/tickets/146/
   qRegisterMetaType< QList<QGeoSatelliteInfo> >( "QList<QGeoSatelliteInfo>" );
 
-  startGPS();
   startSatelliteMonitor();
+  startGPS();
 
   //HACK to signal the gpsinformationwidget that we have a QtLocationConnection
   QTimer::singleShot( 500, this, SLOT( broadcastConnectionAvailable() ) );
@@ -65,7 +65,6 @@ void QgsQtLocationConnection::parseData()
   {
     mStatus = GPSDataReceived;
     //const QGeoPositionInfo &info = locationDataSource->lastKnownPosition();
-    qDebug() << mInfo;
     if ( mInfo.isValid() )
     {
       // mInfo.HorizontalAccuracy;
@@ -110,7 +109,7 @@ void QgsQtLocationConnection::satellitesInViewUpdated(
     QgsSatelliteInfo satelliteInfo;
     satelliteInfo.azimuth = currentSatellite.attribute( QGeoSatelliteInfo::Azimuth );
     satelliteInfo.elevation = currentSatellite.attribute( QGeoSatelliteInfo::Elevation );
-    satelliteInfo.id = currentSatellite.prnNumber();
+    satelliteInfo.id = currentSatellite.satelliteIdentifier();
     satelliteInfo.signal = currentSatellite.signalStrength();
     mLastGPSInformation.satellitesInView.append( satelliteInfo );
   }
@@ -130,13 +129,13 @@ void QgsQtLocationConnection::satellitesInUseUpdated(
   {
     QGeoSatelliteInfo currentSatellite = satellites.at( i );
     //add pnr to mLastGPSInformation.satPrn
-    mLastGPSInformation.satPrn.append( currentSatellite.prnNumber() );
+    mLastGPSInformation.satPrn.append( currentSatellite.satelliteIdentifier() );
 
     //set QgsSatelliteInfo.inuse to true for the satellites in use
     for ( int i = 0; i < mLastGPSInformation.satellitesInView.size(); ++i )
     {
       QgsSatelliteInfo satInView = mLastGPSInformation.satellitesInView.at( i );
-      if ( satInView.id == currentSatellite.prnNumber() )
+      if ( satInView.id == currentSatellite.satelliteIdentifier() )
       {
         satInView.inUse = true;
         break;
@@ -184,6 +183,7 @@ void QgsQtLocationConnection::startGPS()
 void QgsQtLocationConnection::startSatelliteMonitor()
 {
   QgsDebugMsg( "Starting GPS QtLocation satellite monitor" );
+
   if ( !satelliteInfoSource )
   {
     satelliteInfoSource = QGeoSatelliteInfoSource::createDefaultSource( this );
