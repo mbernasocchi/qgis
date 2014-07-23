@@ -219,7 +219,10 @@ SET (HAVE_MSSQL TRUE)
 #############################################################
 # search for Qt4
 SET(QT_MIN_VERSION 4.7.0)
-FIND_PACKAGE(Qt5Core QUIET)
+SET (ENABLE_QT5 FALSE CACHE BOOL "If enabled will try to find Qt5 before looking for Qt4")
+IF (ENABLE_QT5)
+  FIND_PACKAGE(Qt5Core QUIET)
+ENDIF
 IF (Qt5Core_FOUND)
   FIND_PACKAGE(Qt5Gui REQUIRED)
   FIND_PACKAGE(Qt5Widgets REQUIRED)
