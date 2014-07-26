@@ -19,7 +19,9 @@
 #include "qgsmaplayerrenderer.h"
 #include "qgspallabeling.h"
 
-#include <QtConcurrent/QtConcurrentMap>
+#if QT_VERSION >= 0x050000
+  #include <QtConcurrent/QtConcurrentMap>
+#endif
 
 
 QgsMapRendererParallelJob::QgsMapRendererParallelJob( const QgsMapSettings& settings )

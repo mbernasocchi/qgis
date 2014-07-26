@@ -217,13 +217,14 @@ SET (HAVE_SPATIALITE TRUE)
 SET (HAVE_MSSQL TRUE)
 
 #############################################################
-# search for Qt4
+# search for Qt
 SET(QT_MIN_VERSION 4.7.0)
 SET (ENABLE_QT5 FALSE CACHE BOOL "If enabled will try to find Qt5 before looking for Qt4")
 IF (ENABLE_QT5)
   FIND_PACKAGE(Qt5Core QUIET)
 ENDIF (ENABLE_QT5)
 IF (Qt5Core_FOUND)
+  SET (WITH_QTWEBKIT TRUE CACHE BOOL "Disables parts built with QtWebkit")
   FIND_PACKAGE(Qt5Gui REQUIRED)
   FIND_PACKAGE(Qt5Widgets REQUIRED)
   FIND_PACKAGE(Qt5Network REQUIRED)
@@ -245,6 +246,7 @@ IF (Qt5Core_FOUND)
 
   INCLUDE("cmake/modules/ECMQt4To5Porting.cmake")
 ELSE(Qt5Core_FOUND)
+  SET(WITH_QTWEBKIT TRUE)
   FIND_PACKAGE(Qt4 ${QT_MIN_VERSION} REQUIRED)
   SET(QT_USE_QTXML 1)
   SET(QT_USE_QTNETWORK 1)
@@ -263,7 +265,6 @@ ELSE(Qt5Core_FOUND)
     FIND_PACKAGE(QtMobility 1.1.0)
   ENDIF (WITH_QTMOBILITY)
 
-  INCLUDE( ${QT_USE_FILE} )
 ENDIF(Qt5Core_FOUND)
 
 MESSAGE(STATUS "Found Qt version: ${QTVERSION}")
@@ -274,6 +275,10 @@ IF (ANDROID)
 ELSE (ANDROID)
   SET (DEFAULT_WITH_TOUCH FALSE)
 ENDIF (ANDROID)
+
+IF (WITH_QTWEBKIT)
+  ADD_DEFINITIONS(-DWITH_QTWEBKIT)
+ENDIF (WITH_QTWEBKIT)
 
 #Add a touch mode if Qt has Qt Gestures
 SET (WITH_TOUCH ${DEFAULT_WITH_TOUCH} CACHE BOOL "Determines if touch interface related code should be build")
@@ -313,6 +318,9 @@ IF (ENABLE_TESTS)
   add_custom_target(check-no-x COMMAND xvfb-run --server-args="-screen 10,1024x768x24" ctest --output-on-failure)
 ENDIF (ENABLE_TESTS)
 
+IF (NOT QT5_BUILD)
+  INCLUDE( ${QT_USE_FILE} )
+ENDIF (NOT QT5_BUILD)
 
 # Disable automatic conversion from QString to ASCII 8-bit strings (char *)
 # (Keeps code compatible with Qt/Mac/64bit)

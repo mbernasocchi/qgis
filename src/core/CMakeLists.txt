@@ -248,10 +248,16 @@ SET(QGIS_CORE_SRCS
 )
 
 IF (WITH_QTWEBKIT)
-  SET(QT_CORE_SRCS ${QT_CORE_SRCS}
+  SET(QGIS_CORE_SRCS ${QGIS_CORE_SRCS}
     composer/qgscomposerhtml.cpp
   )
 ENDIF (WITH_QTWEBKIT)
+
+IF (NOT QT5_BUILD)
+  SET(QGIS_CORE_SRCS ${QGIS_CORE_SRCS}
+    qgshttptransaction.cpp
+  )
+ENDIF (NOT QT5_BUILD)
 
 IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   # spatialindex headers produce warnings
@@ -364,12 +370,12 @@ SET(QGIS_CORE_MOC_HDRS
   composer/qgscomposerscalebar.h
   composer/qgscomposeritem.h
   composer/qgscomposeritemgroup.h
-  composer/qgscomposermousehandles.h  
+  composer/qgscomposermousehandles.h
   composer/qgscomposerlabel.h
   composer/qgscomposershape.h
   composer/qgscomposerattributetable.h
-  composer/qgscomposerattributetablemodel.h  
-  composer/qgscomposertable.h  
+  composer/qgscomposerattributetablemodel.h
+  composer/qgscomposertable.h
   composer/qgscomposertablecolumn.h
   composer/qgscomposermultiframe.h
   composer/qgscomposereffect.h
@@ -399,6 +405,12 @@ IF (WITH_QTWEBKIT)
     composer/qgscomposerhtml.h
   )
 ENDIF (WITH_QTWEBKIT)
+
+IF (NOT QT5_BUILD)
+  SET(QGIS_CORE_MOC_HDRS ${QGIS_CORE_MOC_HDRS}
+    qgshttptransaction.h
+  )
+ENDIF (NOT QT5_BUILD)
 
 IF (WITH_INTERNAL_QEXTSERIALPORT)
   SET(QGIS_CORE_MOC_HDRS ${QGIS_CORE_MOC_HDRS}
