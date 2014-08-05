@@ -368,4 +368,4 @@ void TestQgsComposerMap::mapPolygonVertices()
 }
 
 QTEST_MAIN( TestQgsComposerMap )
-#include "moc_testqgscomposermap.cxx"
+#include "testqgscomposermap.moc"

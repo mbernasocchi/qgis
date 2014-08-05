@@ -174,4 +174,4 @@ void TestQgsComposerLabel::page_evaluation()
 }
 
 QTEST_MAIN( TestQgsComposerLabel )
-#include "moc_testqgscomposerlabel.cxx"
+#include "testqgscomposerlabel.moc"

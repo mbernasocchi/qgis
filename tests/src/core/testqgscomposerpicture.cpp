@@ -366,4 +366,4 @@ void TestQgsComposerPicture::pictureInvalidExpression()
 }
 
 QTEST_MAIN( TestQgsComposerPicture )
-#include "moc_testqgscomposerpicture.cxx"
+#include "testqgscomposerpicture.moc"
