@@ -1532,8 +1532,15 @@ void QgisApp::createToolBars()
   // qmainwindow::saveState and qmainwindow::restoreState
   // work properly
 
+#ifndef WITH_SAVEONLYTOOLBAR
+    mSaveToolBar->hide();
+#endif
+
   QList<QToolBar*> toolbarMenuToolBars;
   toolbarMenuToolBars << mFileToolBar
+#ifdef WITH_SAVEONLYTOOLBAR
+  << mSaveToolBar
+#endif
   << mLayerToolBar
   << mDigitizeToolBar
   << mAdvancedDigitizeToolBar

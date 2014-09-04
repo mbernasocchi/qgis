@@ -448,10 +448,6 @@ int main( int argc, char *argv[] )
   int mySnapshotHeight = 600;
 
   bool myHideSplash = false;
-#if defined(ANDROID)
-  QgsDebugMsg( QString( "Android: Splash hidden" ) );
-  myHideSplash = true;
-#endif
 
   bool myRestoreDefaultWindowState = false;
   bool myRestorePlugins = true;

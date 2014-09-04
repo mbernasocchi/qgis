@@ -147,7 +147,7 @@ void QgsApplication::init( QString customConfigPath )
 #if defined(Q_WS_MACX) || defined(Q_WS_WIN32) || defined(WIN32)
       setPrefixPath( applicationDirPath(), true );
 #elif defined(ANDROID)
-      // this is  "/data/data/org.qgis.qgis" in android
+      // this is  "/data/data/org.qgis.qgis/files" in android
       QDir myDir( QDir::homePath() );
       myDir.cdUp();
       QString myPrefix = myDir.absolutePath();
