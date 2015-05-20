@@ -122,7 +122,6 @@ layertree/qgslayertreeview.cpp
 layertree/qgslayertreeviewdefaultactions.cpp
 
 qgisgui.cpp
-qgisinterface.cpp
 qgsannotationitem.cpp
 qgsactionmenu.cpp
 qgsattributedialog.cpp
@@ -192,6 +191,7 @@ qgsmaplayeractionregistry.cpp
 qgsmaplayercombobox.cpp
 qgsmaplayermodel.cpp
 qgsmaplayerproxymodel.cpp
+qgsmaplayerpropertiesfactory.cpp
 qgsmapoverviewcanvas.cpp
 qgsmaptip.cpp
 qgsmaptool.cpp
@@ -235,6 +235,7 @@ qgstextannotationitem.cpp
 qgsuserinputdockwidget.cpp
 qgsvertexmarker.cpp
 qgsunitselectionwidget.cpp
+qgsvectorlayerpropertiespage.cpp
 )
 
 IF (WITH_TOUCH)
@@ -340,6 +341,7 @@ SET(QGIS_GUI_MOC_HDRS
   qgssublayersdialog.h
   qgsunitselectionwidget.h
   qgsuserinputdockwidget.h
+  qgsvectorlayerpropertiespage.h
 
   raster/qgsrasterminmaxwidget.h
   raster/qgspalettedrendererwidget.h
@@ -393,9 +395,9 @@ SET(QGIS_GUI_MOC_HDRS
   attributetable/qgsgenericfeatureselectionmanager.h
   attributetable/qgsifeatureselectionmanager.h
   attributetable/qgsvectorlayerselectionmanager.h
-  
+
   effects/qgseffectdrawmodecombobox.h
-  effects/qgspainteffectpropertieswidget.h  
+  effects/qgspainteffectpropertieswidget.h
   effects/qgspainteffectwidget.h
   effects/qgseffectstackpropertieswidget.h
 
@@ -537,7 +539,7 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_SOURCE_DIR}/editorwidgets
   ${CMAKE_CURRENT_SOURCE_DIR}/editorwidgets/core
   ${CMAKE_CURRENT_SOURCE_DIR}/layertree
-  ${CMAKE_CURRENT_SOURCE_DIR}/effects  
+  ${CMAKE_CURRENT_SOURCE_DIR}/effects
   ../core
   ../core/composer
   ../core/layertree

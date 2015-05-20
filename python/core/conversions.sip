@@ -1573,7 +1573,7 @@ template <TYPE>
     return sipGetState(sipTransferObj);
 %End
 };
-
+/*
 %If (QVECTORINT_CONVERSION)
 // QVector<int> is implemented as a Python list of integers.
 %MappedType QVector<int> /DocType="list-of-int"/
@@ -1625,3 +1625,4 @@ template <TYPE>
 %End
 };
 %End
+*/

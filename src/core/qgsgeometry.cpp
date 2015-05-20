@@ -3617,11 +3617,20 @@ QString QgsGeometry::exportToWkt( const int &precision ) const
   switch ( wkbType )
   {
     case QGis::WKBPoint25D:
+      hasZValue = true;
+      //intentional fall-through
     case QGis::WKBPoint:
     {
       double x, y;
       wkbPtr >> x >> y;
-      wkt += "POINT(" + qgsDoubleToString( x, precision ) + " " + qgsDoubleToString( y, precision ) + ")";
+      wkt += "POINT(" + qgsDoubleToString( x, precision ) + " " + qgsDoubleToString( y, precision );
+      if ( hasZValue )
+      {
+        double z;
+        wkbPtr >> z;
+        wkt += " " + qgsDoubleToString( z, precision );
+      }
+      wkt += ")";
       return wkt;
     }
 
@@ -3639,13 +3648,17 @@ QString QgsGeometry::exportToWkt( const int &precision ) const
       {
         double x, y;
         wkbPtr >> x >> y;
-        if ( hasZValue )
-          wkbPtr += sizeof( double );
 
         if ( idx != 0 )
           wkt += ", ";
 
         wkt += qgsDoubleToString( x, precision ) + " " + qgsDoubleToString( y, precision );
+        if ( hasZValue )
+        {
+          double z;
+          wkbPtr >> z;
+          wkt += " " + qgsDoubleToString( z, precision );
+        }
       }
       wkt += ")";
       return wkt;
@@ -3680,10 +3693,14 @@ QString QgsGeometry::exportToWkt( const int &precision ) const
 
           double x, y;
           wkbPtr >> x >> y;
-          if ( hasZValue )
-            wkbPtr += sizeof( double );
 
           wkt += qgsDoubleToString( x, precision ) + " " + qgsDoubleToString( y, precision );
+          if ( hasZValue )
+          {
+            double z;
+            wkbPtr >> z;
+            wkt += " " + qgsDoubleToString( z, precision );
+          }
         }
         wkt += ")";
       }
@@ -3708,10 +3725,14 @@ QString QgsGeometry::exportToWkt( const int &precision ) const
 
         double x, y;
         wkbPtr >> x >> y;
-        if ( hasZValue )
-          wkbPtr += sizeof( double );
 
         wkt += qgsDoubleToString( x, precision ) + " " + qgsDoubleToString( y, precision );
+        if ( hasZValue )
+        {
+          double z;
+          wkbPtr >> z;
+          wkt += " " + qgsDoubleToString( z, precision );
+        }
       }
       wkt += ")";
       return wkt;
@@ -3742,10 +3763,14 @@ QString QgsGeometry::exportToWkt( const int &precision ) const
 
           double x, y;
           wkbPtr >> x >> y;
-          if ( hasZValue )
-            wkbPtr += sizeof( double );
 
           wkt += qgsDoubleToString( x, precision ) + " " + qgsDoubleToString( y, precision );
+          if ( hasZValue )
+          {
+            double z;
+            wkbPtr >> z;
+            wkt += " " + qgsDoubleToString( z, precision );
+          }
         }
         wkt += ")";
       }
@@ -3786,10 +3811,14 @@ QString QgsGeometry::exportToWkt( const int &precision ) const
 
             double x, y;
             wkbPtr >> x >> y;
-            if ( hasZValue )
-              wkbPtr += sizeof( double );
 
             wkt += qgsDoubleToString( x, precision ) + " " + qgsDoubleToString( y, precision );
+            if ( hasZValue )
+            {
+              double z;
+              wkbPtr >> z;
+              wkt += " " + qgsDoubleToString( z, precision );
+            }
           }
           wkt += ")";
         }
@@ -3829,6 +3858,8 @@ QString QgsGeometry::exportToGeoJSON( const int &precision ) const
   switch ( wkbType )
   {
     case QGis::WKBPoint25D:
+      hasZValue = true;
+      //intentional fall-through
     case QGis::WKBPoint:
     {
 
@@ -3837,8 +3868,14 @@ QString QgsGeometry::exportToGeoJSON( const int &precision ) const
 
       wkt += "{ \"type\": \"Point\", \"coordinates\": ["
              + qgsDoubleToString( x, precision ) + ", "
-             + qgsDoubleToString( y, precision )
-             + "] }";
+             + qgsDoubleToString( y, precision );
+      if ( hasZValue )
+      {
+        double z;
+        wkbPtr >> z;
+        wkt += ", " + qgsDoubleToString( z, precision );
+      }
+      wkt += "] }";
       return wkt;
     }
 
@@ -3859,10 +3896,15 @@ QString QgsGeometry::exportToGeoJSON( const int &precision ) const
 
         double x, y;
         wkbPtr >> x >> y;
-        if ( hasZValue )
-          wkbPtr += sizeof( double );
 
-        wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision ) + "]";
+        wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision );
+        if ( hasZValue )
+        {
+          double z;
+          wkbPtr >> z;
+          wkt += ", " + qgsDoubleToString( z, precision );
+        }
+        wkt += "]";
       }
       wkt += " ] }";
       return wkt;
@@ -3898,10 +3940,15 @@ QString QgsGeometry::exportToGeoJSON( const int &precision ) const
 
           double x, y;
           wkbPtr >> x >> y;
-          if ( hasZValue )
-            wkbPtr += sizeof( double );
 
-          wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision ) + "]";
+          wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision );
+          if ( hasZValue )
+          {
+            double z;
+            wkbPtr >> z;
+            wkt += ", " + qgsDoubleToString( z, precision );
+          }
+          wkt += "]";
         }
         wkt += " ]";
       }
@@ -3928,7 +3975,14 @@ QString QgsGeometry::exportToGeoJSON( const int &precision ) const
         if ( hasZValue )
           wkbPtr += sizeof( double );
 
-        wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision ) + "]";
+        wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision );
+        if ( hasZValue )
+        {
+          double z;
+          wkbPtr >> z;
+          wkt += ", " + qgsDoubleToString( z, precision );
+        }
+        wkt += "]";
       }
       wkt += " ] }";
       return wkt;
@@ -3960,10 +4014,15 @@ QString QgsGeometry::exportToGeoJSON( const int &precision ) const
 
           double x, y;
           wkbPtr >> x >> y;
-          if ( hasZValue )
-            wkbPtr += sizeof( double );
 
-          wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision ) + "]";
+          wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision );
+          if ( hasZValue )
+          {
+            double z;
+            wkbPtr >> z;
+            wkt += ", " + qgsDoubleToString( z, precision );
+          }
+          wkt += "]";
         }
         wkt += " ]";
       }
@@ -4008,10 +4067,15 @@ QString QgsGeometry::exportToGeoJSON( const int &precision ) const
 
             double x, y;
             wkbPtr >> x >> y;
-            if ( hasZValue )
-              wkbPtr += sizeof( double );
 
-            wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision ) + "]";
+            wkt += "[" + qgsDoubleToString( x, precision ) + ", " + qgsDoubleToString( y, precision );
+            if ( hasZValue )
+            {
+              double z;
+              wkbPtr >> z;
+              wkt += ", " + qgsDoubleToString( z, precision );
+            }
+            wkt += "]";
           }
           wkt += " ]";
         }
@@ -5507,7 +5571,11 @@ QgsPoint QgsGeometry::asPoint( QgsConstWkbPtr &wkbPtr, bool hasZValue ) const
   double x, y;
   wkbPtr >> x >> y;
   if ( hasZValue )
-    wkbPtr += sizeof( double );
+  {
+    double z;
+    wkbPtr >> z;
+    return QgsPoint( x, y, z );
+  }
 
   return QgsPoint( x, y );
 }
@@ -5527,9 +5595,15 @@ QgsPolyline QgsGeometry::asPolyline( QgsConstWkbPtr &wkbPtr, bool hasZValue ) co
     double x, y;
     wkbPtr >> x >> y;
     if ( hasZValue )
-      wkbPtr += sizeof( double );
-
-    line[i] = QgsPoint( x, y );
+    {
+      double z;
+      wkbPtr >> z;
+      line[i] = QgsPoint( x, y, z );
+    }
+    else
+    {
+      line[i] = QgsPoint( x, y );
+    }
   }
 
   return line;
@@ -5560,9 +5634,15 @@ QgsPolygon QgsGeometry::asPolygon( QgsConstWkbPtr &wkbPtr, bool hasZValue ) cons
       double x, y;
       wkbPtr >> x >> y;
       if ( hasZValue )
-        wkbPtr += sizeof( double );
-
-      ring[jdx] = QgsPoint( x, y );
+      {
+        double z;
+        wkbPtr >> z;
+        ring[jdx] = QgsPoint( x, y, z );
+      }
+      else
+      {
+        ring[jdx] = QgsPoint( x, y );
+      }
     }
 
     rings[idx] = ring;

@@ -328,6 +328,11 @@ void QgsApplication::setDefaultSvgPaths( const QStringList& pathList )
   ABISYM( mDefaultSvgPaths ) = pathList;
 }
 
+bool QgsApplication::runningFromBuildPath()
+{
+  return ABISYM( mRunningFromBuildDir );
+}
+
 const QString QgsApplication::prefixPath()
 {
   if ( ABISYM( mRunningFromBuildDir ) )

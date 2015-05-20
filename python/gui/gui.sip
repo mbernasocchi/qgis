@@ -72,6 +72,7 @@
 %Include qgsmaplayercombobox.sip
 %Include qgsmaplayermodel.sip
 %Include qgsmaplayerproxymodel.sip
+%Include qgsmaplayerpropertiesfactory.sip
 %Include qgsmapoverviewcanvas.sip
 %Include qgsmaptip.sip
 %Include qgsmaptool.sip
@@ -105,6 +106,7 @@
 %Include qgssearchquerybuilder.sip
 %Include qgstextannotationitem.sip
 %Include qgsvertexmarker.sip
+%Include qgsvectorlayerpropertiespage.sip
 %Include qgsvectorlayertools.sip
 %Include qgssublayersdialog.sip
 %Include qgscharacterselectdialog.sip

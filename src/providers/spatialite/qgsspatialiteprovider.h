@@ -410,6 +410,7 @@ class QgsSpatiaLiteProvider: public QgsVectorDataProvider
     bool getTableSummaryAbstractInterface( gaiaVectorLayerPtr lyr );
     void loadFieldsAbstractInterface( gaiaVectorLayerPtr lyr );
     void getViewSpatialIndexName();
+    bool updateLayerStatistics( bool forcedUpdate = false );
 #endif
     bool prepareStatement( sqlite3_stmt *&stmt,
                            const QgsAttributeList &fetchAttributes,

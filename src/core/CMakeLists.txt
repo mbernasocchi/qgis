@@ -377,6 +377,7 @@ SET(QGIS_CORE_MOC_HDRS
   qgspluginlayer.h
   qgspointlocator.h
   qgsproject.h
+  qgsplugininterface.h
   qgsrunprocess.h
   qgsrelationmanager.h
   qgssnappingutils.h
@@ -536,9 +537,11 @@ SET(QGIS_CORE_HDRS
   qgspalgeometry.h
   qgspallabeling.h
   qgspluginlayerregistry.h
+  qgsnumeric.h
   qgspoint.h
   qgspointlocator.h
   qgsproject.h
+  qgsplugininterface.h
   qgsprojectfiletransform.h
   qgsprojectproperty.h
   qgsprojectversion.h

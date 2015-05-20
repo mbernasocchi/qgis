@@ -187,6 +187,8 @@ class CORE_EXPORT QgsApplication : public QApplication
     //! Alters default svg paths - used by 3rd party apps.
     static void setDefaultSvgPaths( const QStringList& pathList );
 
+    static bool runningFromBuildPath();
+
     //! loads providers
     static void initQgis();
 

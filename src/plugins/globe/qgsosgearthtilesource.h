@@ -16,21 +16,13 @@
 #ifndef OSGEARTH_DRIVER_QGIS_DRIVEROPTIONS
 #define OSGEARTH_DRIVER_QGIS_DRIVEROPTIONS 1
 
-#include <QtGlobal>
+#include "qgsmapcanvas.h"
 
+#include <QImage>
 class QgisInterface;
-class QgsMapRenderer;
-class QgsCoordinateTransform;
-class QImage;
 
 #include <osgEarth/Common>
 #include <osgEarth/TileSource>
-
-#define USE_RENDERER
-
-#ifndef USE_RENDERER
-#include "qgsmapsettings.h"
-#endif
 
 using namespace osgEarth;
 
@@ -41,13 +33,15 @@ namespace osgEarth
     class QgsOsgEarthTileSource : public TileSource
     {
       public:
-        QgsOsgEarthTileSource( QgisInterface* theQgisInterface, const TileSourceOptions& options = TileSourceOptions() );
+        QgsOsgEarthTileSource( QStringList mapLayers, QgsMapCanvas* canvas, const TileSourceOptions& options = TileSourceOptions() );
 
         void initialize( const std::string& referenceURI, const Profile* overrideProfile = NULL );
 
-        osg::Image* createImage( const TileKey& key, ProgressCallback* progress ) override;
+        osg::Image* createImage( const TileKey& key, ProgressCallback* progress );
 
-        virtual osg::HeightField* createHeightField( const TileKey &key, ProgressCallback* progress ) override
+        void addLayers( QSet<QgsMapLayer*> layers );
+
+        virtual osg::HeightField* createHeightField( const TileKey &key, ProgressCallback* progress )
         {
           Q_UNUSED( key );
           Q_UNUSED( progress );
@@ -56,7 +50,7 @@ namespace osgEarth
           return NULL;
         }
 
-        virtual std::string getExtension() const override
+        virtual std::string getExtension()  const
         {
           //All QGIS tiles are in JPEG format
           return "jpg";
@@ -67,17 +61,17 @@ namespace osgEarth
           return false;
         }
 
+        bool isDynamic() const override { return true; }
+
       private:
+
         QImage* createQImage( int width, int height ) const;
 
         //! Pointer to the QGIS interface object
-        QgisInterface *mQGisIface;
-        QgsCoordinateTransform *mCoordTransform;
-#ifndef USE_RENDERER
-        QgsMapSettings mMapSettings;
-#else
+        QStringList mMapLayers;
         QgsMapRenderer *mMapRenderer;
-#endif
+        QgsMapCanvas* mCanvas;
+        QgsCoordinateTransform *mCoordTransform;
     };
   }
 } // namespace osgEarth::Drivers

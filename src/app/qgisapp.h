@@ -59,6 +59,7 @@ class QgsPluginLayer;
 class QgsPoint;
 class QgsProviderRegistry;
 class QgsPythonUtils;
+class QgsPluginInterface;
 class QgsRectangle;
 class QgsSnappingUtils;
 class QgsUndoWidget;
@@ -97,6 +98,8 @@ class QgsTileScaleWidget;
 #include "qgsconfig.h"
 #include "qgsfeature.h"
 #include "qgsfeaturestore.h"
+#include "qgsmaplayerpropertiesfactory.h"
+#include "qgspluginmanager.h"
 #include "qgspoint.h"
 #include "qgsrasterlayer.h"
 #include "qgssnappingdialog.h"
@@ -448,6 +451,8 @@ class APP_EXPORT QgisApp : public QMainWindow, private Ui::MainWindow
 
     //! returns pointer to plugin manager
     QgsPluginManager *pluginManager();
+
+    QgsPluginInterface* pluginInterface( const QString& pluginName );
 
     /** Return vector layers in edit mode
      * @param modified whether to return only layers that have been modified
@@ -1196,6 +1201,15 @@ class APP_EXPORT QgisApp : public QMainWindow, private Ui::MainWindow
     void osmExportDialog();
 
     void clipboardChanged();
+    /** Register a new tab in the layer properties dialog
+      \note added in 2.1
+    */
+    void registerMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory );
+
+    /** Unregister a previously registered tab in the layer properties dialog
+      \note added in 2.1
+    */
+    void unregisterMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory );
 
     //! catch MapCanvas keyPress event so we can check if selected feature collection must be deleted
     void mapCanvas_keyPressed( QKeyEvent *e );
@@ -1553,6 +1567,11 @@ class APP_EXPORT QgisApp : public QMainWindow, private Ui::MainWindow
     QCursor *mOverviewMapCursor;
     //! Current map window extent in real-world coordinates
     QRect *mMapWindow;
+    //! Additional map layer properties pages created by plugins
+    QList<QgsMapLayerPropertiesFactory*> mMapLayerPropertiesFactories;
+    //! The previously selected non zoom map tool
+    int mPreviousNonZoomMapTool;
+    //QCursor *mCursorZoomIn; //doesnt seem to be used anymore (TS)
     QString mStartupPath;
     //! full path name of the current map file (if it has been saved or loaded)
     QString mFullPathName;

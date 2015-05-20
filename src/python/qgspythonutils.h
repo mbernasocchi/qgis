@@ -50,7 +50,7 @@ class PYTHON_EXPORT QgsPythonUtils
     virtual bool isEnabled() = 0;
 
     //! initialize python and import bindings
-    virtual void initPython( QgisInterface* interface ) = 0;
+    virtual void initPython( QgisInterface* iface ) = 0;
 
 #ifdef HAVE_SERVER_PYTHON_PLUGINS
     //! initialize python and import server bindings

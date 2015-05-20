@@ -23,35 +23,32 @@
 #include <osgDB/Registry>
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
+#include <sstream>
 
 #include "qgsosgearthtilesource.h"
 
-#include <qgsapplication.h>
+#include "qgsapplication.h"
 #include <qgslogger.h>
 #include <qgisinterface.h>
 #include <qgsmapcanvas.h>
-
-#ifdef USE_RENDERER
-#include <qgsmaprenderer.h>
-#else
-#include <qgsmaprendererjob.h>
-#endif
+#include "qgsproviderregistry.h"
+#include "qgsmaplayerregistry.h"
+#include "qgsmaptopixel.h"
+#include "qgspallabeling.h"
+#include "qgsproject.h"
 
 #include <QFile>
-#include <QImage>
-#include <QDesktopWidget>
+#include <QPainter>
 
 using namespace osgEarth;
 using namespace osgEarth::Drivers;
 
 
-QgsOsgEarthTileSource::QgsOsgEarthTileSource( QgisInterface* theQgisInterface, const TileSourceOptions& options )
+QgsOsgEarthTileSource::QgsOsgEarthTileSource( QStringList mapLayers, QgsMapCanvas* canvas, const TileSourceOptions& options )
     : TileSource( options )
-    , mQGisIface( theQgisInterface )
+    , mMapLayers( mapLayers )
+    , mCanvas( canvas )
     , mCoordTransform( 0 )
-#ifdef USE_RENDERER
-    , mMapRenderer( 0 )
-#endif
 {
 }
 
@@ -65,11 +62,10 @@ void QgsOsgEarthTileSource::initialize( const std::string& referenceURI, const P
   QgsCoordinateReferenceSystem destCRS;
   destCRS.createFromOgcWmsCrs( GEO_EPSG_CRS_AUTHID );
 
-  QgsMapCanvas *c = mQGisIface->mapCanvas();
-  if ( c->mapSettings().destinationCrs().authid().compare( GEO_EPSG_CRS_AUTHID, Qt::CaseInsensitive ) != 0 )
+  if ( mCanvas->mapSettings().destinationCrs().authid().compare( GEO_EPSG_CRS_AUTHID, Qt::CaseInsensitive ) != 0 )
   {
     // FIXME: crs from canvas or first layer?
-    QgsCoordinateReferenceSystem srcCRS( c->mapSettings().destinationCrs() );
+    QgsCoordinateReferenceSystem srcCRS( mCanvas->mapSettings().destinationCrs() );
     QgsDebugMsg( QString( "transforming from %1 to %2" ).arg( srcCRS.authid() ).arg( destCRS.authid() ) );
     mCoordTransform = new QgsCoordinateTransform( srcCRS, destCRS );
   }
@@ -77,18 +73,11 @@ void QgsOsgEarthTileSource::initialize( const std::string& referenceURI, const P
   {
     mCoordTransform = 0;
   }
-
-#ifdef USE_RENDERER
   mMapRenderer = new QgsMapRenderer();
   mMapRenderer->setDestinationCrs( destCRS );
   mMapRenderer->setProjectionsEnabled( true );
-  mMapRenderer->setOutputUnits( c->mapRenderer()->outputUnits() );
+  mMapRenderer->setOutputUnits( mCanvas->mapRenderer()->outputUnits() );
   mMapRenderer->setMapUnits( QGis::Degrees );
-#else
-  mMapSettings.setDestinationCrs( destCRS );
-  mMapSettings.setCrsTransformEnabled( true );
-  mMapSettings.setMapUnits( QGis::Degrees );
-#endif
 }
 
 osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCallback* progress )
@@ -106,7 +95,7 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
     return ImageUtils::createEmptyImage();
   }
 
-  QgsRectangle viewExtent = mQGisIface->mapCanvas()->fullExtent();
+  QgsRectangle viewExtent = mCanvas->fullExtent();
   if ( mCoordTransform )
   {
     QgsDebugMsg( QString( "vext0:%1" ).arg( viewExtent.toString( 5 ) ) );
@@ -126,7 +115,6 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
     return ImageUtils::createEmptyImage();
   }
 
-#ifdef USE_RENDERER
   QImage *qImage = createQImage( tileSize, tileSize );
   if ( !qImage )
   {
@@ -134,33 +122,12 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
     return ImageUtils::createEmptyImage();
   }
 
-  mMapRenderer->setLayerSet( mQGisIface->mapCanvas()->mapRenderer()->layerSet() );
+  mMapRenderer->setLayerSet( mCanvas->mapRenderer()->layerSet() );
   mMapRenderer->setOutputSize( QSize( tileSize, tileSize ), qImage->logicalDpiX() );
   mMapRenderer->setExtent( tileExtent );
 
   QPainter thePainter( qImage );
   mMapRenderer->render( &thePainter );
-#else
-  mMapSettings.setLayers( mQGisIface->mapCanvas()->mapSettings().layers() );
-  mMapSettings.setOutputSize( QSize( tileSize, tileSize ) );
-  mMapSettings.setOutputDpi( QgsApplication::desktop()->logicalDpiX() );
-  mMapSettings.setExtent( tileExtent );
-  mMapSettings.setBackgroundColor( QColor( 0, 0, 0, 0 ) );
-
-  QgsMapRendererSequentialJob job( mMapSettings );
-  job.start();
-  job.waitForFinished();
-
-  QImage *qImage = new QImage( job.renderedImage() );
-  if ( !qImage )
-  {
-    QgsDebugMsg( QString( "earth tile key:%1 ext:%2: EMPTY IMAGE" ).arg( kname ).arg( tileExtent.toString( 5 ) ) );
-    return ImageUtils::createEmptyImage();
-  }
-
-  Q_ASSERT( qImage->logicalDpiX() == QgsApplication::desktop()->logicalDpiX() );
-  Q_ASSERT( qImage->format() == QImage::Format_ARGB32_Premultiplied );
-#endif
 
   QgsDebugMsg( QString( "earth tile key:%1 ext:%2" ).arg( kname ).arg( tileExtent.toString( 5 ) ) );
 #if 0
@@ -177,23 +144,34 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
 
   image->flipVertical();
 
+
   //Create a transparent image if we don't have an image
   if ( !image.valid() )
   {
     QgsDebugMsg( "image is invalid" );
     return ImageUtils::createEmptyImage();
   }
-
   QgsDebugMsg( "returning image" );
   return image.release();
+}
+
+void QgsOsgEarthTileSource::addLayers( QSet<QgsMapLayer*> layers )
+{
+  Q_FOREACH( QgsMapLayer* layer, layers )
+  {
+    mMapLayers << layer->id();
+  }
+  mMapRenderer->setLayerSet( mMapLayers );
 }
 
 QImage* QgsOsgEarthTileSource::createQImage( int width, int height ) const
 {
   if ( width < 0 || height < 0 )
+  {
     return 0;
+  }
 
-  QImage *qImage = 0;
+  QImage* qImage = 0;
 
   //is format jpeg?
   bool jpeg = false;
@@ -213,7 +191,9 @@ QImage* QgsOsgEarthTileSource::createQImage( int width, int height ) const
   }
 
   if ( !qImage )
+  {
     return 0;
+  }
 
   //apply DPI parameter if present.
 #if 0

@@ -19,10 +19,12 @@
 #include <QDialog>
 #include <QSettings>
 #include <QCheckBox>
-#include <osgViewer/Viewer>
 #include "qgscontexthelp.h"
 #include <qgsproject.h>
 #include <qgsvectorlayer.h>
+#include "qgsglobeinterface.h"
+
+#include <osgEarth/Version>
 
 class GlobePlugin;
 
@@ -31,7 +33,7 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     Q_OBJECT
 
   public:
-    QgsGlobePluginDialog( QWidget * parent, GlobePlugin* globe, Qt::WindowFlags fl = 0 );
+    QgsGlobePluginDialog( GlobePlugin* globe, QWidget * parent = 0, Qt::WFlags fl = 0 );
     ~QgsGlobePluginDialog();
     void resetElevationDatasources();
     void readElevationDatasources();
@@ -39,6 +41,9 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void updatePointLayers();
     QgsVectorLayer* modelLayer();
     QString modelPath() { return modelPathLineEdit->text(); }
+
+    float scrollSensitivity();
+    bool invertScrollWheel();
 
   private:
     QString openRasterFile();
@@ -56,6 +61,8 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void loadStereoConfig();
     //! Save settings
     void saveStereoConfig();
+    void loadNavigationSettings();
+    void saveNavigationSettings();
     //! Handle stereoMode
     void setStereoMode();
     void loadVideoSettings();
@@ -82,6 +89,10 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     //MODEL
     void on_modelBrowse_clicked();
 
+    // NAVIGATION
+    void on_mScrollSensitivitySlider_valueChanged( int value );
+    void on_mInvertScrollWheel_stateChanged( int state );
+
     //ELEVATION
     void on_elevationCombo_currentIndexChanged( QString type );
     void on_elevationBrowse_clicked();
@@ -89,6 +100,10 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void on_elevationRemove_clicked();
     void on_elevationUp_clicked();
     void on_elevationDown_clicked();
+
+#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
+    void on_mTxtVerticalScale_changed( double value );
+#endif
 
     //MAP
     void on_mBaseLayerComboBox_currentIndexChanged( int index );

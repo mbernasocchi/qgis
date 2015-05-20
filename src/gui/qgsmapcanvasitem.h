@@ -54,7 +54,6 @@ class GUI_EXPORT QgsMapCanvasItem : public QGraphicsItem
     bool setRenderContextVariables( QPainter* p, QgsRenderContext& context ) const;
 
   public:
-
     //! called on changed extent or resize event to update position of the item
     virtual void updatePosition();
 
@@ -76,6 +75,13 @@ class GUI_EXPORT QgsMapCanvasItem : public QGraphicsItem
 
     //! transformation from map coordinates to screen coordinates
     QPointF toCanvasCoordinates( const QgsPoint& point ) const;
+
+    /**
+     * Returns the map canvas to which this item belongs
+     *
+     * @return Map Canvas
+     */
+    QgsMapCanvas* mapCanvas() { return mMapCanvas; }
 
   protected:
 

@@ -3840,6 +3840,10 @@ bool QgsSpatiaLiteProvider::addAttributes( const QList<QgsField> &attributes )
   update_layer_statistics( sqliteHandle, mTableName.toUtf8().constData(), mGeometryColumn.toUtf8().constData() );
 #endif
 
+#ifdef SPATIALITE_VERSION_GE_4_0_0
+  // update layer statistics to include new attribute
+  updateLayerStatistics( true );
+#endif
   // reload columns
   loadFields();
 
@@ -4868,6 +4872,39 @@ bool QgsSpatiaLiteProvider::getTableSummaryAbstractInterface( gaiaVectorLayerPtr
   }
 
   return true;
+}
+
+bool QgsSpatiaLiteProvider::updateLayerStatistics( bool forcedUpdate )
+{
+  const char* tbl = mTableName.toUtf8().constData();
+  bool successful = false;
+
+  if ( forcedUpdate )
+  {
+    gaiaVectorLayersListPtr list = gaiaGetVectorLayersList(
+                                     sqliteHandle, tbl, NULL, GAIA_VECTORS_LIST_PESSIMISTIC );
+
+    if ( list != NULL )
+    {
+      gaiaVectorLayerPtr lyr = list->First;
+      do
+      {
+        getTableSummaryAbstractInterface( lyr );
+        lyr = lyr->Next;
+      }
+      while ( lyr );
+    }
+
+    gaiaFreeVectorLayersList( list );
+  }
+
+  int ret = update_layer_statistics( sqliteHandle, tbl, NULL );
+  if ( ret == 0 )
+    QgsMessageLog::logMessage( tr( "SQLite error. Could not update layer statistics." ), tr( "SpatiaLite" ) );
+  else
+    successful = true;
+
+  return successful;
 }
 #endif
 

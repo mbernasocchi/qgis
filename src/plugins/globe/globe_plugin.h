@@ -23,7 +23,11 @@
 #include "qgisplugin.h"
 #include "qgsosgearthtilesource.h"
 #include "globe_plugin_dialog.h"
+#include "qgsrubberband.h"
+
 #include <QObject>
+#include <QDockWidget>
+
 #include <osgViewer/Viewer>
 #include <osgEarth/MapNode>
 #include <osgEarth/ImageLayer>
@@ -51,14 +55,24 @@ using namespace osgEarth::Util::Controls;
 #include <iostream>
 #endif
 
+#include <qgslogger.h>
+#include "qgsosgearthfeaturesource.h"
+#include "qgsvectorlayer.h"
+#include "qgsglobefeatureutils.h"
+#include "globefrustumhighlight.h"
+#include "globefeatureidentify.h"
+
 class QAction;
 class QToolBar;
 class QgisInterface;
+class QgsGlobeLayerPropertiesFactory;
+class QgsGlobeInterface;
+using namespace osgEarth::Features;
 
 namespace osgEarth { namespace QtGui { class ViewerWidget; } }
 namespace osgEarth { namespace Util { class SkyNode; class VerticalScale; } }
 
-class GlobePlugin : public QObject, public QgisPlugin
+class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 {
     Q_OBJECT
 
@@ -66,24 +80,20 @@ class GlobePlugin : public QObject, public QgisPlugin
     GlobePlugin( QgisInterface* theQgisInterface );
     virtual ~GlobePlugin();
 
-  public slots:
+    // QgisPlugin interface
+  public:
+    //! offer an interface for python plugins
+    virtual QgsPluginInterface* pluginInterface();
     //! init the gui
     virtual void initGui() override;
-    //! Show the dialog box
-    void run();
-    //! Show the settings dialog box
-    void settings();
     //!  Reset globe
     void reset();
     //! unload the plugin
     void unload() override;
+
     //! show the help document
     void help();
 
-    //! Called when a new set of image layers has been received
-    void imageLayersChanged();
-    //! Called when a new set of elevation layers has been received
-    void elevationLayersChanged();
     //! Set a different base map (QString::NULL will disable the base map)
     void setBaseMap( QString url );
     //! Called when the extents of the map change
@@ -121,10 +131,40 @@ class GlobePlugin : public QObject, public QgisPlugin
     //! Place an OSG model on the globe
     void placeNode( osg::Node* node, double lat, double lon, double alt = 0.0 );
 
+    //! Get the OSG viewer
     osgViewer::Viewer* osgViewer() { return mOsgViewer; }
 
     //! Recursive copy folder
     static void copyFolder( QString sourceFolder, QString destFolder );
+
+    osgEarth::MapNode* mapNode() { return mMapNode; }
+
+    void enableFrustumHighlight( bool status );
+
+    void enableFeatureIdentification( bool status );
+
+  public slots:
+    //! Open the 3D viewer window (if not yet open)
+    void run();
+    //! Called when a new set of image layers has been received
+    void canvasLayersChanged();
+
+  private slots:
+
+    //! Called when a new set of elevation layers has been received
+    void elevationLayersChanged();
+
+    //! Show the settings dialog box
+    void settings();
+
+    void layersAdded( QList<QgsMapLayer*> );
+
+    void layersRemoved( QStringList layerIds );
+
+    void layerSettingsChanged( QgsMapLayer* layer );
+
+    void onLayerRead( QgsMapLayer* mapLayer, QDomElement elem );
+    void onLayerWrite( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc );
 
   private:
     //!  Set HTTP proxy settings
@@ -133,6 +173,8 @@ class GlobePlugin : public QObject, public QgisPlugin
     void setupMap();
     //!  Setup map controls
     void setupControls();
+
+    void tileLayersChanged();
 
   private://! Checks if the globe is open
     //! Pointer to the QGIS interface object
@@ -146,6 +188,8 @@ class GlobePlugin : public QObject, public QgisPlugin
     osgViewer::Viewer* mOsgViewer;
     //! QT viewer widget
     osgEarth::QtGui::ViewerWidget* mViewerWidget;
+    //! Dockable dialog
+    QDockWidget* mDockWidget;
     //! Settings Dialog
     QgsGlobePluginDialog *mSettingsDialog;
     //! OSG root node
@@ -180,6 +224,8 @@ class GlobePlugin : public QObject, public QgisPlugin
     bool mIsGlobeRunning;
     //! coordinates of the right-clicked point on the globe
     double mSelectedLat, mSelectedLon, mSelectedElevation;
+    //! Creates additional pages in the layer properties for adjusting 3D properties
+    QgsGlobeLayerPropertiesFactory* mLayerPropertiesFactory;
 
 #if 0
     std::streambuf *mCoutRdBuf, *mCerrRdBuf;
@@ -190,6 +236,15 @@ class GlobePlugin : public QObject, public QgisPlugin
     void xyCoordinates( const QgsPoint & p );
     //! emits position of right click on globe
     void newCoordinatesSelected( const QgsPoint & p );
+
+  private:
+    QgsGlobeInterface mGlobeInterface;
+
+
+
+
+    GlobeFrustumHighlightCallback* mFrustumHighlightCallback;
+    osgEarth::Util::FeatureQueryTool* mFeatureQueryTool;
 };
 
 class FlyToExtentHandler : public osgGA::GUIEventHandler
@@ -201,6 +256,7 @@ class FlyToExtentHandler : public osgGA::GUIEventHandler
 
   private:
     GlobePlugin* mGlobe;
+
 };
 
 // An event handler that will print out the coordinates at the clicked point

@@ -19,10 +19,10 @@
 #define QGISINTERFACE_H
 
 class QAction;
-class QMenu;
-class QToolBar;
 class QDockWidget;
 class QMainWindow;
+class QMenu;
+class QToolBar;
 class QWidget;
 
 class QgsAttributeDialog;
@@ -33,11 +33,13 @@ class QgsLegendInterface;
 class QgsMapCanvas;
 class QgsMapLayer;
 class QgsMessageBar;
+class QgsPluginInterface;
 class QgsPluginManagerInterface;
 class QgsRasterLayer;
 class QgsSnappingUtils;
 class QgsVectorLayer;
 class QgsVectorLayerTools;
+class QgsMapLayerPropertiesFactory;
 
 #include <QObject>
 #include <QFont>
@@ -66,15 +68,17 @@ class GUI_EXPORT QgisInterface : public QObject
   public:
 
     /** Constructor */
-    QgisInterface();
+    QgisInterface() {}
 
     /** Virtual destructor */
-    virtual ~QgisInterface();
+    virtual ~QgisInterface() {}
 
     /** Get pointer to legend interface */
     virtual QgsLegendInterface* legendInterface() = 0;
 
     virtual QgsPluginManagerInterface* pluginManagerInterface() = 0;
+
+    virtual QgsPluginInterface* pluginInterface( const QString& pluginName ) = 0;
 
     virtual QgsLayerTreeView* layerTreeView() = 0;
 
@@ -310,6 +314,16 @@ class GUI_EXPORT QgisInterface : public QObject
 
     /** Unregister a previously registered action. (e.g. when plugin is going to be unloaded) */
     virtual bool unregisterMainWindowAction( QAction* action ) = 0;
+
+    /** Register a new tab in the vector layer properties dialog
+      \note added in 2.1
+    */
+    virtual void registerMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory ) = 0;
+
+    /** Unregister a previously registered tab in the layer properties dialog
+      \note added in 2.1
+    */
+    virtual void unregisterMapLayerPropertiesFactory( QgsMapLayerPropertiesFactory* factory ) = 0;
 
     // @todo is this deprecated in favour of QgsContextHelp?
     /** Open a url in the users browser. By default the QGIS doc directory is used
