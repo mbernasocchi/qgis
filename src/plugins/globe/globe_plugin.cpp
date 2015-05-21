@@ -481,7 +481,6 @@ void GlobePlugin::run()
 
 void GlobePlugin::settings()
 {
-  mSettingsDialog->updatePointLayers();
   if ( mSettingsDialog->exec() )
   {
     //viewer stereo settings set by mSettingsDialog and stored in QSettings

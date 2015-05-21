@@ -391,63 +391,6 @@ void QgsGlobePluginDialog::saveElevationDatasources()
 }
 //END ELEVATION
 
-//MODEL
-QList<QgsVectorLayer*> QgsGlobePluginDialog::pointLayers()
-{
-  QList<QgsVectorLayer*> list;
-  QMap< QString, QgsMapLayer *> layers = QgsMapLayerRegistry::instance()->mapLayers();
-  QMapIterator<QString, QgsMapLayer *> it( layers );
-  while ( it.hasNext() )
-  {
-    it.next();
-    QgsMapLayer* layer = it.value();
-    if ( layer->type() == QgsMapLayer::VectorLayer )
-    {
-      QgsVectorLayer* vectorLayer = static_cast<QgsVectorLayer*>( layer );
-      if ( vectorLayer->geometryType() == QGis::Point )
-      {
-        list.append( vectorLayer );
-      }
-    }
-  }
-  return list;
-}
-
-void QgsGlobePluginDialog::updatePointLayers()
-{
-  modelLayerCombo->clear();
-  QList<QgsVectorLayer*> layers = pointLayers();
-  QListIterator<QgsVectorLayer*> it( layers );
-  while ( it.hasNext() )
-  {
-    QgsVectorLayer* layer = it.next();
-    modelLayerCombo->addItem( layer->name() );
-  }
-}
-
-QgsVectorLayer* QgsGlobePluginDialog::modelLayer()
-{
-  QList<QgsVectorLayer*> layers = pointLayers();
-  return ( modelLayerCombo->currentIndex() == -1 ) ? NULL : layers.at( modelLayerCombo->currentIndex() );
-}
-
-void QgsGlobePluginDialog::on_modelBrowse_clicked()
-{
-  //see http://www.openscenegraph.org/projects/osg/wiki/Support/UserGuides/Plugins
-  QString path = QFileDialog::getOpenFileName( this,
-                 tr( "Open 3D model file" ),
-                 QDir::homePath(),
-                 tr( "Model files" ) + " (*.3dc *.asc *.3ds *.ac *.bsp *.dae *.dw *.dxf *.fbx *.gem *.geo *.iv *.wrl *.ive *.logo *.lwo *.lw *.geo *.lws *.md2 *.obj *.ogr *.flt *.osg *.shp *.stl *.sta *.wrl *.x);;"
-                 + tr( "All files" ) + " (*.*)"
-                                             );
-
-  if ( ! path.isEmpty() )
-  {
-    modelPathLineEdit->setText( path );
-  }
-}
-//END MODEL
-
 void QgsGlobePluginDialog::on_mScrollSensitivitySlider_valueChanged( int value )
 {
   osgViewer::Viewer* viewer = mGlobe->osgViewer();

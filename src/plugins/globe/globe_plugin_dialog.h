@@ -38,9 +38,6 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void resetElevationDatasources();
     void readElevationDatasources();
     QTableWidget *elevationDatasources() { return elevationDatasourcesWidget; }
-    void updatePointLayers();
-    QgsVectorLayer* modelLayer();
-    QString modelPath() { return modelPathLineEdit->text(); }
 
     float scrollSensitivity();
     bool invertScrollWheel();
@@ -85,9 +82,6 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void on_splitStereoHorizontalEyeMapping_currentIndexChanged( int value );
     void on_splitStereoVerticalEyeMapping_currentIndexChanged( int value );
     void on_resetStereoDefaults_clicked();
-
-    //MODEL
-    void on_modelBrowse_clicked();
 
     // NAVIGATION
     void on_mScrollSensitivitySlider_valueChanged( int value );
