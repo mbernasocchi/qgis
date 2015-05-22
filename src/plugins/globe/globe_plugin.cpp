@@ -144,19 +144,18 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     , mQActionUnload( 0 )
     , mOsgViewer( 0 )
     , mViewerWidget( 0 )
+    , mDockWidget( 0 )
     , mRootNode( 0 )
     , mMapNode( 0 )
     , mBaseLayer( 0 )
     , mQgisMapLayer( 0 )
     , mTileSource( 0 )
     , mControlCanvas( 0 )
-    , mElevationManager( 0 )
-    , mObjectPlacer( 0 )
     , mSelectedLat( 0. )
     , mSelectedLon( 0. )
     , mSelectedElevation( 0. )
-    , mDockWidget( 0 )
     , mGlobeInterface( this )
+    , mFeatureQueryTool( 0 )
 {
   mIsGlobeRunning = false;
   //needed to be "seen" by other plugins by doing
@@ -347,7 +346,6 @@ void GlobePlugin::run()
 #if 0
     if ( !getenv( "OSGNOTIFYLEVEL" ) ) osgEarth::setNotifyLevel( osg::DEBUG_INFO );
 #endif
-    osgEarth::setNotifyLevel( osg::DEBUG_INFO );
 
     mOsgViewer = new osgViewer::Viewer();
 
@@ -464,13 +462,8 @@ void GlobePlugin::run()
     mOsgViewer->addEventHandler( new FlyToExtentHandler( this ) );
     mOsgViewer->addEventHandler( new KeyboardControlHandler( manip ) );
 
-#ifndef HAVE_OSGEARTH_ELEVATION_QUERY
-    mOsgViewer->addEventHandler( new QueryCoordinatesHandler( this, mElevationManager,
-                                 mMapNode->getMap()->getProfile()->getSRS() )
-                               );
-#endif
-
-    mFeatureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode, new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() ) );
+    mFeatureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode );
+    mFeatureQueryTool->addCallback( new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() ) );
     mFeatureQueryTool->addCallback( new FeatureHighlightCallback() );
   }
   else
@@ -553,35 +546,6 @@ void GlobePlugin::setupMap()
     , mMapNode->getTerrain()
     , mQGisIface->mapCanvas()
     , color );
-
-
-  // model placement utils
-#ifdef HAVE_OSGEARTH_ELEVATION_QUERY
-#else
-  mElevationManager = new osgEarth::Util::ElevationManager( mMapNode->getMap() );
-  mElevationManager->setTechnique( osgEarth::Util::ElevationManager::TECHNIQUE_GEOMETRIC );
-  mElevationManager->setMaxTilesToCache( 50 );
-
-  mObjectPlacer = new osgEarth::Util::ObjectPlacer( mMapNode );
-
-  // place 3D model on point layer
-  if ( mSettingsDialog->modelLayer() && !mSettingsDialog->modelPath().isEmpty() )
-  {
-    osg::Node* model = osgDB::readNodeFile( mSettingsDialog->modelPath().toStdString() );
-    if ( model )
-    {
-      QgsVectorLayer* layer = mSettingsDialog->modelLayer();
-      QgsFeatureIterator fit = layer->getFeatures( QgsFeatureRequest().setSubsetOfAttributes( QgsAttributeList() ) ); //TODO: select only visible features
-      QgsFeature feature;
-      while ( fit.nextFeature( feature ) )
-      {
-        QgsPoint point = feature.geometry()->asPoint();
-        placeNode( model, point.y(), point.x() );
-      }
-    }
-  }
-#endif
-
 }
 
 void GlobePlugin::projectReady()
@@ -1321,29 +1285,6 @@ void GlobePlugin::help()
 {
 }
 
-void GlobePlugin::placeNode( osg::Node* node, double lat, double lon, double alt /*= 0.0*/ )
-{
-#ifdef HAVE_OSGEARTH_ELEVATION_QUERY
-  Q_UNUSED( node );
-  Q_UNUSED( lat );
-  Q_UNUSED( lon );
-  Q_UNUSED( alt );
-#else
-  // get elevation
-  double elevation = 0.0;
-  double resolution = 0.0;
-  mElevationManager->getElevation( lon, lat, 0, NULL, elevation, resolution );
-
-  // place model
-  osg::Matrix mat;
-  mObjectPlacer->createPlacerMatrix( lat, lon, elevation + alt, mat );
-
-  osg::MatrixTransform* mt = new osg::MatrixTransform( mat );
-  mt->addChild( node );
-  mRootNode->addChild( mt );
-#endif
-}
-
 void GlobePlugin::copyFolder( QString sourceFolder, QString destFolder )
 {
   QDir sourceDir( sourceFolder );
@@ -1574,86 +1515,6 @@ bool FlyToExtentHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIAct
   }
   return false;
 }
-
-#ifdef HAVE_OSGEARTH_ELEVATION_QUERY
-#else
-bool QueryCoordinatesHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa )
-{
-  if ( ea.getEventType() == osgGA::GUIEventAdapter::MOVE )
-  {
-    osgViewer::View* view = static_cast<osgViewer::View*>( aa.asView() );
-    osg::Vec3d coords = getCoords( ea.getX(), ea.getY(), view, false );
-    mGlobe->showCurrentCoordinates( coords.x(), coords.y() );
-  }
-  if ( ea.getEventType() == osgGA::GUIEventAdapter::PUSH
-       && ea.getButtonMask() == osgGA::GUIEventAdapter::RIGHT_MOUSE_BUTTON )
-  {
-    osgViewer::View* view = static_cast<osgViewer::View*>( aa.asView() );
-    osg::Vec3d coords = getCoords( ea.getX(), ea.getY(), view, false );
-
-    OE_NOTICE << "SelectedCoordinates set to:\nLon: " << coords.x() << " Lat: " << coords.y()
-    << " Ele: " << coords.z() << std::endl;
-
-    mGlobe->setSelectedCoordinates( coords );
-
-    if ( ea.getModKeyMask() == osgGA::GUIEventAdapter::MODKEY_CTRL )
-      //ctrl + rightclick pops up a QMessageBox
-    {
-      mGlobe->showSelectedCoordinates();
-    }
-  }
-
-  return false;
-}
-
-osg::Vec3d QueryCoordinatesHandler::getCoords( float x, float y, osgViewer::View* view,  bool getElevation )
-{
-  osgUtil::LineSegmentIntersector::Intersections results;
-  osg::Vec3d coords;
-  if ( view->computeIntersections( x, y, results, 0x01 ) )
-  {
-    // find the first hit under the mouse:
-    osgUtil::LineSegmentIntersector::Intersection first = *( results.begin() );
-    osg::Vec3d point = first.getWorldIntersectPoint();
-
-    // transform it to map coordinates:
-    double lat_rad, lon_rad, height;
-    _mapSRS->getEllipsoid()->convertXYZToLatLongHeight( point.x(), point.y(), point.z(), lat_rad, lon_rad, height );
-
-    // query the elevation at the map point:
-    double lon_deg = osg::RadiansToDegrees( lon_rad );
-    double lat_deg = osg::RadiansToDegrees( lat_rad );
-    double elevation = -99999;
-
-    if ( getElevation )
-    {
-      osg::Matrixd out_mat;
-      double query_resolution = 0.1; // 1/10th of a degree
-      double out_resolution = 0.0;
-
-      //TODO test elevation calculation
-      //@see https://github.com/gwaldron/osgearth/blob/master/src/applications/osgearth_elevation/osgearth_elevation.cpp
-      if ( _elevMan->getPlacementMatrix(
-             lon_deg, lat_deg, 0,
-             query_resolution, _mapSRS,
-             //query_resolution, NULL,
-             out_mat, elevation, out_resolution ) )
-      {
-        OE_NOTICE << "Elevation at " << lon_deg << ", " << lat_deg
-        << " is " << elevation << std::endl;
-      }
-      else
-      {
-        OE_NOTICE << "getElevation FAILED! at (" << lon_deg << ", "
-        << lat_deg << ")" << std::endl;
-      }
-    }
-
-    coords = osg::Vec3d( lon_deg, lat_deg, elevation );
-  }
-  return coords;
-}
-#endif
 
 /**
  * Required extern functions needed  for every plugin

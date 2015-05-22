@@ -128,9 +128,6 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     //! get elevation of user right click
     double getSelectedElevation();
 
-    //! Place an OSG model on the globe
-    void placeNode( osg::Node* node, double lat, double lon, double alt = 0.0 );
-
     //! Get the OSG viewer
     osgViewer::Viewer* osgViewer() { return mOsgViewer; }
 
@@ -176,12 +173,10 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 
     void tileLayersChanged();
 
-  private://! Checks if the globe is open
+  private:
     //! Pointer to the QGIS interface object
     QgisInterface *mQGisIface;
-    //!pointer to the qaction for this plugin
     QAction * mQActionPointer;
-    //!pointer to the qaction for this plugin
     QAction * mQActionSettingsPointer;
     QAction * mQActionUnload;
     //! OSG Viewer
@@ -209,17 +204,6 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     osgEarth::Drivers::QgsOsgEarthTileSource* mTileSource;
     //! Control Canvas
     ControlCanvas* mControlCanvas;
-#ifdef HAVE_OSGEARTH_ELEVATION_QUERY
-    //! Elevation manager
-    osgEarth::ElevationQuery* mElevationManager;
-    //! Object placer
-    osgEarth::Util::ObjectLocator* mObjectPlacer;
-#else
-    //! Elevation manager
-    osgEarth::Util::ElevationManager* mElevationManager;
-    //! Object placer
-    osgEarth::Util::ObjectPlacer* mObjectPlacer;
-#endif
     //! tracks if the globe is open
     bool mIsGlobeRunning;
     //! coordinates of the right-clicked point on the globe
@@ -240,9 +224,6 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
   private:
     QgsGlobeInterface mGlobeInterface;
 
-
-
-
     GlobeFrustumHighlightCallback* mFrustumHighlightCallback;
     osgEarth::Util::FeatureQueryTool* mFeatureQueryTool;
 };
@@ -258,27 +239,6 @@ class FlyToExtentHandler : public osgGA::GUIEventHandler
     GlobePlugin* mGlobe;
 
 };
-
-// An event handler that will print out the coordinates at the clicked point
-#ifdef HAVE_OSGEARTH_ELEVATION_QUERY
-#else
-class QueryCoordinatesHandler : public osgGA::GUIEventHandler
-{
-  public:
-    QueryCoordinatesHandler( GlobePlugin* globe, osgEarth::Util::ElevationManager* elevMan,
-                             const osgEarth::SpatialReference* mapSRS )
-        :  mGlobe( globe ), _mapSRS( mapSRS ), _elevMan( elevMan ) { }
-
-    bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa );
-
-    virtual osg::Vec3d getCoords( float x, float y, osgViewer::View* view, bool getElevation = false );
-
-  private:
-    GlobePlugin* mGlobe;
-    osg::ref_ptr<const SpatialReference> _mapSRS;
-    osg::ref_ptr<osgEarth::Util::ElevationManager> _elevMan;
-};
-#endif
 
 
 class KeyboardControlHandler : public osgGA::GUIEventHandler
