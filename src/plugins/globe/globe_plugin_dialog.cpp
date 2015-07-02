@@ -36,6 +36,8 @@
 #include <QNetworkReply>
 
 #include <osg/DisplaySettings>
+#include <osgViewer/Viewer>
+#include <osgEarthUtil/EarthManipulator>
 
 //constructor
 QgsGlobePluginDialog::QgsGlobePluginDialog( GlobePlugin* globe , QWidget* parent, Qt::WFlags fl )
@@ -60,6 +62,8 @@ QgsGlobePluginDialog::QgsGlobePluginDialog( GlobePlugin* globe , QWidget* parent
 
 #if OSGEARTH_VERSION_LESS_THAN( 2, 5, 0 )
   mTxtVerticalScale->setVisible( false );
+#else
+  connect( mTxtVerticalScale, SIGNAL( valueChanged( double ) ), mGlobe, SLOT( setVerticalScale( double ) ) );
 #endif
 
   elevationPath->setText( QDir::homePath() );
@@ -241,14 +245,6 @@ void QgsGlobePluginDialog::on_mBaseLayerComboBox_currentIndexChanged( int index 
     mBaseLayerURL->setEnabled( true );
   }
 }
-
-#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
-void QgsGlobePluginDialog::on_mTxtVerticalScale_changed( double value )
-{
-  using namespace osgEarth::Util;
-  // will be available from osgEarth 2.5
-}
-#endif
 
 void QgsGlobePluginDialog::moveRow( QTableWidget* widget, bool up )
 {

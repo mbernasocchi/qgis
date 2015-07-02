@@ -95,10 +95,6 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void on_elevationUp_clicked();
     void on_elevationDown_clicked();
 
-#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
-    void on_mTxtVerticalScale_changed( double value );
-#endif
-
     //MAP
     void on_mBaseLayerComboBox_currentIndexChanged( int index );
 

@@ -24,14 +24,12 @@
 #include "globe_plugin_dialog.h"
 #include "qgsosgearthtilesource.h"
 #include "qgsosgearthfeaturesource.h"
+#include "qgsosgearthfeatureoptions.h"
 #include "qgsglobestyleutils.h"
+#include "qgsglobelayerpropertiesfactory.h"
+#include "qgsglobevectorlayerconfig.h"
 #include "globefeatureidentify.h"
-
-#ifdef HAVE_OSGEARTHQT
-#include <osgEarthQt/ViewerWidget>
-#else
-#include "osgEarthQt/ViewerWidget"
-#endif
+#include "globefrustumhighlight.h"
 
 #include <qgisinterface.h>
 #include <qgisgui.h>
@@ -45,27 +43,27 @@
 #include <qgsdistancearea.h>
 #include <symbology-ng/qgsrendererv2.h>
 #include <symbology-ng/qgssymbolv2.h>
+#include <qgspallabeling.h>
 
 #include <QAction>
 #include <QDir>
-#include <QToolBar>
-#include <QMessageBox>
+#include <QDockWidget>
+#include <QStringList>
 
-#include <osgGA/TrackballManipulator>
 #include <osgDB/ReadFile>
 #include <osgDB/Registry>
 
 #include <osgGA/StateSetManipulator>
 #include <osgGA/GUIEventHandler>
 
-#include <osg/MatrixTransform>
-#include <osg/ShapeDrawable>
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
+#include <osgEarthQt/ViewerWidget>
 #include <osgEarth/Notify>
 #include <osgEarth/Map>
 #include <osgEarth/MapNode>
 #include <osgEarth/TileSource>
+#include <osgEarthUtil/EarthManipulator>
 #if OSGEARTH_VERSION_LESS_THAN( 2, 6, 0 )
 #include <osgEarthUtil/SkyNode>
 #else
@@ -85,14 +83,6 @@
 #include <osgEarthUtil/FeatureQueryTool>
 #include <osgEarthFeatures/FeatureDisplayLayout>
 
-#include "qgsglobelayerpropertiesfactory.h"
-#include "qgsglobevectorlayerconfig.h"
-#include "qgspallabeling.h"
-
-
-using namespace osgEarth::Drivers;
-using namespace osgEarth::Util;
-
 #define MOVE_OFFSET 0.05
 
 static const QString sName = QObject::tr( "Globe" );
@@ -103,69 +93,164 @@ static const QgisPlugin::PLUGINTYPE sPluginType = QgisPlugin::UI;
 static const QString sIcon = ":/globe/icon.svg";
 static const QString sExperimental = QString( "true" );
 
-#if 0
-#include <qgsmessagelog.h>
 
-class QgsMsgTrap : public std::streambuf
+class NavigationControlHandler : public osgEarth::Util::Controls::ControlEventHandler
 {
   public:
-    inline virtual int_type overflow( int_type c = std::streambuf::traits_type::eof() )
-    {
-      if ( c == std::streambuf::traits_type::eof() )
-        return std::streambuf::traits_type::not_eof( c );
+    virtual void onMouseDown() { }
+    virtual void onClick( const osgGA::GUIEventAdapter& /*ea*/, osgGA::GUIActionAdapter& /*aa*/ ) {}
+};
 
-      switch ( c )
+class ZoomControlHandler : public NavigationControlHandler
+{
+  public:
+    ZoomControlHandler( osgEarth::Util::EarthManipulator* manip, double dx, double dy )
+        : _manip( manip ), _dx( dx ), _dy( dy ) { }
+    virtual void onMouseDown() override
+    {
+      _manip->zoom( _dx, _dy );
+    }
+  private:
+    osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
+    double _dx;
+    double _dy;
+};
+
+class HomeControlHandler : public NavigationControlHandler
+{
+  public:
+    HomeControlHandler( osgEarth::Util::EarthManipulator* manip ) : _manip( manip ) { }
+    virtual void onClick( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa ) override
+    {
+      _manip->home( ea, aa );
+    }
+  private:
+    osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
+};
+
+struct RefreshControlHandler : public NavigationControlHandler
+{
+  RefreshControlHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
+  virtual void onClick( const osgGA::GUIEventAdapter& /*ea*/, osgGA::GUIActionAdapter& /*aa*/ ) override
+  {
+    mGlobe->canvasLayersChanged();
+  }
+private:
+  GlobePlugin* mGlobe;
+};
+
+class SyncExtentControlHandler : public NavigationControlHandler
+{
+  public:
+    SyncExtentControlHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
+    virtual void onClick( const osgGA::GUIEventAdapter& /*ea*/, osgGA::GUIActionAdapter& /*aa*/ ) override
+    {
+      mGlobe->syncExtent();
+    }
+  private:
+    GlobePlugin* mGlobe;
+};
+
+
+class PanControlHandler : public NavigationControlHandler
+{
+  public:
+    PanControlHandler( osgEarth::Util::EarthManipulator* manip, double dx, double dy ) : _manip( manip ), _dx( dx ), _dy( dy ) { }
+    virtual void onMouseDown() override
+    {
+      _manip->pan( _dx, _dy );
+    }
+  private:
+    osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
+    double _dx;
+    double _dy;
+};
+
+class RotateControlHandler : public NavigationControlHandler
+{
+  public:
+    RotateControlHandler( osgEarth::Util::EarthManipulator* manip, double dx, double dy ) : _manip( manip ), _dx( dx ), _dy( dy ) { }
+    virtual void onMouseDown() override
+    {
+      if ( 0 == _dx && 0 == _dy )
+        _manip->setRotation( osg::Quat() );
+      else
+        _manip->rotate( _dx, _dy );
+    }
+  private:
+    osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
+    double _dx;
+    double _dy;
+};
+
+class FlyToExtentHandler : public osgGA::GUIEventHandler
+{
+  public:
+    FlyToExtentHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
+
+    bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& /*aa*/ ) override
+    {
+      if ( ea.getEventType() == ea.KEYDOWN && ea.getKey() == '1' )
       {
-        case '\r':
-          break;
-        case '\n':
-          QgsMessageLog::logMessage( buf, QObject::tr( "Globe" ) );
-          buf.clear();
-          break;
-        default:
-          buf += c;
-          break;
+        mGlobe->syncExtent();
       }
-      return c;
+      return false;
     }
 
   private:
-    QString buf;
-} msgTrap;
-#endif
+    GlobePlugin* mGlobe;
+
+};
+
+class KeyboardControlHandler : public osgGA::GUIEventHandler
+{
+  public:
+    KeyboardControlHandler( osgEarth::Util::EarthManipulator* manip ) : _manip( manip ) { }
+
+    bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa ) override;
+
+  private:
+    osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
+};
+
+class NavigationControl : public osgEarth::Util::Controls::ImageControl
+{
+  public:
+    NavigationControl( osg::Image* image = 0 ) : ImageControl( image ),  mMousePressed( false ) {}
+
+  protected:
+    bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, osgEarth::Util::Controls::ControlContext& cx ) override;
+
+  private:
+    bool mMousePressed;
+};
 
 
-//constructor
 GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     : QgisPlugin( sName, sDescription, sCategory, sPluginVersion, sPluginType )
     , mQGisIface( theQgisInterface )
-    , mQActionPointer( 0 )
-    , mQActionSettingsPointer( 0 )
-    , mQActionUnload( 0 )
+    , mActionLaunch( 0 )
+    , mActionSettings( 0 )
+    , mActionUnload( 0 )
     , mOsgViewer( 0 )
     , mViewerWidget( 0 )
     , mDockWidget( 0 )
+    , mSettingsDialog( 0 )
     , mRootNode( 0 )
     , mMapNode( 0 )
     , mBaseLayer( 0 )
     , mQgisMapLayer( 0 )
     , mTileSource( 0 )
     , mControlCanvas( 0 )
+    , mIsGlobeRunning( false )
     , mSelectedLat( 0. )
     , mSelectedLon( 0. )
     , mSelectedElevation( 0. )
     , mGlobeInterface( this )
     , mFeatureQueryTool( 0 )
 {
-  mIsGlobeRunning = false;
-  //needed to be "seen" by other plugins by doing
-  //iface.mainWindow().findChild( QObject, "globePlugin" )
-  //needed until https://trac.osgeo.org/qgis/changeset/15224
-  setObjectName( "globePlugin" );
-  setParent( theQgisInterface->mainWindow() );
-
-// update path to osg plugins on Mac OS X
 #ifdef Q_OS_MACX
+  // update path to osg plugins on Mac OS X
   if ( !getenv( "OSG_LIBRARY_PATH" ) )
   {
     // OSG_PLUGINS_PATH value set by CMake option
@@ -182,129 +267,36 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     }
   }
 #endif
-
-  mSettingsDialog = new QgsGlobePluginDialog( this, theQgisInterface->mainWindow(), QgisGui::ModalDialogFlags );
-
   connect( QgsProject::instance(), SIGNAL( readMapLayer( QgsMapLayer*, QDomElement ) ), this, SLOT( onLayerRead( QgsMapLayer*, QDomElement ) ) );
   connect( QgsProject::instance(), SIGNAL( writeMapLayer( QgsMapLayer*, QDomElement&, QDomDocument& ) ), this, SLOT( onLayerWrite( QgsMapLayer*, QDomElement&, QDomDocument& ) ) );
 }
 
-//destructor
-GlobePlugin::~GlobePlugin()
-{
-  delete( mSettingsDialog );
-}
-
-struct PanControlHandler : public NavigationControlHandler
-{
-  PanControlHandler( osgEarth::Util::EarthManipulator* manip, double dx, double dy ) : _manip( manip ), _dx( dx ), _dy( dy ) { }
-  virtual void onMouseDown( Control* /*control*/, int /*mouseButtonMask*/ ) override
-  {
-    _manip->pan( _dx, _dy );
-  }
-private:
-  osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
-  double _dx;
-  double _dy;
-};
-
-struct RotateControlHandler : public NavigationControlHandler
-{
-  RotateControlHandler( osgEarth::Util::EarthManipulator* manip, double dx, double dy ) : _manip( manip ), _dx( dx ), _dy( dy ) { }
-  virtual void onMouseDown( Control* /*control*/, int /*mouseButtonMask*/ ) override
-  {
-    if ( 0 == _dx && 0 == _dy )
-    {
-      _manip->setRotation( osg::Quat() );
-    }
-    else
-    {
-      _manip->rotate( _dx, _dy );
-    }
-  }
-private:
-  osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
-  double _dx;
-  double _dy;
-};
-
-struct ZoomControlHandler : public NavigationControlHandler
-{
-  ZoomControlHandler( osgEarth::Util::EarthManipulator* manip, double dx, double dy ) : _manip( manip ), _dx( dx ), _dy( dy ) { }
-  virtual void onMouseDown( Control* /*control*/, int /*mouseButtonMask*/ ) override
-  {
-    _manip->zoom( _dx, _dy );
-  }
-private:
-  osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
-  double _dx;
-  double _dy;
-};
-
-struct HomeControlHandler : public NavigationControlHandler
-{
-  HomeControlHandler( osgEarth::Util::EarthManipulator* manip ) : _manip( manip ) { }
-  virtual void onClick( Control* /*control*/, int /*mouseButtonMask*/, const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa ) override
-  {
-    _manip->home( ea, aa );
-  }
-private:
-  osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
-};
-
-struct RefreshControlHandler : public ControlEventHandler
-{
-  RefreshControlHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
-  virtual void onClick( Control* /*control*/, int /*mouseButtonMask*/ ) override
-  {
-    mGlobe->canvasLayersChanged();
-  }
-private:
-  GlobePlugin* mGlobe;
-};
-
-struct SyncExtentControlHandler : public ControlEventHandler
-{
-  SyncExtentControlHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
-  virtual void onClick( Control* /*control*/, int /*mouseButtonMask*/ ) override
-  {
-    mGlobe->syncExtent();
-  }
-private:
-  GlobePlugin* mGlobe;
-};
+GlobePlugin::~GlobePlugin() {}
 
 void GlobePlugin::initGui()
 {
-  delete mQActionPointer;
-  delete mQActionSettingsPointer;
-  delete mQActionUnload;
+  mSettingsDialog = new QgsGlobePluginDialog( this, mQGisIface->mainWindow(), QgisGui::ModalDialogFlags );
 
   // Create the action for tool
-  mQActionPointer = new QAction( QIcon( ":/globe/globe.png" ), tr( "Launch Globe" ), this );
-  mQActionPointer->setObjectName( "mQActionPointer" );
-  mQActionSettingsPointer = new QAction( QIcon( ":/globe/globe.png" ), tr( "Globe Settings" ), this );
-  mQActionSettingsPointer->setObjectName( "mQActionSettingsPointer" );
-  mQActionUnload = new QAction( tr( "Unload Globe" ), this );
-  mQActionUnload->setObjectName( "mQActionUnload" );
-
-  // Set the what's this text
-  mQActionPointer->setWhatsThis( tr( "Overlay data on a 3D globe" ) );
-  mQActionSettingsPointer->setWhatsThis( tr( "Settings for 3D globe" ) );
-  mQActionUnload->setWhatsThis( tr( "Unload globe" ) );
+  mActionLaunch = new QAction( QIcon( ":/globe/globe.png" ), tr( "Launch Globe" ), this );
+  mActionLaunch->setWhatsThis( tr( "Overlay data on a 3D globe" ) );
+  mActionSettings = new QAction( QIcon( ":/globe/globe.png" ), tr( "Globe Settings" ), this );
+  mActionSettings->setWhatsThis( tr( "Settings for 3D globe" ) );
+  mActionUnload = new QAction( tr( "Unload Globe" ), this );
+  mActionUnload->setWhatsThis( tr( "Unload globe" ) );
 
   // Connect actions
-  connect( mQActionPointer, SIGNAL( triggered() ), this, SLOT( run() ) );
-  connect( mQActionSettingsPointer, SIGNAL( triggered() ), this, SLOT( settings() ) );
-  connect( mQActionUnload, SIGNAL( triggered() ), this, SLOT( reset() ) );
+  connect( mActionLaunch, SIGNAL( triggered() ), this, SLOT( run() ) );
+  connect( mActionSettings, SIGNAL( triggered() ), this, SLOT( showSettings() ) );
+  connect( mActionUnload, SIGNAL( triggered() ), this, SLOT( reset() ) );
 
   // Add the icon to the toolbar
-  mQGisIface->addToolBarIcon( mQActionPointer );
+  mQGisIface->addToolBarIcon( mActionLaunch );
 
   //Add menu
-  mQGisIface->addPluginToMenu( tr( "&Globe" ), mQActionPointer );
-  mQGisIface->addPluginToMenu( tr( "&Globe" ), mQActionSettingsPointer );
-  mQGisIface->addPluginToMenu( tr( "&Globe" ), mQActionUnload );
+  mQGisIface->addPluginToMenu( tr( "&Globe" ), mActionLaunch );
+  mQGisIface->addPluginToMenu( tr( "&Globe" ), mActionSettings );
+  mQGisIface->addPluginToMenu( tr( "&Globe" ), mActionUnload );
 
   connect( mQGisIface->mapCanvas(), SIGNAL( extentsChanged() ),
            this, SLOT( extentsChanged() ) );
@@ -330,11 +322,6 @@ void GlobePlugin::initGui()
            SLOT( blankProjectReady() ) );
   connect( this, SIGNAL( xyCoordinates( const QgsPoint & ) ),
            mQGisIface->mapCanvas(), SIGNAL( xyCoordinates( const QgsPoint & ) ) );
-
-#if 0
-  mCoutRdBuf = std::cout.rdbuf( &msgTrap );
-  mCerrRdBuf = std::cerr.rdbuf( &msgTrap );
-#endif
 }
 
 void GlobePlugin::run()
@@ -349,9 +336,11 @@ void GlobePlugin::run()
 
     mOsgViewer = new osgViewer::Viewer();
 
-    // install the programmable manipulator.
+    // Set camera manipulator with default home position
     osgEarth::Util::EarthManipulator* manip = new osgEarth::Util::EarthManipulator();
     mOsgViewer->setCameraManipulator( manip );
+    manip->setHomeViewpoint( osgEarth::Util::Viewpoint( osg::Vec3d( -90, 0, 0 ), 0., -90., 2e7 ), 1. );
+    manip->home( 0 );
 
     mIsGlobeRunning = true;
     setupProxy();
@@ -376,22 +365,19 @@ void GlobePlugin::run()
     }
 
     // Initialize the sky node if required
-    setSkyParameters( settings.value( "/Plugin-Globe/skyEnabled", false ).toBool()
-                      , settings.value( "/Plugin-Globe/skyDateTime", QDateTime() ).toDateTime()
-                      , settings.value( "/Plugin-Globe/skyAutoAmbient", false ).toBool() );
+    setSkyParameters( settings.value( "/Plugin-Globe/skyEnabled", false ).toBool(),
+                      settings.value( "/Plugin-Globe/skyDateTime", QDateTime() ).toDateTime(),
+                      settings.value( "/Plugin-Globe/skyAutoAmbient", false ).toBool() );
 
     // create a surface to house the controls
-#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 1, 1 )
-    mControlCanvas = ControlCanvas::get( mOsgViewer );
-#else
-    mControlCanvas = new ControlCanvas( mOsgViewer );
-#endif
-
+    mControlCanvas = osgEarth::Util::Controls::ControlCanvas::get( mOsgViewer );
     mRootNode->addChild( mControlCanvas );
 
     mOsgViewer->setSceneData( mRootNode );
     mOsgViewer->setThreadingModel( osgViewer::Viewer::SingleThreaded );
 
+    mOsgViewer->addEventHandler( new FlyToExtentHandler( this ) );
+    mOsgViewer->addEventHandler( new KeyboardControlHandler( manip ) );
     mOsgViewer->addEventHandler( new osgViewer::StatsHandler() );
     mOsgViewer->addEventHandler( new osgViewer::WindowSizeHandler() );
     mOsgViewer->addEventHandler( new osgViewer::ThreadingHandler() );
@@ -401,82 +387,36 @@ void GlobePlugin::run()
     // add a handler that will automatically calculate good clipping planes
     mOsgViewer->addEventHandler( new osgEarth::Util::AutoClipPlaneHandler() );
 #else
-    mOsgViewer->getCamera()->addCullCallback( new AutoClipPlaneCullCallback( mMapNode ) );
+    mOsgViewer->getCamera()->addCullCallback( new osgEarth::Util::AutoClipPlaneCullCallback( mMapNode ) );
 #endif
 
     // osgEarth benefits from pre-compilation of GL objects in the pager. In newer versions of
     // OSG, this activates OSG's IncrementalCompileOpeartion in order to avoid frame breaks.
     mOsgViewer->getDatabasePager()->setDoPreCompile( true );
 
-#ifdef GLOBE_OSG_STANDALONE_VIEWER
-    mOsgViewer->run();
-#endif
-
-    mDockWidget = new QDockWidget( tr( "Globe" ), mQGisIface->mainWindow() );
     mViewerWidget = new osgEarth::QtGui::ViewerWidget( mOsgViewer );
-
-    if ( settings.value( "/Plugin-Globe/anti-aliasing", true ).toBool() )
+    if ( settings.value( "/Plugin-Globe/anti-aliasing", true ).toBool() &&
+         settings.value( "/Plugin-Globe/anti-aliasing-level", "" ).toInt() > 0 )
     {
       QGLFormat glf = QGLFormat::defaultFormat();
       glf.setSampleBuffers( true );
-      bool aaLevelIsInt;
-      int aaLevel;
-      QString aaLevelStr = settings.value( "/Plugin-Globe/anti-aliasing-level", "" ).toString();
-      aaLevel = aaLevelStr.toInt( &aaLevelIsInt );
-      if ( aaLevelIsInt )
-      {
-        glf.setSamples( aaLevel );
-      }
-      mViewerWidget->setFormat( glf );
-    }
-
-    mDockWidget->setWidget( mViewerWidget );
-    mDockWidget->show();
-    mQGisIface->addDockWidget( Qt::BottomDockWidgetArea, mDockWidget );
-
-    if ( settings.value( "/Plugin-Globe/anti-aliasing", true ).toBool() )
-    {
-      QGLFormat glf = QGLFormat::defaultFormat();
-      glf.setSampleBuffers( true );
-      bool aaLevelIsInt;
-      int aaLevel;
-      QString aaLevelStr = settings.value( "/Plugin-Globe/anti-aliasing-level", "" ).toString();
-      aaLevel = aaLevelStr.toInt( &aaLevelIsInt );
-      if ( aaLevelIsInt )
-      {
-        glf.setSamples( aaLevel );
-      }
+      glf.setSamples( settings.value( "/Plugin-Globe/anti-aliasing-level", "" ).toInt() );
       mViewerWidget->setFormat( glf );
     }
 
     setupControls();
 
-    // Set a home viewpoint
-    manip->setHomeViewpoint(
-      osgEarth::Util::Viewpoint( osg::Vec3d( -90, 0, 0 ), 0.0, -90.0, 2e7 ),
-      1.0 );
-
-    manip->home( 0 );
-
-    // add our handlers
-    mOsgViewer->addEventHandler( new FlyToExtentHandler( this ) );
-    mOsgViewer->addEventHandler( new KeyboardControlHandler( manip ) );
-
     mFeatureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode );
     mFeatureQueryTool->addCallback( new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() ) );
-    mFeatureQueryTool->addCallback( new FeatureHighlightCallback() );
+    mFeatureQueryTool->addCallback( new osgEarth::Util::FeatureHighlightCallback() );
+
+    mDockWidget = new QDockWidget( tr( "Globe" ), mQGisIface->mainWindow() );
+    mDockWidget->setWidget( mViewerWidget );
+    mQGisIface->addDockWidget( Qt::BottomDockWidgetArea, mDockWidget );
   }
   else
   {
     mDockWidget->show();
-  }
-}
-
-void GlobePlugin::settings()
-{
-  if ( mSettingsDialog->exec() )
-  {
-    //viewer stereo settings set by mSettingsDialog and stored in QSettings
   }
 }
 
@@ -486,10 +426,10 @@ void GlobePlugin::setupMap()
   QString cacheDirectory = settings.value( "cache/directory", QgsApplication::qgisSettingsDirPath() + "cache" ).toString();
 
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 2, 0 )
-  FileSystemCacheOptions cacheOptions;
+  osgEarth::Drivers::FileSystemCacheOptions cacheOptions;
   cacheOptions.rootPath() = cacheDirectory.toStdString();
 #else
-  TMSCacheOptions cacheOptions;
+  osgEarth::Drivers::TMSCacheOptions cacheOptions;
   cacheOptions.setPath( cacheDirectory.toStdString() );
 #endif
 
@@ -531,7 +471,7 @@ void GlobePlugin::setupMap()
   mRootNode->addChild( mMapNode );
 
   //add QGIS layer
-  mTileSource = new QgsOsgEarthTileSource( QStringList(), mQGisIface->mapCanvas() );
+  mTileSource = new osgEarth::Drivers::QgsOsgEarthTileSource( QStringList(), mQGisIface->mapCanvas() );
   mTileSource->initialize( "", 0 );
 
   // Add layers to the map
@@ -539,13 +479,13 @@ void GlobePlugin::setupMap()
   elevationLayersChanged();
 
   // Create the frustum highlight callback
-  QColor color( Qt::black );
-  color.setAlpha( 50 );
   mFrustumHighlightCallback = new GlobeFrustumHighlightCallback(
-    mOsgViewer
-    , mMapNode->getTerrain()
-    , mQGisIface->mapCanvas()
-    , color );
+    mOsgViewer, mMapNode->getTerrain(), mQGisIface->mapCanvas(), QColor( 0, 0, 0, 50 ) );
+}
+
+void GlobePlugin::showSettings()
+{
+  mSettingsDialog->exec();
 }
 
 void GlobePlugin::projectReady()
@@ -561,58 +501,26 @@ void GlobePlugin::blankProjectReady()
 
 void GlobePlugin::showCurrentCoordinates( double lon, double lat )
 {
-  // show x y on status bar
-  //OE_NOTICE << "lon: " << lon << " lat: " << lat <<std::endl;
-  QgsPoint coord = QgsPoint( lon, lat );
-  emit xyCoordinates( coord );
+  emit xyCoordinates( QgsPoint( lon, lat ) );
 }
 
-void GlobePlugin::setSelectedCoordinates( osg::Vec3d coords )
+void GlobePlugin::setSelectedCoordinates( const osg::Vec3d &coords )
 {
   mSelectedLon = coords.x();
   mSelectedLat = coords.y();
   mSelectedElevation = coords.z();
-  QgsPoint coord = QgsPoint( mSelectedLon, mSelectedLat );
-  emit newCoordinatesSelected( coord );
+  emit newCoordinatesSelected( QgsPoint( mSelectedLon, mSelectedLat ) );
 }
 
 osg::Vec3d GlobePlugin::getSelectedCoordinates()
 {
-  osg::Vec3d coords = osg::Vec3d( mSelectedLon, mSelectedLat, mSelectedElevation );
-  return coords;
-}
-
-void GlobePlugin::showSelectedCoordinates()
-{
-  QString lon, lat, elevation;
-  lon.setNum( mSelectedLon );
-  lat.setNum( mSelectedLat );
-  elevation.setNum( mSelectedElevation );
-  QMessageBox m;
-  m.setText( "selected coordinates are:\nlon: " + lon + "\nlat: " + lat + "\nelevation: " + elevation );
-  m.exec();
-}
-
-double GlobePlugin::getSelectedLon()
-{
-  return mSelectedLon;
-}
-
-double GlobePlugin::getSelectedLat()
-{
-  return mSelectedLat;
-}
-
-double GlobePlugin::getSelectedElevation()
-{
-  return mSelectedElevation;
+  return osg::Vec3d( mSelectedLon, mSelectedLat, mSelectedElevation );
 }
 
 void GlobePlugin::syncExtent()
 {
-  QgsMapCanvas* mapCanvas = mQGisIface->mapCanvas();
-  const QgsMapSettings &mapSettings = mapCanvas->mapSettings();
-  QgsRectangle extent = mapCanvas->extent();
+  const QgsMapSettings& mapSettings = mQGisIface->mapCanvas()->mapSettings();
+  QgsRectangle extent = mQGisIface->mapCanvas()->extent();
 
   long epsgGlobe = 4326;
   QgsCoordinateReferenceSystem globeCrs;
@@ -622,17 +530,10 @@ void GlobePlugin::syncExtent()
   if ( mapSettings.destinationCrs().authid().compare( QString( "EPSG:%1" ).arg( epsgGlobe ), Qt::CaseInsensitive ) != 0 )
   {
     QgsCoordinateReferenceSystem srcCRS( mapSettings.destinationCrs() );
-    QgsCoordinateTransform* coordTransform = new QgsCoordinateTransform( srcCRS, globeCrs );
-    extent = coordTransform->transformBoundingBox( extent );
-    delete coordTransform;
+    extent = QgsCoordinateTransform( srcCRS, globeCrs ).transformBoundingBox( extent );
   }
 
-  osgEarth::Util::EarthManipulator* manip = dynamic_cast<osgEarth::Util::EarthManipulator*>( mOsgViewer->getCameraManipulator() );
-  //rotate earth to north and perpendicular to camera
-  manip->setRotation( osg::Quat() );
-
   QgsDistanceArea dist;
-
   dist.setSourceCrs( globeCrs );
   dist.setEllipsoidalMode( true );
   dist.setEllipsoid( "WGS84" );
@@ -640,23 +541,22 @@ void GlobePlugin::syncExtent()
   QgsPoint ll = QgsPoint( extent.xMinimum(), extent.yMinimum() );
   QgsPoint ul = QgsPoint( extent.xMinimum(), extent.yMaximum() );
   double height = dist.measureLine( ll, ul );
+//  double height = dist.computeDistanceBearing( ll, ul );
 
-  //double height = dist.computeDistanceBearing( ll, ul );
+  double camViewAngle = 30;
+  double camDistance = height / tan( camViewAngle * osg::PI / 180 ); //c = b*cotan(B(rad))
+  osgEarth::Util::Viewpoint viewpoint( osg::Vec3d( extent.center().x(), extent.center().y(), 0.0 ), 0.0, -90.0, camDistance );
 
-  //camera viewing angle
-  double viewAngle = 30;
-  //camera distance
-  double distance = height / tan( viewAngle * osg::PI / 180 ); //c = b*cotan(B(rad))
+  OE_NOTICE << "map extent: " << height << " camera distance: " << camDistance << std::endl;
 
-  OE_NOTICE << "map extent: " << height << " camera distance: " << distance << std::endl;
-
-  osgEarth::Util::Viewpoint viewpoint( osg::Vec3d( extent.center().x(), extent.center().y(), 0.0 ), 0.0, -90.0, distance );
+  osgEarth::Util::EarthManipulator* manip = dynamic_cast<osgEarth::Util::EarthManipulator*>( mOsgViewer->getCameraManipulator() );
+  manip->setRotation( osg::Quat() );
   manip->setViewpoint( viewpoint, 4.0 );
 }
 
-#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
 void GlobePlugin::setVerticalScale( double value )
 {
+#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
   if ( mMapNode )
   {
     if ( !mVerticalScale.get() || mVerticalScale->getScale() != value )
@@ -667,8 +567,29 @@ void GlobePlugin::setVerticalScale( double value )
       mMapNode->getTerrainEngine()->addEffect( mVerticalScale );
     }
   }
-}
+#else
+  Q_UNUSED( value );
 #endif
+}
+
+void GlobePlugin::addControl( osgEarth::Util::Controls::Control* control, int x, int y, int w, int h, osgEarth::Util::Controls::ControlEventHandler* handler )
+{
+  control->setPosition( x, y );
+  control->setHeight( h );
+  control->setWidth( w );
+  control->addEventHandler( handler );
+  mControlCanvas->addControl( control );
+}
+
+void GlobePlugin::addImageControl( const std::string& imgPath, int x, int y, Util::Controls::ControlEventHandler *handler )
+{
+  osg::Image* image = osgDB::readImageFile( imgPath );
+  osgEarth::Util::Controls::ImageControl* control = new NavigationControl( image );
+  control->setPosition( x, y );
+  if ( handler )
+    control->addEventHandler( handler );
+  mControlCanvas->addControl( control );
+}
 
 void GlobePlugin::setupControls()
 {
@@ -690,147 +611,37 @@ void GlobePlugin::setupControls()
   }
   manip->applySettings( settings );
 
-  osg::Image* yawPitchWheelImg = osgDB::readImageFile( imgDir + "/YawPitchWheel.png" );
-  ImageControl* yawPitchWheel = new ImageControl( yawPitchWheelImg );
+  // Rotate and tiltcontrols
   int imgLeft = 16;
   int imgTop = 20;
-  yawPitchWheel->setPosition( imgLeft, imgTop );
-  mControlCanvas->addControl( yawPitchWheel );
+  addImageControl( imgDir + "/YawPitchWheel.png", 16, 20 );
+  addControl( new NavigationControl, imgLeft, imgTop + 18, 20, 22, new RotateControlHandler( manip, MOVE_OFFSET, 0 ) );
+  addControl( new NavigationControl, imgLeft + 36, imgTop + 18, 20, 22, new RotateControlHandler( manip, -MOVE_OFFSET, 0 ) );
+  addControl( new NavigationControl, imgLeft + 20, imgTop + 18, 16, 22, new RotateControlHandler( manip, 0, 0 ) );
+  addControl( new NavigationControl, imgLeft + 20, imgTop, 24, 19, new RotateControlHandler( manip, 0, MOVE_OFFSET ) );
+  addControl( new NavigationControl, imgLeft + 16, imgTop + 36, 24, 19, new RotateControlHandler( manip, 0, -MOVE_OFFSET ) );
 
-//ROTATE CONTROLS
-  Control* rotateCCW = new NavigationControl();
-  rotateCCW->setHeight( 22 );
-  rotateCCW->setWidth( 20 );
-  rotateCCW->setPosition( imgLeft + 0, imgTop + 18 );
-  rotateCCW->addEventHandler( new RotateControlHandler( manip, MOVE_OFFSET, 0 ) );
-  mControlCanvas->addControl( rotateCCW );
-
-  Control* rotateCW = new NavigationControl();
-  rotateCW->setHeight( 22 );
-  rotateCW->setWidth( 20 );
-  rotateCW->setPosition( imgLeft + 36, imgTop + 18 );
-  rotateCW->addEventHandler( new RotateControlHandler( manip, -MOVE_OFFSET, 0 ) );
-  mControlCanvas->addControl( rotateCW );
-
-  //Rotate Reset
-  Control* rotateReset = new NavigationControl();
-  rotateReset->setHeight( 22 );
-  rotateReset->setWidth( 16 );
-  rotateReset->setPosition( imgLeft + 20, imgTop + 18 );
-  rotateReset->addEventHandler( new RotateControlHandler( manip, 0, 0 ) );
-  mControlCanvas->addControl( rotateReset );
-
-//TILT CONTROLS
-  Control* tiltUp = new NavigationControl();
-  tiltUp->setHeight( 19 );
-  tiltUp->setWidth( 24 );
-  tiltUp->setPosition( imgLeft + 20, imgTop + 0 );
-  tiltUp->addEventHandler( new RotateControlHandler( manip, 0, MOVE_OFFSET ) );
-  mControlCanvas->addControl( tiltUp );
-
-  Control* tiltDown = new NavigationControl();
-  tiltDown->setHeight( 19 );
-  tiltDown->setWidth( 24 );
-  tiltDown->setPosition( imgLeft + 16, imgTop + 36 );
-  tiltDown->addEventHandler( new RotateControlHandler( manip, 0, -MOVE_OFFSET ) );
-  mControlCanvas->addControl( tiltDown );
-
-  // -------
-
-  osg::Image* moveWheelImg = osgDB::readImageFile( imgDir + "/MoveWheel.png" );
-  ImageControl* moveWheel = new ImageControl( moveWheelImg );
+  // Move controls
   imgTop = 80;
-  moveWheel->setPosition( imgLeft, imgTop );
-  mControlCanvas->addControl( moveWheel );
+  addImageControl( imgDir + "/MoveWheel.png", imgLeft, imgTop );
+  addControl( new NavigationControl, imgLeft, imgTop + 18, 20, 22, new PanControlHandler( manip, -MOVE_OFFSET, 0 ) );
+  addControl( new NavigationControl, imgLeft + 36, imgTop + 18, 20, 22, new PanControlHandler( manip, MOVE_OFFSET, 0 ) );
+  addControl( new NavigationControl, imgLeft + 20, imgTop, 24, 19, new PanControlHandler( manip, 0, MOVE_OFFSET ) );
+  addControl( new NavigationControl, imgLeft + 16, imgTop + 36, 24, 19, new PanControlHandler( manip, 0, -MOVE_OFFSET ) );
+  addControl( new NavigationControl, imgLeft + 20, imgTop + 18, 16, 22, new HomeControlHandler( manip ) );
 
-  //MOVE CONTROLS
-  Control* moveLeft = new NavigationControl();
-  moveLeft->setHeight( 22 );
-  moveLeft->setWidth( 20 );
-  moveLeft->setPosition( imgLeft + 0, imgTop + 18 );
-  moveLeft->addEventHandler( new PanControlHandler( manip, -MOVE_OFFSET, 0 ) );
-  mControlCanvas->addControl( moveLeft );
-
-  Control* moveRight = new NavigationControl();
-  moveRight->setHeight( 22 );
-  moveRight->setWidth( 20 );
-  moveRight->setPosition( imgLeft + 36, imgTop + 18 );
-  moveRight->addEventHandler( new PanControlHandler( manip, MOVE_OFFSET, 0 ) );
-  mControlCanvas->addControl( moveRight );
-
-  Control* moveUp = new NavigationControl();
-  moveUp->setHeight( 19 );
-  moveUp->setWidth( 24 );
-  moveUp->setPosition( imgLeft + 20, imgTop + 0 );
-  moveUp->addEventHandler( new PanControlHandler( manip, 0, MOVE_OFFSET ) );
-  mControlCanvas->addControl( moveUp );
-
-  Control* moveDown = new NavigationControl();
-  moveDown->setHeight( 19 );
-  moveDown->setWidth( 24 );
-  moveDown->setPosition( imgLeft + 16, imgTop + 36 );
-  moveDown->addEventHandler( new PanControlHandler( manip, 0, -MOVE_OFFSET ) );
-  mControlCanvas->addControl( moveDown );
-
-  //Zoom Reset
-  Control* zoomHome = new NavigationControl();
-  zoomHome->setHeight( 22 );
-  zoomHome->setWidth( 16 );
-  zoomHome->setPosition( imgLeft + 20, imgTop + 18 );
-  zoomHome->addEventHandler( new HomeControlHandler( manip ) );
-  mControlCanvas->addControl( zoomHome );
-
-  // -------
-
-  osg::Image* backgroundImg = osgDB::readImageFile( imgDir + "/button-background.png" );
-  ImageControl* backgroundGrp1 = new ImageControl( backgroundImg );
+  // Zoom controls
+  imgLeft = 28;
   imgTop = imgTop + 62;
-  backgroundGrp1->setPosition( imgLeft + 12, imgTop );
-  mControlCanvas->addControl( backgroundGrp1 );
+  addImageControl( imgDir + "/button-background.png", imgLeft, imgTop );
+  addImageControl( imgDir + "/zoom-in.png", imgLeft + 3, imgTop + 3, new ZoomControlHandler( manip, 0, -MOVE_OFFSET ) );
+  addImageControl( imgDir + "/zoom-out.png", imgLeft + 3, imgTop + 28, new ZoomControlHandler( manip, 0, MOVE_OFFSET ) );
 
-  osg::Image* plusImg = osgDB::readImageFile( imgDir + "/zoom-in.png" );
-  ImageControl* zoomIn = new NavigationControl( plusImg );
-  zoomIn->setPosition( imgLeft + 12 + 3, imgTop + 3 );
-  zoomIn->addEventHandler( new ZoomControlHandler( manip, 0, -MOVE_OFFSET ) );
-  mControlCanvas->addControl( zoomIn );
-
-  osg::Image* minusImg = osgDB::readImageFile( imgDir + "/zoom-out.png" );
-  ImageControl* zoomOut = new NavigationControl( minusImg );
-  zoomOut->setPosition( imgLeft + 12 + 3, imgTop + 3 + 23 + 2 );
-  zoomOut->addEventHandler( new ZoomControlHandler( manip, 0, MOVE_OFFSET ) );
-  mControlCanvas->addControl( zoomOut );
-
-  // -------
-
-  ImageControl* backgroundGrp2 = new ImageControl( backgroundImg );
+  // Refresh and sync controls
   imgTop = imgTop + 60;
-  backgroundGrp2->setPosition( imgLeft + 12, imgTop );
-  mControlCanvas->addControl( backgroundGrp2 );
-
-  //Zoom Reset
-#if ENABLE_HOME_BUTTON
-  osg::Image* homeImg = osgDB::readImageFile( imgDir + "/zoom-home.png" );
-  ImageControl* home = new NavigationControl( homeImg );
-  home->setPosition( imgLeft + 12 + 3, imgTop + 2 );
-  imgTop = imgTop + 23 + 2;
-  home->addEventHandler( new HomeControlHandler( manip ) );
-  mControlCanvas->addControl( home );
-#endif
-
-  //refresh layers
-  osg::Image* refreshImg = osgDB::readImageFile( imgDir + "/refresh-view.png" );
-  ImageControl* refresh = new NavigationControl( refreshImg );
-  refresh->setPosition( imgLeft + 12 + 3, imgTop + 3 );
-  imgTop = imgTop + 23 + 2;
-  refresh->addEventHandler( new RefreshControlHandler( this ) );
-  mControlCanvas->addControl( refresh );
-
-  //Sync Extent
-  osg::Image* syncImg = osgDB::readImageFile( imgDir + "/sync-extent.png" );
-  ImageControl* sync = new NavigationControl( syncImg );
-  sync->setPosition( imgLeft + 12 + 3, imgTop + 2 );
-  sync->addEventHandler( new SyncExtentControlHandler( this ) );
-  mControlCanvas->addControl( sync );
+  addImageControl( imgDir + "/button-background.png", imgLeft, imgTop );
+  addImageControl( imgDir + "/refresh-view.png", imgLeft + 3, imgTop + 3, new RefreshControlHandler( this ) );
+  addImageControl( imgDir + "/sync-extent.png", imgLeft + 3, imgTop + 28, new SyncExtentControlHandler( this ) );
 }
 
 void GlobePlugin::setupProxy()
@@ -839,20 +650,16 @@ void GlobePlugin::setupProxy()
   settings.beginGroup( "proxy" );
   if ( settings.value( "/proxyEnabled" ).toBool() )
   {
-    ProxySettings proxySettings( settings.value( "/proxyHost" ).toString().toStdString(),
-                                 settings.value( "/proxyPort" ).toInt() );
+    osgEarth::ProxySettings proxySettings( settings.value( "/proxyHost" ).toString().toStdString(),
+                                           settings.value( "/proxyPort" ).toInt() );
     if ( !settings.value( "/proxyUser" ).toString().isEmpty() )
     {
       QString auth = settings.value( "/proxyUser" ).toString() + ":" + settings.value( "/proxyPassword" ).toString();
-#ifdef WIN32
-      putenv( QString( "OSGEARTH_CURL_PROXYAUTH=%1" ).arg( auth ).toAscii() );
-#else
-      setenv( "OSGEARTH_CURL_PROXYAUTH", auth.toStdString().c_str(), 0 );
-#endif
+      qputenv( "OSGEARTH_CURL_PROXYAUTH", auth.toLocal8Bit() );
     }
     //TODO: settings.value("/proxyType")
     //TODO: URL exlusions
-    HTTPClient::setProxySettings( proxySettings );
+    osgEarth::HTTPClient::setProxySettings( proxySettings );
   }
   settings.endGroup();
 }
@@ -900,7 +707,7 @@ void GlobePlugin::canvasLayersChanged()
 #endif
 }
 
-void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
+void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
 {
   if ( mIsGlobeRunning )
   {
@@ -917,7 +724,7 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
 
         QgsGlobeVectorLayerConfig* layerConfig = QgsGlobeVectorLayerConfig::configForLayer( vLayer );
 
-        QgsGlobeFeatureOptions  featureOpt;
+        osgEarth::Drivers::QgsGlobeFeatureOptions  featureOpt;
         featureOpt.setLayer( vLayer );
         Style style;
 
@@ -1049,12 +856,12 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
         layout.tileSizeFactor() = 45.0;
         layout.addLevel( FeatureLevel( 0.0f, 200000.0f ) );
 #endif
-        FeatureGeomModelOptions geomOpt;
+        osgEarth::Drivers::FeatureGeomModelOptions geomOpt;
         geomOpt.featureOptions() = featureOpt;
         geomOpt.styles() = new StyleSheet();
         geomOpt.styles()->addStyle( style );
 
-        geomOpt.featureIndexing() = FeatureSourceIndexOptions();
+        geomOpt.featureIndexing() = osgEarth::Features::FeatureSourceIndexOptions();
 
 #if 0
         geomOpt.layout() = layout;
@@ -1083,26 +890,36 @@ void GlobePlugin::layersAdded( QList<QgsMapLayer*> mapLayers )
     if ( tileLayers.size() > 0 )
     {
       mTileSource->addLayers( tileLayers );
-      tileLayersChanged();
+      osg::ref_ptr<Map> map = mMapNode->getMap();
+      if ( map->getNumImageLayers() > 1 )
+      {
+        mOsgViewer->getDatabasePager()->clear();
+      }
+
+      if ( mQgisMapLayer )
+      {
+        map->removeImageLayer( mQgisMapLayer );
+      }
+
+      osgEarth::ImageLayerOptions options( "QGIS" );
+      mQgisMapLayer = new osgEarth::ImageLayer( options, mTileSource );
+      map->addImageLayer( mQgisMapLayer );
     }
   }
 }
 
-void GlobePlugin::layersRemoved( QStringList layerIds )
+void GlobePlugin::layersRemoved( const QStringList &layerIds )
 {
   QgsDebugMsg( QString( "layers removed [%1]" ).arg( layerIds.join( ", " ) ) );
   if ( mIsGlobeRunning )
   {
-    osg::ref_ptr<Map> mapNode = mMapNode->getMap();
-
-    Q_FOREACH( const QString &layer, layerIds )
+    foreach ( const QString &layer, layerIds )
     {
-      ModelLayer* modelLayer = mapNode->getModelLayerByName( layer.toStdString() );
-      mapNode->removeModelLayer( modelLayer );
+      ModelLayer* modelLayer = mMapNode->getMap()->getModelLayerByName( layer.toStdString() );
+      mMapNode->getMap()->removeModelLayer( modelLayer );
     }
   }
 }
-
 
 void GlobePlugin::elevationLayersChanged()
 {
@@ -1117,7 +934,7 @@ void GlobePlugin::elevationLayersChanged()
     }
 
     // Remove elevation layers
-    ElevationLayerVector list;
+    osgEarth::ElevationLayerVector list;
     map->getElevationLayers( list );
     for ( ElevationLayerVector::iterator i = list.begin(); i != list.end(); ++i )
     {
@@ -1125,41 +942,31 @@ void GlobePlugin::elevationLayersChanged()
     }
 
     // Add elevation layers
-    QSettings settings;
-    QString cacheDirectory = settings.value( "cache/directory", QgsApplication::qgisSettingsDirPath() + "cache" ).toString();
     QTableWidget* table = mSettingsDialog->elevationDatasources();
     for ( int i = 0; i < table->rowCount(); ++i )
     {
       QString type = table->item( i, 0 )->text();
-      //bool cache = table->item( i, 1 )->checkState();
       QString uri = table->item( i, 2 )->text();
       ElevationLayer* layer = 0;
 
       if ( "Raster" == type )
       {
-        GDALOptions options;
+        osgEarth::Drivers::GDALOptions options;
         options.url() = uri.toStdString();
         layer = new osgEarth::ElevationLayer( uri.toStdString(), options );
       }
       else if ( "TMS" == type )
       {
-        TMSOptions options;
+        osgEarth::Drivers::TMSOptions options;
         options.url() = uri.toStdString();
         layer = new osgEarth::ElevationLayer( uri.toStdString(), options );
       }
       map->addElevationLayer( layer );
-
-      //if ( !cache || type == "Worldwind" ) layer->setCache( 0 ); //no tms cache for worldwind (use worldwind_cache)
     }
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
     double scale = QgsProject::instance()->readDoubleEntry( "Globe-Plugin", "/verticalScale", 1 );
     setVerticalScale( scale );
 #endif
-  }
-  else
-  {
-    QgsDebugMsg( "layersChanged: Globe NOT running, skipping" );
-    return;
   }
 }
 
@@ -1174,7 +981,7 @@ void GlobePlugin::setBaseMap( QString url )
     }
     else
     {
-      TMSOptions imagery;
+      osgEarth::Drivers::TMSOptions imagery;
       imagery.url() = url.toStdString();
       mBaseLayer = new ImageLayer( "Imagery", imagery );
       mMapNode->getMap()->insertImageLayer( mBaseLayer, 0 );
@@ -1190,7 +997,7 @@ void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, boo
     {
       // Create if not yet done
       if ( !mSkyNode.get() )
-        mSkyNode = SkyNode::create( mMapNode );
+        mSkyNode = osgEarth::Util::SkyNode::create( mMapNode );
 
 #warning "FIXME?"
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 4, 0 ) and OSGEARTH_VERSION_LESS_THAN(2, 6, 0)
@@ -1199,12 +1006,16 @@ void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, boo
       Q_UNUSED( autoAmbience );
 #endif
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
-      mSkyNode->setDateTime( osgEarth::DateTime( dateTime.date().year(), dateTime.date().month(), dateTime.date().day(), dateTime.time().hour() + dateTime.time().minute() / 60.0 ) );
+      mSkyNode->setDateTime( osgEarth::DateTime(
+                               dateTime.date().year(),
+                               dateTime.date().month(),
+                               dateTime.date().day(),
+                               dateTime.time().hour() + dateTime.time().minute() / 60.0 ) );
 #else
-      mSkyNode->setDateTime( dateTime.date().year()
-                             , dateTime.date().month()
-                             , dateTime.date().day()
-                             , dateTime.time().hour() + dateTime.time().minute() / 60.0 );
+      mSkyNode->setDateTime( dateTime.date().year(),
+                             dateTime.date().month(),
+                             dateTime.date().day(),
+                             dateTime.time().hour() + dateTime.time().minute() / 60.0 );
 #endif
       //sky->setSunPosition( osg::Vec3(0,-1,0) );
       mSkyNode->attach( mOsgViewer );
@@ -1217,99 +1028,46 @@ void GlobePlugin::setSkyParameters( bool enabled, const QDateTime& dateTime, boo
   }
 }
 
-void GlobePlugin::tileLayersChanged()
-{
-  if ( mIsGlobeRunning )
-  {
-    osg::ref_ptr<Map> map = mMapNode->getMap();
-
-    if ( map->getNumImageLayers() > 1 )
-    {
-      mOsgViewer->getDatabasePager()->clear();
-    }
-
-    //remove QGIS layer
-    if ( mQgisMapLayer )
-    {
-      map->removeImageLayer( mQgisMapLayer );
-    }
-
-    ImageLayerOptions options( "QGIS" );
-    mQgisMapLayer = new ImageLayer( options, mTileSource );
-    map->addImageLayer( mQgisMapLayer );
-  }
-}
-
 void GlobePlugin::reset()
 {
-  if ( mViewerWidget )
-  {
-    delete mViewerWidget;
-    mViewerWidget = 0;
-    delete mDockWidget;
-    mDockWidget = 0;
-  }
-  if ( mOsgViewer )
-  {
-    delete mOsgViewer;
-    mOsgViewer = 0;
-  }
+  delete mFeatureQueryTool;
+  mFeatureQueryTool = 0;
+  delete mViewerWidget;
+  mViewerWidget = 0;
+  delete mDockWidget;
+  mDockWidget = 0;
+  delete mOsgViewer;
+  mOsgViewer = 0;
   mQgisMapLayer = 0;
-
-  setGlobeNotRunning();
+  mIsGlobeRunning = false;
 }
 
 void GlobePlugin::unload()
 {
   reset();
-  // remove the GUI
-  mQGisIface->removePluginMenu( tr( "&Globe" ), mQActionPointer );
-  mQGisIface->removePluginMenu( tr( "&Globe" ), mQActionSettingsPointer );
-  mQGisIface->removePluginMenu( tr( "&Globe" ), mQActionUnload );
-
-  mQGisIface->removeToolBarIcon( mQActionPointer );
-
-  delete mQActionPointer;
-
-#if 0
-  if ( mCoutRdBuf )
-    std::cout.rdbuf( mCoutRdBuf );
-  if ( mCerrRdBuf )
-    std::cerr.rdbuf( mCerrRdBuf );
-#endif
+  mQGisIface->removePluginMenu( tr( "&Globe" ), mActionLaunch );
+  mQGisIface->removePluginMenu( tr( "&Globe" ), mActionSettings );
+  mQGisIface->removePluginMenu( tr( "&Globe" ), mActionUnload );
+  mQGisIface->removeToolBarIcon( mActionLaunch );
   mQGisIface->unregisterMapLayerPropertiesFactory( mLayerPropertiesFactory );
   delete mLayerPropertiesFactory;
-}
+  mLayerPropertiesFactory = 0;
+  delete mSettingsDialog;
+  mSettingsDialog = 0;
 
-void GlobePlugin::help()
-{
-}
-
-void GlobePlugin::copyFolder( QString sourceFolder, QString destFolder )
-{
-  QDir sourceDir( sourceFolder );
-  if ( !sourceDir.exists() )
-    return;
-  QDir destDir( destFolder );
-  if ( !destDir.exists() )
-  {
-    destDir.mkpath( destFolder );
-  }
-  QStringList files = sourceDir.entryList( QDir::Files );
-  for ( int i = 0; i < files.count(); i++ )
-  {
-    QString srcName = sourceFolder + "/" + files[i];
-    QString destName = destFolder + "/" + files[i];
-    QFile::copy( srcName, destName );
-  }
-  files.clear();
-  files = sourceDir.entryList( QDir::AllDirs | QDir::NoDotAndDotDot );
-  for ( int i = 0; i < files.count(); i++ )
-  {
-    QString srcName = sourceFolder + "/" + files[i];
-    QString destName = destFolder + "/" + files[i];
-    copyFolder( srcName, destName );
-  }
+  QgsMapLayerRegistry* layerRegistry = QgsMapLayerRegistry::instance();
+  disconnect( layerRegistry , SIGNAL( layersAdded( QList<QgsMapLayer*> ) ),
+              this, SLOT( refreshQGISMapLayer() ) );
+  disconnect( layerRegistry , SIGNAL( layersRemoved( QStringList ) ),
+              this, SLOT( refreshQGISMapLayer( ) ) );
+  disconnect( mQGisIface->mapCanvas(), SIGNAL( extentsChanged() ),
+              this, SLOT( extentsChanged() ) );
+  disconnect( mQGisIface->mainWindow(), SIGNAL( projectRead() ), this,
+              SLOT( projectReady() ) );
+  disconnect( mQGisIface, SIGNAL( newProjectCreated() ), this,
+              SLOT( blankProjectReady() ) );
+  disconnect( this, SIGNAL( xyCoordinates( const QgsPoint & ) ),
+              mQGisIface->mapCanvas(), SIGNAL( xyCoordinates( const QgsPoint & ) ) );
 }
 
 void GlobePlugin::enableFrustumHighlight( bool status )
@@ -1334,11 +1092,11 @@ void GlobePlugin::layerSettingsChanged( QgsMapLayer* layer )
   layersAdded( QList<QgsMapLayer*>() << layer );
 }
 
-void GlobePlugin::onLayerRead( QgsMapLayer* mapLayer, QDomElement elem )
+void GlobePlugin::onLayerRead( QgsMapLayer* mapLayer, const QDomElement& elem )
 {
   if ( mapLayer->type() == QgsMapLayer::VectorLayer )
   {
-    QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
+    QgsVectorLayer* vLayer = static_cast<QgsVectorLayer*>( mapLayer );
     QgsGlobeVectorLayerConfig::readLayer( vLayer, elem );
   }
 }
@@ -1347,171 +1105,74 @@ void GlobePlugin::onLayerWrite( QgsMapLayer* mapLayer, QDomElement& elem, QDomDo
 {
   if ( mapLayer->type() == QgsMapLayer::VectorLayer )
   {
-    QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
+    QgsVectorLayer* vLayer = static_cast<QgsVectorLayer*>( mapLayer );
     QgsGlobeVectorLayerConfig::writeLayer( vLayer, elem, doc );
   }
 }
 
-void GlobePlugin::setGlobeNotRunning()
+bool NavigationControl::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, osgEarth::Util::Controls::ControlContext& cx )
 {
-  QgsDebugMsg( "Globe Closed" );
-  mIsGlobeRunning = false;
-}
-
-bool NavigationControl::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, ControlContext& cx )
-{
-  switch ( ea.getEventType() )
+  if ( ea.getEventType() == osgGA::GUIEventAdapter::PUSH )
   {
-    case osgGA::GUIEventAdapter::PUSH:
-      _mouse_down_event = &ea;
-      break;
-    case osgGA::GUIEventAdapter::FRAME:
-      if ( _mouse_down_event )
-      {
-        _mouse_down_event = &ea;
-      }
-      break;
-    case osgGA::GUIEventAdapter::RELEASE:
-      for ( ControlEventHandlerList::const_iterator i = _eventHandlers.begin(); i != _eventHandlers.end(); ++i )
-      {
-        NavigationControlHandler* handler = dynamic_cast<NavigationControlHandler*>( i->get() );
-        if ( handler )
-        {
-          handler->onClick( this, ea.getButtonMask(), ea, aa );
-        }
-      }
-      _mouse_down_event = NULL;
-      break;
-    default:
-      /* ignore */
-      ;
+    mMousePressed = true;
   }
-  if ( _mouse_down_event )
+  else if ( ea.getEventType() == osgGA::GUIEventAdapter::FRAME && mMousePressed )
   {
-    //OE_NOTICE << "NavigationControl::handle getEventType " << ea.getEventType() << std::endl;
-    for ( ControlEventHandlerList::const_iterator i = _eventHandlers.begin(); i != _eventHandlers.end(); ++i )
+    for ( osgEarth::Util::Controls::ControlEventHandlerList::const_iterator i = _eventHandlers.begin(); i != _eventHandlers.end(); ++i )
     {
       NavigationControlHandler* handler = dynamic_cast<NavigationControlHandler*>( i->get() );
       if ( handler )
       {
-        handler->onMouseDown( this, ea.getButtonMask() );
+        handler->onMouseDown();
       }
     }
+  }
+  else if ( ea.getEventType() == osgGA::GUIEventAdapter::RELEASE )
+  {
+    for ( osgEarth::Util::Controls::ControlEventHandlerList::const_iterator i = _eventHandlers.begin(); i != _eventHandlers.end(); ++i )
+    {
+      NavigationControlHandler* handler = dynamic_cast<NavigationControlHandler*>( i->get() );
+      if ( handler )
+      {
+        handler->onClick( ea, aa );
+      }
+    }
+    mMousePressed = false;
   }
   return Control::handle( ea, aa, cx );
 }
 
-bool KeyboardControlHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& /*aa*/ )
+bool KeyboardControlHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa )
 {
-#if 0
-  osgEarth::Util::EarthManipulator::Settings* _manipSettings = _manip->getSettings();
-  _manip->getSettings()->bindKey( osgEarth::Util::EarthManipulator::ACTION_ZOOM_IN, osgGA::GUIEventAdapter::KEY_Space );
-  //install default action bindings:
-  osgEarth::Util::EarthManipulator::ActionOptions options;
-
-  _manipSettings->bindKey( osgEarth::Util::EarthManipulator::ACTION_HOME, osgGA::GUIEventAdapter::KEY_Space );
-
-  _manipSettings->bindMouse( osgEarth::Util::EarthManipulator::ACTION_PAN, osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON );
-
-  // zoom as you hold the right button:
-  options.clear();
-  options.add( osgEarth::Util::EarthManipulator::OPTION_CONTINUOUS, true );
-  _manipSettings->bindMouse( osgEarth::Util::EarthManipulator::ACTION_ROTATE, osgGA::GUIEventAdapter::RIGHT_MOUSE_BUTTON, 0L, options );
-
-  // zoom with the scroll wheel:
-  _manipSettings->bindScroll( osgEarth::Util::EarthManipulator::ACTION_ZOOM_IN,  osgGA::GUIEventAdapter::SCROLL_DOWN );
-  _manipSettings->bindScroll( osgEarth::Util::EarthManipulator::ACTION_ZOOM_OUT, osgGA::GUIEventAdapter::SCROLL_UP );
-
-  // pan around with arrow keys:
-  _manipSettings->bindKey( osgEarth::Util::EarthManipulator::ACTION_PAN_LEFT,  osgGA::GUIEventAdapter::KEY_Left );
-  _manipSettings->bindKey( osgEarth::Util::EarthManipulator::ACTION_PAN_RIGHT, osgGA::GUIEventAdapter::KEY_Right );
-  _manipSettings->bindKey( osgEarth::Util::EarthManipulator::ACTION_PAN_UP,    osgGA::GUIEventAdapter::KEY_Up );
-  _manipSettings->bindKey( osgEarth::Util::EarthManipulator::ACTION_PAN_DOWN,  osgGA::GUIEventAdapter::KEY_Down );
-
-  // double click the left button to zoom in on a point:
-  options.clear();
-  options.add( osgEarth::Util::EarthManipulator::OPTION_GOTO_RANGE_FACTOR, 0.4 );
-  _manipSettings->bindMouseDoubleClick( osgEarth::Util::EarthManipulator::ACTION_GOTO, osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON, 0L, options );
-
-  // double click the right button(or CTRL-left button) to zoom out to a point
-  options.clear();
-  options.add( osgEarth::Util::EarthManipulator::OPTION_GOTO_RANGE_FACTOR, 2.5 );
-  _manipSettings->bindMouseDoubleClick( osgEarth::Util::EarthManipulator::ACTION_GOTO, osgGA::GUIEventAdapter::RIGHT_MOUSE_BUTTON, 0L, options );
-  _manipSettings->bindMouseDoubleClick( osgEarth::Util::EarthManipulator::ACTION_GOTO, osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON, osgGA::GUIEventAdapter::MODKEY_CTRL, options );
-
-  _manipSettings->setThrowingEnabled( false );
-  _manipSettings->setLockAzimuthWhilePanning( true );
-
-  _manip->applySettings( _manipSettings );
-#endif
-
-  switch ( ea.getEventType() )
+  if ( ea.getEventType() == osgGA::GUIEventAdapter::KEYDOWN )
   {
-    case( osgGA::GUIEventAdapter::KEYDOWN ) :
-    {
-      //move map
-      if ( ea.getKey() == '4' )
-      {
-        _manip->pan( -MOVE_OFFSET, 0 );
-      }
-      if ( ea.getKey() == '6' )
-      {
-        _manip->pan( MOVE_OFFSET, 0 );
-      }
-      if ( ea.getKey() == '2' )
-      {
-        _manip->pan( 0, MOVE_OFFSET );
-      }
-      if ( ea.getKey() == '8' )
-      {
-        _manip->pan( 0, -MOVE_OFFSET );
-      }
-      //rotate
-      if ( ea.getKey() == '/' )
-      {
-        _manip->rotate( MOVE_OFFSET, 0 );
-      }
-      if ( ea.getKey() == '*' )
-      {
-        _manip->rotate( -MOVE_OFFSET, 0 );
-      }
-      //tilt
-      if ( ea.getKey() == '9' )
-      {
-        _manip->rotate( 0, MOVE_OFFSET );
-      }
-      if ( ea.getKey() == '3' )
-      {
-        _manip->rotate( 0, -MOVE_OFFSET );
-      }
-      //zoom
-      if ( ea.getKey() == '-' )
-      {
-        _manip->zoom( 0, MOVE_OFFSET );
-      }
-      if ( ea.getKey() == '+' )
-      {
-        _manip->zoom( 0, -MOVE_OFFSET );
-      }
-      //reset
-      if ( ea.getKey() == '5' )
-      {
-        //_manip->zoom( 0, 0 );
-      }
-      break;
-    }
-
-    default:
-      break;
-  }
-  return false;
-}
-
-bool FlyToExtentHandler::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& /*aa*/ )
-{
-  if ( ea.getEventType() == ea.KEYDOWN && ea.getKey() == '1' )
-  {
-    mGlobe->syncExtent();
+    //move map
+    if ( ea.getKey() == '4' )
+      _manip->pan( -MOVE_OFFSET, 0 );
+    else if ( ea.getKey() == '6' )
+      _manip->pan( MOVE_OFFSET, 0 );
+    else if ( ea.getKey() == '2' )
+      _manip->pan( 0, MOVE_OFFSET );
+    else if ( ea.getKey() == '8' )
+      _manip->pan( 0, -MOVE_OFFSET );
+    //rotate
+    else if ( ea.getKey() == '/' )
+      _manip->rotate( MOVE_OFFSET, 0 );
+    else if ( ea.getKey() == '*' )
+      _manip->rotate( -MOVE_OFFSET, 0 );
+    //tilt
+    else if ( ea.getKey() == '9' )
+      _manip->rotate( 0, MOVE_OFFSET );
+    else if ( ea.getKey() == '3' )
+      _manip->rotate( 0, -MOVE_OFFSET );
+    //zoom
+    else if ( ea.getKey() == '-' )
+      _manip->zoom( 0, MOVE_OFFSET );
+    else if ( ea.getKey() == '+' )
+      _manip->zoom( 0, -MOVE_OFFSET );
+    //reset
+    else if ( ea.getKey() == '5' )
+      _manip->home( ea, aa );
   }
   return false;
 }

@@ -19,58 +19,51 @@
 #ifndef QGS_GLOBE_PLUGIN_H
 #define QGS_GLOBE_PLUGIN_H
 
-#include "qgsconfig.h"
-#include "qgisplugin.h"
-#include "qgsosgearthtilesource.h"
-#include "globe_plugin_dialog.h"
-#include "qgsrubberband.h"
-
+#include <qgisplugin.h>
 #include <QObject>
-#include <QDockWidget>
+#include <osg/ref_ptr>
 
-#include <osgViewer/Viewer>
-#include <osgEarth/MapNode>
-#include <osgEarth/ImageLayer>
-#include <osgEarthUtil/EarthManipulator>
-#ifndef HAVE_OSGEARTHQT //use backported controls if osgEarth <= 2.1
-#define USE_BACKPORTED_CONTROLS
-#endif
-#ifdef USE_BACKPORTED_CONTROLS
-#include "osgEarthUtil/Controls"
-using namespace osgEarth::Util::Controls21;
-#else
-#include <osgEarthUtil/Controls>
-using namespace osgEarth::Util::Controls;
-#endif
-#ifdef HAVE_OSGEARTH_ELEVATION_QUERY
-#include <osgEarth/ElevationQuery>
-#include <osgEarthUtil/ObjectLocator>
-#else
-#include <osgEarthUtil/ElevationManager>
-#include <osgEarthUtil/ObjectPlacer>
-#endif
-#include <osgEarth/Version>
-
-#if 0
-#include <iostream>
-#endif
-
-#include <qgslogger.h>
-#include "qgsosgearthfeaturesource.h"
-#include "qgsvectorlayer.h"
-#include "qgsglobefeatureutils.h"
-#include "globefrustumhighlight.h"
-#include "globefeatureidentify.h"
+#include "qgsglobeinterface.h"
 
 class QAction;
-class QToolBar;
-class QgisInterface;
+class QDateTime;
+class QDockWidget;
+class QDomDocument;
+class QDomElement;
 class QgsGlobeLayerPropertiesFactory;
 class QgsGlobeInterface;
-using namespace osgEarth::Features;
+class QgsGlobePluginDialog;
+class QgsMapLayer;
+class QgsPoint;
+class GlobeFrustumHighlightCallback;
+namespace osgEarth { namespace Drivers { class QgsOsgEarthTileSource; } }
 
-namespace osgEarth { namespace QtGui { class ViewerWidget; } }
-namespace osgEarth { namespace Util { class SkyNode; class VerticalScale; } }
+namespace osg
+{
+  class Group;
+  class Vec3d;
+}
+namespace osgViewer { class Viewer; }
+
+namespace osgEarth
+{
+  class ImageLayer;
+  class MapNode;
+  namespace QtGui { class ViewerWidget; }
+  namespace Util
+  {
+    class FeatureQueryTool;
+    class SkyNode;
+    class VerticalScale;
+    namespace Controls
+    {
+      class Control;
+      class ControlCanvas;
+      class ControlEventHandler;
+    }
+  }
+}
+
 
 class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 {
@@ -78,10 +71,8 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 
   public:
     GlobePlugin( QgisInterface* theQgisInterface );
-    virtual ~GlobePlugin();
+    ~GlobePlugin();
 
-    // QgisPlugin interface
-  public:
     //! offer an interface for python plugins
     virtual QgsPluginInterface* pluginInterface();
     //! init the gui
@@ -91,199 +82,91 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     //! unload the plugin
     void unload() override;
 
-    //! show the help document
-    void help();
-
     //! Set a different base map (QString::NULL will disable the base map)
     void setBaseMap( QString url );
-    //! Called when the extents of the map change
+    //! Set sky parameters
     void setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbience );
     //! Called when the extents of the map change
     void extentsChanged();
     //! Sync globe extent to mapCanavas
     void syncExtent();
-#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
-    //! Set vertical scale
-    void setVerticalScale( double scale );
-#endif
+    //! Enable or disable frustum highlight
+    void enableFrustumHighlight( bool statu );
+    //! Enable or disable feature identification
+    void enableFeatureIdentification( bool status );
 
-    //! called when a project has been read successfully
-    void projectReady();
-    //! called when a new project has been created successfully
-    void blankProjectReady();
-    //! called when the globe window is closed
-    void setGlobeNotRunning();
     //! set the globe coordinates of a user right-click on the globe
-    void setSelectedCoordinates( osg::Vec3d coords );
+    void setSelectedCoordinates( const osg::Vec3d& coords );
     //! get a coordinates vector
     osg::Vec3d getSelectedCoordinates();
-    //! prints the ccordinates in a QMessageBox
-    void showSelectedCoordinates();
     //! emits signal with current mouse coordinates
     void showCurrentCoordinates( double lon, double lat );
     //! get longitude of user right click
-    double getSelectedLon();
+    double getSelectedLon() const { return mSelectedLon; }
     //! get latitude of user right click
-    double getSelectedLat();
+    double getSelectedLat() const { return mSelectedLat; }
     //! get elevation of user right click
-    double getSelectedElevation();
+    double getSelectedElevation() { return mSelectedElevation; }
 
     //! Get the OSG viewer
     osgViewer::Viewer* osgViewer() { return mOsgViewer; }
-
-    //! Recursive copy folder
-    static void copyFolder( QString sourceFolder, QString destFolder );
-
+    //! Get OSG map node
     osgEarth::MapNode* mapNode() { return mMapNode; }
 
-    void enableFrustumHighlight( bool status );
-
-    void enableFeatureIdentification( bool status );
-
   public slots:
-    //! Open the 3D viewer window (if not yet open)
     void run();
-    //! Called when a new set of image layers has been received
     void canvasLayersChanged();
-
-  private slots:
-
-    //! Called when a new set of elevation layers has been received
-    void elevationLayersChanged();
-
-    //! Show the settings dialog box
-    void settings();
-
-    void layersAdded( QList<QgsMapLayer*> );
-
-    void layersRemoved( QStringList layerIds );
-
-    void layerSettingsChanged( QgsMapLayer* layer );
-
-    void onLayerRead( QgsMapLayer* mapLayer, QDomElement elem );
-    void onLayerWrite( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc );
+    void setVerticalScale( double scale );
 
   private:
-    //!  Set HTTP proxy settings
-    void setupProxy();
-    //!  Setup map
-    void setupMap();
-    //!  Setup map controls
-    void setupControls();
-
-    void tileLayersChanged();
-
-  private:
-    //! Pointer to the QGIS interface object
     QgisInterface *mQGisIface;
-    QAction * mQActionPointer;
-    QAction * mQActionSettingsPointer;
-    QAction * mQActionUnload;
-    //! OSG Viewer
+    QAction * mActionLaunch;
+    QAction * mActionSettings;
+    QAction * mActionUnload;
     osgViewer::Viewer* mOsgViewer;
-    //! QT viewer widget
     osgEarth::QtGui::ViewerWidget* mViewerWidget;
-    //! Dockable dialog
     QDockWidget* mDockWidget;
-    //! Settings Dialog
     QgsGlobePluginDialog *mSettingsDialog;
-    //! OSG root node
     osg::Group* mRootNode;
-    //! Map node
     osgEarth::MapNode* mMapNode;
-    //! Base layer
     osg::ref_ptr<osgEarth::ImageLayer> mBaseLayer;
-    //! Sky node
     osg::ref_ptr<osgEarth::Util::SkyNode> mSkyNode;
-#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
     osg::ref_ptr<osgEarth::Util::VerticalScale> mVerticalScale;
-#endif
-    //! QGIS maplayer
     osgEarth::ImageLayer* mQgisMapLayer;
-    //! Tile source
     osgEarth::Drivers::QgsOsgEarthTileSource* mTileSource;
-    //! Control Canvas
-    ControlCanvas* mControlCanvas;
-    //! tracks if the globe is open
+    osgEarth::Util::Controls::ControlCanvas* mControlCanvas;
     bool mIsGlobeRunning;
     //! coordinates of the right-clicked point on the globe
     double mSelectedLat, mSelectedLon, mSelectedElevation;
+
+    QgsGlobeInterface mGlobeInterface;
     //! Creates additional pages in the layer properties for adjusting 3D properties
     QgsGlobeLayerPropertiesFactory* mLayerPropertiesFactory;
+    GlobeFrustumHighlightCallback* mFrustumHighlightCallback;
+    osgEarth::Util::FeatureQueryTool* mFeatureQueryTool;
 
-#if 0
-    std::streambuf *mCoutRdBuf, *mCerrRdBuf;
-#endif
+    void setupProxy();
+    void setupMap();
+    void addControl( osgEarth::Util::Controls::Control* control, int x, int y, int w, int h, osgEarth::Util::Controls::ControlEventHandler* handler );
+    void addImageControl( const std::string &imgPath, int x, int y, osgEarth::Util::Controls::ControlEventHandler* handler = 0 );
+    void setupControls();
+
+  private slots:
+    void elevationLayersChanged();
+    void projectReady();
+    void blankProjectReady();
+    void showSettings();
+    void layersAdded( const QList<QgsMapLayer*>& );
+    void layersRemoved( const QStringList& layerIds );
+    void layerSettingsChanged( QgsMapLayer* layer );
+    void onLayerRead( QgsMapLayer* mapLayer, const QDomElement &elem );
+    void onLayerWrite( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc );
 
   signals:
     //! emits current mouse position
     void xyCoordinates( const QgsPoint & p );
     //! emits position of right click on globe
     void newCoordinatesSelected( const QgsPoint & p );
-
-  private:
-    QgsGlobeInterface mGlobeInterface;
-
-    GlobeFrustumHighlightCallback* mFrustumHighlightCallback;
-    osgEarth::Util::FeatureQueryTool* mFeatureQueryTool;
 };
-
-class FlyToExtentHandler : public osgGA::GUIEventHandler
-{
-  public:
-    FlyToExtentHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
-
-    bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa ) override;
-
-  private:
-    GlobePlugin* mGlobe;
-
-};
-
-
-class KeyboardControlHandler : public osgGA::GUIEventHandler
-{
-  public:
-    KeyboardControlHandler( osgEarth::Util::EarthManipulator* manip ) : _manip( manip ) { }
-
-    bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa ) override;
-
-  private:
-    osg::observer_ptr<osgEarth::Util::EarthManipulator> _manip;
-};
-
-
-namespace osgEarth
-{
-  namespace Util
-  {
-#ifdef USE_BACKPORTED_CONTROLS
-    namespace Controls21
-#else
-    namespace Controls
-#endif
-    {
-      class NavigationControlHandler : public ControlEventHandler
-      {
-        public:
-          virtual void onMouseDown( class Control* control, int mouseButtonMask ) { Q_UNUSED( control ); Q_UNUSED( mouseButtonMask ); }
-          virtual void onClick( class Control* control, int mouseButtonMask, const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa ) { Q_UNUSED( control ); Q_UNUSED( mouseButtonMask ); Q_UNUSED( ea ); Q_UNUSED( aa ); }
-          virtual void onClick( class Control* control, int mouseButtonMask ) override { Q_UNUSED( control ); Q_UNUSED( mouseButtonMask ); }
-      };
-
-      class NavigationControl : public ImageControl
-      {
-        public:
-          NavigationControl( osg::Image* image = 0L ) : ImageControl( image ),  _mouse_down_event( NULL ) {}
-
-        protected:
-          virtual bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, ControlContext& cx ) override;
-
-        private:
-          osg::ref_ptr<const osgGA::GUIEventAdapter> _mouse_down_event;
-      };
-    }
-  }
-}
 
 #endif // QGS_GLOBE_PLUGIN_H

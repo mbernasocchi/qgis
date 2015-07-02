@@ -14,13 +14,6 @@
  ***************************************************************************/
 
 #include "qgsglobeinterface.h"
-
-// Qt Includes
-
-// QGIS Includes
-#include "qgslogger.h"
-
-// Globe Includes
 #include "globe_plugin.h"
 
 QgsGlobeInterface::QgsGlobeInterface( GlobePlugin* const globe )
@@ -34,7 +27,7 @@ osgViewer::Viewer* QgsGlobeInterface::osgViewer()
   return mGlobe->osgViewer();
 }
 
-MapNode* QgsGlobeInterface::mapNode()
+osgEarth::MapNode* QgsGlobeInterface::mapNode()
 {
   return mGlobe->mapNode();
 }
@@ -54,7 +47,7 @@ void QgsGlobeInterface::enableFeatureIdentification( bool status )
   mGlobe->enableFeatureIdentification( status );
 }
 
-void QgsGlobeInterface::setBaseMap( QString url )
+void QgsGlobeInterface::setBaseMap( const QString& url )
 {
   mGlobe->setBaseMap( url );
 }

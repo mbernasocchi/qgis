@@ -18,15 +18,10 @@
 
 #include "qgsplugininterface.h"
 
-#include <osgViewer/Viewer>
-
-#include <osgEarth/MapNode>
-
-#include <qglobal.h>
-
 class GlobePlugin;
-
 class QDateTime;
+namespace osgViewer { class Viewer; }
+namespace osgEarth { class MapNode; }
 
 class GLOBE_EXPORT QgsGlobeInterface : public QgsPluginInterface
 {
@@ -45,7 +40,7 @@ class GLOBE_EXPORT QgsGlobeInterface : public QgsPluginInterface
 
     void enableFeatureIdentification( bool status );
 
-    void setBaseMap( QString url );
+    void setBaseMap( const QString &url );
 
     void setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbient );
 
