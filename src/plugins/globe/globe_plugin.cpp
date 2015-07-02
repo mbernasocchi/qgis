@@ -62,6 +62,7 @@
 #include <osgEarth/Notify>
 #include <osgEarth/Map>
 #include <osgEarth/MapNode>
+#include <osgEarth/Registry>
 #include <osgEarth/TileSource>
 #include <osgEarthUtil/EarthManipulator>
 #if OSGEARTH_VERSION_LESS_THAN( 2, 6, 0 )
@@ -133,7 +134,7 @@ struct RefreshControlHandler : public NavigationControlHandler
   RefreshControlHandler( GlobePlugin* globe ) : mGlobe( globe ) { }
   virtual void onClick( const osgGA::GUIEventAdapter& /*ea*/, osgGA::GUIActionAdapter& /*aa*/ ) override
   {
-    mGlobe->canvasLayersChanged();
+    mGlobe->refreshQGISMapLayer();
   }
 private:
   GlobePlugin* mGlobe;
@@ -471,8 +472,12 @@ void GlobePlugin::setupMap()
   mRootNode->addChild( mMapNode );
 
   //add QGIS layer
-  mTileSource = new osgEarth::Drivers::QgsOsgEarthTileSource( QStringList(), mQGisIface->mapCanvas() );
-  mTileSource->initialize( "", 0 );
+  osgEarth::Registry::instance()->unRefImageDataAfterApply() = false;
+  mTileSource = new QgsOsgEarthTileSource( mQGisIface->mapCanvas() );
+
+  osgEarth::ImageLayerOptions options( "QGIS" );
+  mQgisMapLayer = new osgEarth::ImageLayer( options, mTileSource );
+  map->addImageLayer( mQgisMapLayer );
 
   // Add layers to the map
   layersAdded( mQGisIface->mapCanvas()->layers() );
@@ -669,49 +674,20 @@ void GlobePlugin::extentsChanged()
   QgsDebugMsg( "extentsChanged: " + mQGisIface->mapCanvas()->extent().toString() );
 }
 
-void GlobePlugin::canvasLayersChanged()
+void GlobePlugin::refreshQGISMapLayer()
 {
-#if 0
-  if ( mIsGlobeRunning )
+  if ( mTileSource )
   {
-    QgsDebugMsg( "imageLayersChanged: Globe Running, executing" );
-    osg::ref_ptr<Map> map = mMapNode->getMap();
-
-    if ( map->getNumImageLayers() > 1 )
-    {
-      mOsgViewer->getDatabasePager()->clear();
-    }
-
-    //remove QGIS layer
-    if ( mQgisMapLayer )
-    {
-      QgsDebugMsg( "removeMapLayer" );
-      map->removeImageLayer( mQgisMapLayer );
-    }
-
-    //add QGIS layer
-    mTileSource = new QgsOsgEarthTileSource( QStringList(), mQGisIface->mapCanvas() );
-    mTileSource->initialize( "", 0 );
-    ImageLayerOptions options( "QGIS" );
-#if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 2, 0 )
-    options.cachePolicy() = CachePolicy::NO_CACHE;
-#endif
-    mQgisMapLayer = new ImageLayer( options, mTileSource );
-    map->addImageLayer( mQgisMapLayer );
+    mTileSource->updateModifiedTime();
+    mOsgViewer->requestRedraw();
   }
-  else
-  {
-    QgsDebugMsg( "layersChanged: Globe NOT running, skipping" );
-    return;
-  }
-#endif
 }
 
 void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
 {
   if ( mIsGlobeRunning )
   {
-    QSet<QgsMapLayer*> tileLayers;
+    bool refreshDrapedLayer = false;
 
     Q_FOREACH( QgsMapLayer* mapLayer, mapLayers )
     {
@@ -882,28 +858,13 @@ void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
       }
       else
       {
-        // Add to the draped image for non-vector layers
-        tileLayers << mapLayer;
+        refreshDrapedLayer = true;
       }
     }
 
-    if ( tileLayers.size() > 0 )
+    if ( refreshDrapedLayer )
     {
-      mTileSource->addLayers( tileLayers );
-      osg::ref_ptr<Map> map = mMapNode->getMap();
-      if ( map->getNumImageLayers() > 1 )
-      {
-        mOsgViewer->getDatabasePager()->clear();
-      }
-
-      if ( mQgisMapLayer )
-      {
-        map->removeImageLayer( mQgisMapLayer );
-      }
-
-      osgEarth::ImageLayerOptions options( "QGIS" );
-      mQgisMapLayer = new osgEarth::ImageLayer( options, mTileSource );
-      map->addImageLayer( mQgisMapLayer );
+      refreshQGISMapLayer();
     }
   }
 }

@@ -36,7 +36,7 @@ class QgsGlobePluginDialog;
 class QgsMapLayer;
 class QgsPoint;
 class GlobeFrustumHighlightCallback;
-namespace osgEarth { namespace Drivers { class QgsOsgEarthTileSource; } }
+class QgsOsgEarthTileSource;
 
 namespace osg
 {
@@ -115,7 +115,7 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 
   public slots:
     void run();
-    void canvasLayersChanged();
+    void refreshQGISMapLayer();
     void setVerticalScale( double scale );
 
   private:
@@ -133,7 +133,7 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     osg::ref_ptr<osgEarth::Util::SkyNode> mSkyNode;
     osg::ref_ptr<osgEarth::Util::VerticalScale> mVerticalScale;
     osgEarth::ImageLayer* mQgisMapLayer;
-    osgEarth::Drivers::QgsOsgEarthTileSource* mTileSource;
+    QgsOsgEarthTileSource* mTileSource;
     osgEarth::Util::Controls::ControlCanvas* mControlCanvas;
     bool mIsGlobeRunning;
     //! coordinates of the right-clicked point on the globe

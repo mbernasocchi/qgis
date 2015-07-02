@@ -3,7 +3,9 @@
     ---------------------
     begin                : August 2010
     copyright            : (C) 2010 by Pirmin Kalberer
+                           (C) 2015 Sandro Mani
     email                : pka at sourcepole dot ch
+                           smani at sourcepole dot ch
  ***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -13,68 +15,62 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef OSGEARTH_DRIVER_QGIS_DRIVEROPTIONS
-#define OSGEARTH_DRIVER_QGIS_DRIVEROPTIONS 1
+#ifndef QGSOSGEARTHTILESOURCE_H
+#define QGSOSGEARTHTILESOURCE_H
 
-#include "qgsmapcanvas.h"
-
-#include <QImage>
-class QgisInterface;
-
-#include <osgEarth/Common>
 #include <osgEarth/TileSource>
+#include "qgsrectangle.h"
 
-using namespace osgEarth;
+class QgsCoordinateTransform;
+class QgsMapCanvas;
+class QgsMapRenderer;
+class QgsOsgEarthTileSource;
 
-namespace osgEarth
+
+class QgsOsgEarthTile : public osg::Image
 {
-  namespace Drivers
-  {
-    class QgsOsgEarthTileSource : public TileSource
+  public:
+    QgsOsgEarthTile( const QgsOsgEarthTileSource* tileSource, const QgsRectangle& tileExtent );
+    bool requiresUpdateCall() const;
+    void update( osg::NodeVisitor * );
+
+  private:
+    const QgsOsgEarthTileSource* mTileSource;
+    QgsRectangle mTileExtent;
+    osgEarth::TimeStamp mLastUpdateTime;
+};
+
+
+class QgsOsgEarthTileSource : public osgEarth::TileSource
+{
+  public:
+    QgsOsgEarthTileSource( QgsMapCanvas* canvas, const osgEarth::TileSourceOptions& options = osgEarth::TileSourceOptions() );
+    Status initialize( const osgDB::Options *dbOptions ) override;
+
+    osg::Image* createImage( const osgEarth::TileKey& key, osgEarth::ProgressCallback* progress );
+    QgsOsgEarthTile *renderImage( int tileSize, const QgsRectangle& tileExtent ) const;
+
+    osg::HeightField* createHeightField( const osgEarth::TileKey &/*key*/, osgEarth::ProgressCallback* /*progress*/ )
     {
-      public:
-        QgsOsgEarthTileSource( QStringList mapLayers, QgsMapCanvas* canvas, const TileSourceOptions& options = TileSourceOptions() );
+      OE_WARN << "[QGIS] Driver does not support heightfields" << std::endl;
+      return 0;
+    }
 
-        void initialize( const std::string& referenceURI, const Profile* overrideProfile = NULL );
+    osgEarth::CachePolicy getCachePolicyHint( const osgEarth::Profile* ) const
+    {
+      return osgEarth::CachePolicy::NO_CACHE;
+    }
 
-        osg::Image* createImage( const TileKey& key, ProgressCallback* progress );
+    bool supportsPersistentCaching() const { return false; }
+    bool isDynamic() const { return true; }
+    osgEarth::TimeStamp getLastModifiedTime() const { return mLastModifiedTime; }
+    void updateModifiedTime();
 
-        void addLayers( QSet<QgsMapLayer*> layers );
+  private:
+    QgsMapRenderer *mMapRenderer;
+    QgsMapCanvas* mCanvas;
+    QgsCoordinateTransform *mCoordTransform;
+    osgEarth::TimeStamp mLastModifiedTime;
+};
 
-        virtual osg::HeightField* createHeightField( const TileKey &key, ProgressCallback* progress )
-        {
-          Q_UNUSED( key );
-          Q_UNUSED( progress );
-          //NI
-          OE_WARN << "[QGIS] Driver does not support heightfields" << std::endl;
-          return NULL;
-        }
-
-        virtual std::string getExtension()  const
-        {
-          //All QGIS tiles are in JPEG format
-          return "jpg";
-        }
-
-        virtual bool supportsPersistentCaching() const
-        {
-          return false;
-        }
-
-        bool isDynamic() const override { return true; }
-
-      private:
-
-        QImage* createQImage( int width, int height ) const;
-
-        //! Pointer to the QGIS interface object
-        QStringList mMapLayers;
-        QgsMapRenderer *mMapRenderer;
-        QgsMapCanvas* mCanvas;
-        QgsCoordinateTransform *mCoordTransform;
-    };
-  }
-} // namespace osgEarth::Drivers
-
-#endif // OSGEARTH_DRIVER_QGIS_DRIVEROPTIONS
-
+#endif // QGSOSGEARTHTILESOURCE_H

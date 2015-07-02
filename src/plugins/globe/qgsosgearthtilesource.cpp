@@ -3,7 +3,9 @@
     ---------------------
     begin                : August 2010
     copyright            : (C) 2010 by Pirmin Kalberer
+                           (C) 2015 Sandro Mani
     email                : pka at sourcepole dot ch
+                           smani at sourcepole dot ch
  ***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -13,50 +15,52 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <osgEarth/TileSource>
 #include <osgEarth/Registry>
 #include <osgEarth/ImageUtils>
-
-#include <osg/Notify>
-#include <osgDB/FileNameUtils>
-#include <osgDB/FileUtils>
-#include <osgDB/Registry>
-#include <osgDB/ReadFile>
-#include <osgDB/WriteFile>
-#include <sstream>
-
-#include "qgsosgearthtilesource.h"
-
-#include "qgsapplication.h"
-#include <qgslogger.h>
-#include <qgisinterface.h>
-#include <qgsmapcanvas.h>
-#include "qgsproviderregistry.h"
-#include "qgsmaplayerregistry.h"
-#include "qgsmaptopixel.h"
-#include "qgspallabeling.h"
-#include "qgsproject.h"
-
-#include <QFile>
 #include <QPainter>
 
-using namespace osgEarth;
-using namespace osgEarth::Drivers;
+#include "qgsosgearthtilesource.h"
+#include "qgscoordinatetransform.h"
+#include "qgslogger.h"
+#include "qgsmapcanvas.h"
+#include "qgsmaprenderer.h"
 
 
-QgsOsgEarthTileSource::QgsOsgEarthTileSource( QStringList mapLayers, QgsMapCanvas* canvas, const TileSourceOptions& options )
+QgsOsgEarthTile::QgsOsgEarthTile( const QgsOsgEarthTileSource* tileSource, const QgsRectangle& tileExtent )
+    : osg::Image()
+    , mTileSource( tileSource )
+    , mTileExtent( tileExtent )
+    , mLastUpdateTime( osgEarth::DateTime().asTimeStamp() )
+{}
+
+bool QgsOsgEarthTile::requiresUpdateCall() const
+{
+  return mLastUpdateTime < mTileSource->getLastModifiedTime();
+}
+
+void QgsOsgEarthTile::update( osg::NodeVisitor * )
+{
+  QgsDebugMsg( QString( "Updating tile image for extent %1" ).arg( mTileExtent.toString() ) );
+  osg::ref_ptr<osg::Image> image = mTileSource->renderImage( s(), mTileExtent );
+  if ( image )
+  {
+    image->setAllocationMode( osg::Image::NO_DELETE ); // since image->data is passed to this
+    setImage( image->s(), image->t(), image->r(), image->getInternalTextureFormat(), image->getPixelFormat(), image->getDataType(), image->data(), osg::Image::USE_NEW_DELETE, image->getPacking() );
+    mLastUpdateTime = osgEarth::DateTime().asTimeStamp();
+  }
+}
+
+
+QgsOsgEarthTileSource::QgsOsgEarthTileSource( QgsMapCanvas* canvas, const osgEarth::TileSourceOptions& options )
     : TileSource( options )
-    , mMapLayers( mapLayers )
     , mCanvas( canvas )
     , mCoordTransform( 0 )
+    , mLastModifiedTime( 0 )
 {
 }
 
-void QgsOsgEarthTileSource::initialize( const std::string& referenceURI, const Profile* overrideProfile )
+osgEarth::TileSource::Status QgsOsgEarthTileSource::initialize( const osgDB::Options* /*dbOptions*/ )
 {
-  Q_UNUSED( referenceURI );
-  Q_UNUSED( overrideProfile );
-
   setProfile( osgEarth::Registry::instance()->getGlobalGeodeticProfile() );
 
   QgsCoordinateReferenceSystem destCRS;
@@ -69,22 +73,18 @@ void QgsOsgEarthTileSource::initialize( const std::string& referenceURI, const P
     QgsDebugMsg( QString( "transforming from %1 to %2" ).arg( srcCRS.authid() ).arg( destCRS.authid() ) );
     mCoordTransform = new QgsCoordinateTransform( srcCRS, destCRS );
   }
-  else
-  {
-    mCoordTransform = 0;
-  }
   mMapRenderer = new QgsMapRenderer();
   mMapRenderer->setDestinationCrs( destCRS );
   mMapRenderer->setProjectionsEnabled( true );
   mMapRenderer->setOutputUnits( mCanvas->mapRenderer()->outputUnits() );
   mMapRenderer->setMapUnits( QGis::Degrees );
+
+  mLastModifiedTime = osgEarth::DateTime().asTimeStamp();
+  return STATUS_OK;
 }
 
-osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCallback* progress )
+osg::Image* QgsOsgEarthTileSource::createImage( const osgEarth::TileKey& key, osgEarth::ProgressCallback* progress )
 {
-  QString kname = key.str().c_str();
-  kname.replace( '/', '_' );
-
   Q_UNUSED( progress );
 
   //Get the extents of the tile
@@ -92,7 +92,7 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
   if ( tileSize <= 0 )
   {
     QgsDebugMsg( "Tile size too small." );
-    return ImageUtils::createEmptyImage();
+    return osgEarth::ImageUtils::createEmptyImage();
   }
 
   QgsRectangle viewExtent = mCanvas->fullExtent();
@@ -107,99 +107,48 @@ osg::Image* QgsOsgEarthTileSource::createImage( const TileKey& key, ProgressCall
   double xmin, ymin, xmax, ymax;
   key.getExtent().getBounds( xmin, ymin, xmax, ymax );
   QgsRectangle tileExtent( xmin, ymin, xmax, ymax );
+  QgsDebugMsg( QString( "earth tile key:%1 ext:%2" ).arg( key.str().c_str() ).arg( tileExtent.toString( 5 ) ) );
 
   QgsDebugMsg( QString( "text0:%1" ).arg( tileExtent.toString( 5 ) ) );
   if ( !viewExtent.intersects( tileExtent ) )
   {
-    QgsDebugMsg( QString( "earth tile key:%1 ext:%2: NO INTERSECT" ).arg( kname ).arg( tileExtent.toString( 5 ) ) );
-    return ImageUtils::createEmptyImage();
+    QgsDebugMsg( QString( "earth tile key:%1 ext:%2: NO INTERSECT" ).arg( key.str().c_str() ).arg( tileExtent.toString( 5 ) ) );
+    return osgEarth::ImageUtils::createEmptyImage();
   }
 
-  QImage *qImage = createQImage( tileSize, tileSize );
-  if ( !qImage )
-  {
-    QgsDebugMsg( QString( "earth tile key:%1 ext:%2: EMPTY IMAGE" ).arg( kname ).arg( tileExtent.toString( 5 ) ) );
-    return ImageUtils::createEmptyImage();
-  }
+  osg::Image* image = renderImage( tileSize, tileExtent );
+  if ( image != 0 )
+    return image;
+  else
+    return osgEarth::ImageUtils::createEmptyImage();
+}
+
+QgsOsgEarthTile* QgsOsgEarthTileSource::renderImage( int tileSize, const QgsRectangle& tileExtent ) const
+{
+  unsigned char* data = new unsigned char[tileSize * tileSize * 4];
+  QImage qImage( data, tileSize, tileSize, QImage::Format_ARGB32_Premultiplied );
+  if ( qImage.isNull() )
+    return 0;
+  qImage.fill( 0 );
 
   mMapRenderer->setLayerSet( mCanvas->mapRenderer()->layerSet() );
-  mMapRenderer->setOutputSize( QSize( tileSize, tileSize ), qImage->logicalDpiX() );
+  mMapRenderer->setOutputSize( QSize( tileSize, tileSize ), qImage.logicalDpiX() );
   mMapRenderer->setExtent( tileExtent );
 
-  QPainter thePainter( qImage );
-  mMapRenderer->render( &thePainter );
+  QPainter painter( &qImage );
+  mMapRenderer->render( &painter );
 
-  QgsDebugMsg( QString( "earth tile key:%1 ext:%2" ).arg( kname ).arg( tileExtent.toString( 5 ) ) );
-#if 0
-  qImage->save( QString( "/tmp/tile-%1.png" ).arg( kname ) );
-#endif
-
-  osg::ref_ptr<osg::Image> image = new osg::Image;
-
-  //The pixel format is always RGBA to support transparency
-  image->setImage( tileSize, tileSize, 1, 4, // width, height, depth, pixelFormat?
-                   GL_BGRA, GL_UNSIGNED_BYTE, //Why not GL_RGBA - Qt bug?
-                   qImage->bits(),
-                   osg::Image::NO_DELETE, 1 );
-
+  QgsOsgEarthTile* image = new QgsOsgEarthTile( this, tileExtent );
+  image->setImage( tileSize, tileSize, 1, 4, // width, height, depth, internal_format
+                   GL_BGRA, GL_UNSIGNED_BYTE,
+                   data, osg::Image::USE_NEW_DELETE, 1 );
   image->flipVertical();
-
-
-  //Create a transparent image if we don't have an image
-  if ( !image.valid() )
-  {
-    QgsDebugMsg( "image is invalid" );
-    return ImageUtils::createEmptyImage();
-  }
-  QgsDebugMsg( "returning image" );
-  return image.release();
+  return image;
 }
 
-void QgsOsgEarthTileSource::addLayers( QSet<QgsMapLayer*> layers )
+void QgsOsgEarthTileSource::updateModifiedTime()
 {
-  Q_FOREACH( QgsMapLayer* layer, layers )
-  {
-    mMapLayers << layer->id();
-  }
-  mMapRenderer->setLayerSet( mMapLayers );
-}
-
-QImage* QgsOsgEarthTileSource::createQImage( int width, int height ) const
-{
-  if ( width < 0 || height < 0 )
-  {
-    return 0;
-  }
-
-  QImage* qImage = 0;
-
-  //is format jpeg?
-  bool jpeg = false;
-  //transparent parameter
-  bool transparent = true;
-
-  //use alpha channel only if necessary because it slows down performance
-  if ( transparent && !jpeg )
-  {
-    qImage = new QImage( width, height, QImage::Format_ARGB32_Premultiplied );
-    qImage->fill( 0 );
-  }
-  else
-  {
-    qImage = new QImage( width, height, QImage::Format_RGB32 );
-    qImage->fill( qRgb( 255, 255, 255 ) );
-  }
-
-  if ( !qImage )
-  {
-    return 0;
-  }
-
-  //apply DPI parameter if present.
-#if 0
-  int dpm = dpi / 0.0254;
-  qImage->setDotsPerMeterX( dpm );
-  qImage->setDotsPerMeterY( dpm );
-#endif
-  return qImage;
+  osgEarth::TimeStamp old = mLastModifiedTime;
+  mLastModifiedTime = osgEarth::DateTime().asTimeStamp();
+  QgsDebugMsg( QString( "Updated QGIS map layer modified time from %1 to %2" ).arg( old ).arg( mLastModifiedTime ) );
 }
