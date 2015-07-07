@@ -18,8 +18,8 @@ ENDIF(OSGEARTH_ELEVATION_QUERY)
 
 SET (GLOBE_PLUGIN_SRCS
      globe_plugin.cpp
-     qgsosgearthtilesource.cpp
-     globe_plugin_dialog.cpp
+     qgsglobetilesource.cpp
+     qgsglobeplugindialog.cpp
      qgsglobeinterface.cpp
      qgsglobelayerpropertiesfactory.cpp
      qgsglobevectorlayerpropertiespage.cpp
@@ -35,13 +35,13 @@ IF (NOT HAVE_OSGEARTHQT)
 ENDIF (NOT HAVE_OSGEARTHQT)
 
 SET (GLOBE_PLUGIN_UIS
-     globe_plugin_dialog_guibase.ui
+     qgsglobeplugindialog.ui
      qgsglobevectorlayerpropertiespage.ui
      )
 
 SET (GLOBE_PLUGIN_MOC_HDRS
      globe_plugin.h
-     globe_plugin_dialog.h
+     qgsglobeplugindialog.h
      qgsglobeinterface.h
      qgsglobelayerpropertiesfactory.h
      qgsglobevectorlayerpropertiespage.h
@@ -49,13 +49,12 @@ SET (GLOBE_PLUGIN_MOC_HDRS
 )
 
 SET (GLOBE_PLUGIN_HDRS
-     qgsosgearthtilesource.h
+     qgsglobetilesource.h
      qgsosgearthfeaturesource.h
      qgsosgearthfeatureoptions.h
 
      qgsglobefeatureutils.h
      qgsglobeinterface.h
-     qgsglobestyleutils.h
      qgsglobelayerpropertiesfactory.h
      qgsglobevectorlayerpropertiespage.h
      qgsglobevectorlayerconfig.h

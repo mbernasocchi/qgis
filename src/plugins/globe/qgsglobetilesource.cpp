@@ -1,5 +1,5 @@
 /***************************************************************************
-    qgsosgearthtilesource.cpp
+    qgsglobetilesource.cpp
     ---------------------
     begin                : August 2010
     copyright            : (C) 2010 by Pirmin Kalberer
@@ -19,26 +19,26 @@
 #include <osgEarth/ImageUtils>
 #include <QPainter>
 
-#include "qgsosgearthtilesource.h"
+#include "qgsglobetilesource.h"
 #include "qgscoordinatetransform.h"
 #include "qgslogger.h"
 #include "qgsmapcanvas.h"
 #include "qgsmaprenderer.h"
 
 
-QgsOsgEarthTile::QgsOsgEarthTile( const QgsOsgEarthTileSource* tileSource, const QgsRectangle& tileExtent )
+QgsGlobeTile::QgsGlobeTile( const QgsGlobeTileSource* tileSource, const QgsRectangle& tileExtent )
     : osg::Image()
     , mTileSource( tileSource )
     , mTileExtent( tileExtent )
     , mLastUpdateTime( osgEarth::DateTime().asTimeStamp() )
 {}
 
-bool QgsOsgEarthTile::requiresUpdateCall() const
+bool QgsGlobeTile::requiresUpdateCall() const
 {
   return mLastUpdateTime < mTileSource->getLastModifiedTime();
 }
 
-void QgsOsgEarthTile::update( osg::NodeVisitor * )
+void QgsGlobeTile::update( osg::NodeVisitor * )
 {
   QgsDebugMsg( QString( "Updating tile image for extent %1" ).arg( mTileExtent.toString() ) );
   osg::ref_ptr<osg::Image> image = mTileSource->renderImage( s(), mTileExtent );
@@ -51,7 +51,7 @@ void QgsOsgEarthTile::update( osg::NodeVisitor * )
 }
 
 
-QgsOsgEarthTileSource::QgsOsgEarthTileSource( QgsMapCanvas* canvas, const osgEarth::TileSourceOptions& options )
+QgsGlobeTileSource::QgsGlobeTileSource( QgsMapCanvas* canvas, const osgEarth::TileSourceOptions& options )
     : TileSource( options )
     , mCanvas( canvas )
     , mCoordTransform( 0 )
@@ -59,7 +59,7 @@ QgsOsgEarthTileSource::QgsOsgEarthTileSource( QgsMapCanvas* canvas, const osgEar
 {
 }
 
-osgEarth::TileSource::Status QgsOsgEarthTileSource::initialize( const osgDB::Options* /*dbOptions*/ )
+osgEarth::TileSource::Status QgsGlobeTileSource::initialize( const osgDB::Options* /*dbOptions*/ )
 {
   setProfile( osgEarth::Registry::instance()->getGlobalGeodeticProfile() );
 
@@ -83,7 +83,7 @@ osgEarth::TileSource::Status QgsOsgEarthTileSource::initialize( const osgDB::Opt
   return STATUS_OK;
 }
 
-osg::Image* QgsOsgEarthTileSource::createImage( const osgEarth::TileKey& key, osgEarth::ProgressCallback* progress )
+osg::Image* QgsGlobeTileSource::createImage( const osgEarth::TileKey& key, osgEarth::ProgressCallback* progress )
 {
   Q_UNUSED( progress );
 
@@ -110,7 +110,7 @@ osg::Image* QgsOsgEarthTileSource::createImage( const osgEarth::TileKey& key, os
   QgsDebugMsg( QString( "earth tile key:%1 ext:%2" ).arg( key.str().c_str() ).arg( tileExtent.toString( 5 ) ) );
 
   QgsDebugMsg( QString( "text0:%1" ).arg( tileExtent.toString( 5 ) ) );
-  if ( !viewExtent.intersects( tileExtent ) )
+  if ( !(viewExtent.intersects( tileExtent ) || viewExtent.contains( tileExtent )) )
   {
     QgsDebugMsg( QString( "earth tile key:%1 ext:%2: NO INTERSECT" ).arg( key.str().c_str() ).arg( tileExtent.toString( 5 ) ) );
     return osgEarth::ImageUtils::createEmptyImage();
@@ -123,7 +123,7 @@ osg::Image* QgsOsgEarthTileSource::createImage( const osgEarth::TileKey& key, os
     return osgEarth::ImageUtils::createEmptyImage();
 }
 
-QgsOsgEarthTile* QgsOsgEarthTileSource::renderImage( int tileSize, const QgsRectangle& tileExtent ) const
+QgsGlobeTile* QgsGlobeTileSource::renderImage( int tileSize, const QgsRectangle& tileExtent ) const
 {
   unsigned char* data = new unsigned char[tileSize * tileSize * 4];
   QImage qImage( data, tileSize, tileSize, QImage::Format_ARGB32_Premultiplied );
@@ -138,7 +138,7 @@ QgsOsgEarthTile* QgsOsgEarthTileSource::renderImage( int tileSize, const QgsRect
   QPainter painter( &qImage );
   mMapRenderer->render( &painter );
 
-  QgsOsgEarthTile* image = new QgsOsgEarthTile( this, tileExtent );
+  QgsGlobeTile* image = new QgsGlobeTile( this, tileExtent );
   image->setImage( tileSize, tileSize, 1, 4, // width, height, depth, internal_format
                    GL_BGRA, GL_UNSIGNED_BYTE,
                    data, osg::Image::USE_NEW_DELETE, 1 );
@@ -146,7 +146,7 @@ QgsOsgEarthTile* QgsOsgEarthTileSource::renderImage( int tileSize, const QgsRect
   return image;
 }
 
-void QgsOsgEarthTileSource::updateModifiedTime()
+void QgsGlobeTileSource::updateModifiedTime()
 {
   osgEarth::TimeStamp old = mLastModifiedTime;
   mLastModifiedTime = osgEarth::DateTime().asTimeStamp();

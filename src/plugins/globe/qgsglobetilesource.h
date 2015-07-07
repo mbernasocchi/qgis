@@ -1,5 +1,5 @@
 /***************************************************************************
-    qgsosgearthtilesource.h
+    qgsglobetilesource.h
     ---------------------
     begin                : August 2010
     copyright            : (C) 2010 by Pirmin Kalberer
@@ -15,8 +15,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef QGSOSGEARTHTILESOURCE_H
-#define QGSOSGEARTHTILESOURCE_H
+#ifndef QGSGLOBETILESOURCE_H
+#define QGSGLOBETILESOURCE_H
 
 #include <osgEarth/TileSource>
 #include "qgsrectangle.h"
@@ -24,31 +24,31 @@
 class QgsCoordinateTransform;
 class QgsMapCanvas;
 class QgsMapRenderer;
-class QgsOsgEarthTileSource;
+class QgsGlobeTileSource;
 
 
-class QgsOsgEarthTile : public osg::Image
+class QgsGlobeTile : public osg::Image
 {
   public:
-    QgsOsgEarthTile( const QgsOsgEarthTileSource* tileSource, const QgsRectangle& tileExtent );
+    QgsGlobeTile( const QgsGlobeTileSource* tileSource, const QgsRectangle& tileExtent );
     bool requiresUpdateCall() const;
     void update( osg::NodeVisitor * );
 
   private:
-    const QgsOsgEarthTileSource* mTileSource;
+    const QgsGlobeTileSource* mTileSource;
     QgsRectangle mTileExtent;
     osgEarth::TimeStamp mLastUpdateTime;
 };
 
 
-class QgsOsgEarthTileSource : public osgEarth::TileSource
+class QgsGlobeTileSource : public osgEarth::TileSource
 {
   public:
-    QgsOsgEarthTileSource( QgsMapCanvas* canvas, const osgEarth::TileSourceOptions& options = osgEarth::TileSourceOptions() );
+    QgsGlobeTileSource( QgsMapCanvas* canvas, const osgEarth::TileSourceOptions& options = osgEarth::TileSourceOptions() );
     Status initialize( const osgDB::Options *dbOptions ) override;
 
     osg::Image* createImage( const osgEarth::TileKey& key, osgEarth::ProgressCallback* progress );
-    QgsOsgEarthTile *renderImage( int tileSize, const QgsRectangle& tileExtent ) const;
+    QgsGlobeTile *renderImage( int tileSize, const QgsRectangle& tileExtent ) const;
 
     osg::HeightField* createHeightField( const osgEarth::TileKey &/*key*/, osgEarth::ProgressCallback* /*progress*/ )
     {
@@ -73,4 +73,4 @@ class QgsOsgEarthTileSource : public osgEarth::TileSource
     osgEarth::TimeStamp mLastModifiedTime;
 };
 
-#endif // QGSOSGEARTHTILESOURCE_H
+#endif // QGSGLOBETILESOURCE_H

@@ -24,6 +24,7 @@
 #include <osg/ref_ptr>
 
 #include "qgsglobeinterface.h"
+#include "qgsglobeplugindialog.h"
 
 class QAction;
 class QDateTime;
@@ -36,7 +37,7 @@ class QgsGlobePluginDialog;
 class QgsMapLayer;
 class QgsPoint;
 class GlobeFrustumHighlightCallback;
-class QgsOsgEarthTileSource;
+class QgsGlobeTileSource;
 
 namespace osg
 {
@@ -82,10 +83,6 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     //! unload the plugin
     void unload() override;
 
-    //! Set a different base map (QString::NULL will disable the base map)
-    void setBaseMap( QString url );
-    //! Set sky parameters
-    void setSkyParameters( bool enabled, const QDateTime& dateTime, bool autoAmbience );
     //! Called when the extents of the map change
     void extentsChanged();
     //! Sync globe extent to mapCanavas
@@ -116,7 +113,6 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
   public slots:
     void run();
     void refreshQGISMapLayer();
-    void setVerticalScale( double scale );
 
   private:
     QgisInterface *mQGisIface;
@@ -129,11 +125,13 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     QgsGlobePluginDialog *mSettingsDialog;
     osg::Group* mRootNode;
     osgEarth::MapNode* mMapNode;
+    QString mBaseLayerUrl;
+    QList<QgsGlobePluginDialog::ElevationDataSource> mElevationSources;
     osg::ref_ptr<osgEarth::ImageLayer> mBaseLayer;
     osg::ref_ptr<osgEarth::Util::SkyNode> mSkyNode;
     osg::ref_ptr<osgEarth::Util::VerticalScale> mVerticalScale;
     osgEarth::ImageLayer* mQgisMapLayer;
-    QgsOsgEarthTileSource* mTileSource;
+    QgsGlobeTileSource* mTileSource;
     osgEarth::Util::Controls::ControlCanvas* mControlCanvas;
     bool mIsGlobeRunning;
     //! coordinates of the right-clicked point on the globe
@@ -150,17 +148,17 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     void addControl( osgEarth::Util::Controls::Control* control, int x, int y, int w, int h, osgEarth::Util::Controls::ControlEventHandler* handler );
     void addImageControl( const std::string &imgPath, int x, int y, osgEarth::Util::Controls::ControlEventHandler* handler = 0 );
     void setupControls();
+    void applyProjectSettings();
 
   private slots:
-    void elevationLayersChanged();
-    void projectReady();
-    void blankProjectReady();
+    void projectRead();
     void showSettings();
+    void applySettings();
     void layersAdded( const QList<QgsMapLayer*>& );
     void layersRemoved( const QStringList& layerIds );
     void layerSettingsChanged( QgsMapLayer* layer );
-    void onLayerRead( QgsMapLayer* mapLayer, const QDomElement &elem );
-    void onLayerWrite( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc );
+    void readGlobeVectorLayerConfig( QgsMapLayer* mapLayer, const QDomElement &elem );
+    void writeGlobeVectorLayerConfig( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc );
 
   signals:
     //! emits current mouse position
