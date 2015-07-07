@@ -433,12 +433,9 @@ void GlobePlugin::setupMap()
 
   osgEarth::MapNodeOptions nodeOptions;
   //nodeOptions.proxySettings() =
-  //nodeOptions.enableLighting() = false;
-
   //LoadingPolicy loadingPolicy( LoadingPolicy::MODE_SEQUENTIAL );
   osgEarth::TerrainOptions terrainOptions;
   //terrainOptions.loadingPolicy() = loadingPolicy;
-#warning "FIXME?"
 #if OSGEARTH_VERSION_LESS_THAN(2, 6, 0)
   terrainOptions.compositingTechnique() = TerrainOptions::COMPOSITING_MULTITEXTURE_FFP;
 #endif
@@ -527,11 +524,15 @@ void GlobePlugin::applySettings()
       mSkyNode = osgEarth::Util::SkyNode::create( mMapNode );
       mSkyNode->attach( mOsgViewer );
       mRootNode->addChild( mSkyNode );
+      // Insert sky between root and map
+      mSkyNode->addChild(mMapNode);
+      mRootNode->removeChild(mMapNode);
     }
 
-#warning "FIXME?"
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 4, 0 ) and OSGEARTH_VERSION_LESS_THAN(2, 6, 0)
     mSkyNode->setAutoAmbience( mSettingsDialog->getSkyAutoAmbience() );
+#elif OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
+    mSkyNode->setLighting(mSettingsDialog->getSkyAutoAmbience() ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
 #endif
     QDateTime dateTime = mSettingsDialog->getSkyDateTime();
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
@@ -546,10 +547,11 @@ void GlobePlugin::applySettings()
                            dateTime.date().day(),
                            dateTime.time().hour() + dateTime.time().minute() / 60.0 );
 #endif
-    //sky->setSunPosition( osg::Vec3(0,-1,0) );
   }
-  else
+  else if(mSkyNode != 0)
   {
+    mRootNode->addChild(mMapNode);
+    mSkyNode->removeChild(mMapNode);
     mRootNode->removeChild( mSkyNode );
     mSkyNode = 0;
   }
