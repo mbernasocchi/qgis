@@ -17,12 +17,11 @@
 
 #include "qgsglobevectorlayerpropertiespage.h"
 
-QgsGlobeLayerPropertiesFactory::QgsGlobeLayerPropertiesFactory()
-    : QObject()
+QgsGlobeLayerPropertiesFactory::QgsGlobeLayerPropertiesFactory( QObject *parent )
+    : QObject( parent )
     , QgsMapLayerPropertiesFactory()
 {
 }
-
 
 QgsVectorLayerPropertiesPage* QgsGlobeLayerPropertiesFactory::createVectorLayerPropertiesPage( QgsVectorLayer* layer, QWidget* parent )
 {

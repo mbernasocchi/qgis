@@ -21,13 +21,18 @@
 #include "globefrustumhighlight.h"
 
 GlobeFrustumHighlightCallback::GlobeFrustumHighlightCallback( osg::View* view, osgEarth::Terrain* terrain, QgsMapCanvas* mapCanvas, QColor color )
-    : osg::NodeCallback()
-    , mView( view )
-    , mTerrain( terrain )
-    , mRubberBand( mapCanvas, QGis::Polygon )
-    , mSrs( osgEarth::SpatialReference::create( mapCanvas->mapRenderer()->destinationCrs().toWkt().toStdString() ) )
+  : osg::NodeCallback()
+  , mView( view )
+  , mTerrain( terrain )
+  , mRubberBand( new QgsRubberBand( mapCanvas, QGis::Polygon ) )
+  , mSrs( osgEarth::SpatialReference::create( mapCanvas->mapRenderer()->destinationCrs().toWkt().toStdString() ) )
 {
-  mRubberBand.setColor( color );
+  mRubberBand->setColor( color );
+}
+
+GlobeFrustumHighlightCallback::~GlobeFrustumHighlightCallback()
+{
+  delete mRubberBand;
 }
 
 void GlobeFrustumHighlightCallback::operator()( osg::Node* node, osg::NodeVisitor* nv )

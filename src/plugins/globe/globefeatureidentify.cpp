@@ -14,18 +14,23 @@
  ***************************************************************************/
 
 #include "globefeatureidentify.h"
-
 #include "qgsosgearthfeaturesource.h"
 
 #include <qgsvectorlayer.h>
+#include <qgsmapcanvas.h>
 
 GlobeFeatureIdentifyCallback::GlobeFeatureIdentifyCallback( QgsMapCanvas* mapCanvas )
-    : mRubberBand( mapCanvas, QGis::Polygon )
+    : mRubberBand( new QgsRubberBand( mapCanvas, QGis::Polygon ) )
 {
   QColor color( Qt::green );
   color.setAlpha( 190 );
 
-  mRubberBand.setColor( color );
+  mRubberBand->setColor( color );
+}
+
+GlobeFeatureIdentifyCallback::~GlobeFeatureIdentifyCallback()
+{
+  delete mRubberBand;
 }
 
 void GlobeFeatureIdentifyCallback::onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args )
@@ -42,9 +47,9 @@ void GlobeFeatureIdentifyCallback::onHit( osgEarth::Features::FeatureSourceIndex
     lyr->getFeatures( QgsFeatureRequest().setFilterFid( fid ) ).nextFeature( feat );
 
     if ( feat.isValid() )
-      mRubberBand.setToGeometry( feat.geometry(), lyr );
+      mRubberBand->setToGeometry( feat.geometry(), lyr );
     else
-      mRubberBand.reset( QGis::Polygon );
+      mRubberBand->reset( QGis::Polygon );
   }
   else
   {

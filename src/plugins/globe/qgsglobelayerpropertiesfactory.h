@@ -27,10 +27,9 @@ class QgsGlobeLayerPropertiesFactory : public QObject, public QgsMapLayerPropert
     Q_OBJECT
 
   public:
-    explicit QgsGlobeLayerPropertiesFactory();
+    explicit QgsGlobeLayerPropertiesFactory( QObject* parent = 0 );
 
     // QgsMapLayerPropertiesFactory interface
-  public:
     QgsVectorLayerPropertiesPage* createVectorLayerPropertiesPage( QgsVectorLayer* layer, QWidget* parent );
     QListWidgetItem* createVectorLayerPropertiesItem( QgsVectorLayer* layer, QListWidget* view );
 

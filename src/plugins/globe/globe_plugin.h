@@ -37,6 +37,7 @@ class QgsGlobePluginDialog;
 class QgsMapLayer;
 class QgsPoint;
 class GlobeFrustumHighlightCallback;
+class GlobeFeatureIdentifyCallback;
 class QgsGlobeTileSource;
 
 namespace osg
@@ -53,13 +54,13 @@ namespace osgEarth
   namespace QtGui { class ViewerWidget; }
   namespace Util
   {
+    class FeatureHighlightCallback;
     class FeatureQueryTool;
     class SkyNode;
     class VerticalScale;
     namespace Controls
     {
       class Control;
-      class ControlCanvas;
       class ControlEventHandler;
     }
   }
@@ -116,32 +117,35 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 
   private:
     QgisInterface *mQGisIface;
-    QAction * mActionLaunch;
-    QAction * mActionSettings;
-    QAction * mActionUnload;
-    osgViewer::Viewer* mOsgViewer;
+
+    QAction* mActionLaunch;
+    QAction* mActionSettings;
+    QAction* mActionUnload;
     osgEarth::QtGui::ViewerWidget* mViewerWidget;
     QDockWidget* mDockWidget;
-    QgsGlobePluginDialog *mSettingsDialog;
-    osg::Group* mRootNode;
-    osgEarth::MapNode* mMapNode;
-    QString mBaseLayerUrl;
-    QList<QgsGlobePluginDialog::ElevationDataSource> mElevationSources;
-    osg::ref_ptr<osgEarth::ImageLayer> mBaseLayer;
-    osg::ref_ptr<osgEarth::Util::SkyNode> mSkyNode;
-    osg::ref_ptr<osgEarth::Util::VerticalScale> mVerticalScale;
-    osgEarth::ImageLayer* mQgisMapLayer;
-    QgsGlobeTileSource* mTileSource;
-    osgEarth::Util::Controls::ControlCanvas* mControlCanvas;
-    bool mIsGlobeRunning;
-    //! coordinates of the right-clicked point on the globe
-    double mSelectedLat, mSelectedLon, mSelectedElevation;
+    QgsGlobePluginDialog* mSettingsDialog;
 
     QgsGlobeInterface mGlobeInterface;
+    bool mIsGlobeRunning;
+    QString mBaseLayerUrl;
+    QList<QgsGlobePluginDialog::ElevationDataSource> mElevationSources;
+    double mSelectedLat, mSelectedLon, mSelectedElevation;
+
+    osg::ref_ptr<osgViewer::Viewer> mOsgViewer;
+    osg::ref_ptr<osgEarth::MapNode> mMapNode;
+    osg::ref_ptr<osg::Group> mRootNode;
+    osg::ref_ptr<osgEarth::Util::SkyNode> mSkyNode;
+    osg::ref_ptr<osgEarth::ImageLayer> mBaseLayer;
+    osg::ref_ptr<osgEarth::ImageLayer> mQgisMapLayer;
+    osg::ref_ptr<osgEarth::Util::VerticalScale> mVerticalScale;
+    osg::ref_ptr<QgsGlobeTileSource> mTileSource;
+
     //! Creates additional pages in the layer properties for adjusting 3D properties
     QgsGlobeLayerPropertiesFactory* mLayerPropertiesFactory;
-    GlobeFrustumHighlightCallback* mFrustumHighlightCallback;
-    osgEarth::Util::FeatureQueryTool* mFeatureQueryTool;
+    osg::ref_ptr<GlobeFrustumHighlightCallback> mFrustumHighlightCallback;
+    osg::ref_ptr<GlobeFeatureIdentifyCallback> mFeatureQueryToolIdentifyCb;
+    osg::ref_ptr<osgEarth::Util::FeatureHighlightCallback> mFeatureQueryToolHighlightCb;
+    osg::ref_ptr<osgEarth::Util::FeatureQueryTool> mFeatureQueryTool;
 
     void setupProxy();
     void setupMap();

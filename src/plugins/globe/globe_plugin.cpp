@@ -234,22 +234,15 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     , mActionLaunch( 0 )
     , mActionSettings( 0 )
     , mActionUnload( 0 )
-    , mOsgViewer( 0 )
     , mViewerWidget( 0 )
     , mDockWidget( 0 )
     , mSettingsDialog( 0 )
-    , mRootNode( 0 )
-    , mMapNode( 0 )
-    , mBaseLayer( 0 )
-    , mQgisMapLayer( 0 )
-    , mTileSource( 0 )
-    , mControlCanvas( 0 )
+    , mGlobeInterface( this )
     , mIsGlobeRunning( false )
     , mSelectedLat( 0. )
     , mSelectedLon( 0. )
     , mSelectedElevation( 0. )
-    , mGlobeInterface( this )
-    , mFeatureQueryTool( 0 )
+    , mLayerPropertiesFactory( 0 )
 {
 #ifdef Q_OS_MACX
   // update path to osg plugins on Mac OS X
@@ -302,7 +295,7 @@ void GlobePlugin::initGui()
   mQGisIface->addPluginToMenu( tr( "&Globe" ), mActionUnload );
 
   // Add layer properties pages
-  mLayerPropertiesFactory = new QgsGlobeLayerPropertiesFactory();
+  mLayerPropertiesFactory = new QgsGlobeLayerPropertiesFactory(this);
   mQGisIface->registerMapLayerPropertiesFactory( mLayerPropertiesFactory );
 
   QgsMapLayerRegistry* layerRegistry = QgsMapLayerRegistry::instance();
@@ -361,8 +354,7 @@ void GlobePlugin::run()
       setupMap();
     }
 
-    mControlCanvas = osgEarth::Util::Controls::ControlCanvas::get( mOsgViewer );
-    mRootNode->addChild( mControlCanvas );
+    mRootNode->addChild( osgEarth::Util::Controls::ControlCanvas::get( mOsgViewer ) );
 
     mOsgViewer->setSceneData( mRootNode );
     mOsgViewer->setThreadingModel( osgViewer::Viewer::SingleThreaded );
@@ -399,8 +391,10 @@ void GlobePlugin::run()
     applySettings();
 
     mFeatureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode );
-    mFeatureQueryTool->addCallback( new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() ) );
-    mFeatureQueryTool->addCallback( new osgEarth::Util::FeatureHighlightCallback() );
+    mFeatureQueryToolIdentifyCb = new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() );
+    mFeatureQueryToolHighlightCb = new osgEarth::Util::FeatureHighlightCallback();
+    mFeatureQueryTool->addCallback( mFeatureQueryToolIdentifyCb.get() );
+    mFeatureQueryTool->addCallback( mFeatureQueryToolHighlightCb.get() );
 
     mDockWidget = new QDockWidget( tr( "Globe" ), mQGisIface->mainWindow() );
     mDockWidget->setWidget( mViewerWidget );
@@ -680,7 +674,7 @@ void GlobePlugin::addControl( osgEarth::Util::Controls::Control* control, int x,
   control->setHeight( h );
   control->setWidth( w );
   control->addEventHandler( handler );
-  mControlCanvas->addControl( control );
+  osgEarth::Util::Controls::ControlCanvas::get( mOsgViewer )->addControl( control );
 }
 
 void GlobePlugin::addImageControl( const std::string& imgPath, int x, int y, osgEarth::Util::Controls::ControlEventHandler *handler )
@@ -690,7 +684,7 @@ void GlobePlugin::addImageControl( const std::string& imgPath, int x, int y, osg
   control->setPosition( x, y );
   if ( handler )
     control->addEventHandler( handler );
-  mControlCanvas->addControl( control );
+  osgEarth::Util::Controls::ControlCanvas::get( mOsgViewer )->addControl( control );
 }
 
 void GlobePlugin::setupControls()
@@ -971,15 +965,22 @@ void GlobePlugin::layersRemoved( const QStringList &layerIds )
 
 void GlobePlugin::reset()
 {
-  delete mFeatureQueryTool;
+  mOsgViewer = 0;
+  mMapNode = 0;
+  mRootNode = 0;
+  mSkyNode = 0;
+  mBaseLayer = 0;
+  mQgisMapLayer = 0;
+  mTileSource = 0;
+  mVerticalScale = 0;
+  mFrustumHighlightCallback = 0;
+  mFeatureQueryToolIdentifyCb = 0;
+  mFeatureQueryToolHighlightCb = 0;
   mFeatureQueryTool = 0;
   delete mViewerWidget;
   mViewerWidget = 0;
   delete mDockWidget;
   mDockWidget = 0;
-  delete mOsgViewer;
-  mOsgViewer = 0;
-  mQgisMapLayer = 0;
   mIsGlobeRunning = false;
 }
 

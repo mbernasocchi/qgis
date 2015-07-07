@@ -23,11 +23,12 @@ struct GlobeFeatureIdentifyCallback : public osgEarth::Util::FeatureQueryTool::C
 {
 public:
   GlobeFeatureIdentifyCallback( QgsMapCanvas* mapCanvas );
+  ~GlobeFeatureIdentifyCallback();
 
   virtual void onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args );
 
 private:
-  QgsRubberBand mRubberBand;
+  QgsRubberBand* mRubberBand;
 };
 
 #endif // GLOBEFEATUREIDENTIFY_H
