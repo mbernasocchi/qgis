@@ -25,7 +25,7 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
 {
     Q_OBJECT
   public:
-    QgsGlobePluginDialog( GlobePlugin* globe, QWidget * parent = 0, Qt::WFlags fl = 0 );
+    QgsGlobePluginDialog( QWidget * parent = 0, Qt::WFlags fl = 0 );
 
     struct ElevationDataSource
     {
@@ -44,6 +44,7 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     bool getInvertScrollWheel() const;
     QList<ElevationDataSource> getElevationDataSources() const;
     double getVerticalScale() const;
+    bool getFrustumHighlighting() const;
 
   signals:
     void settingsApplied();
@@ -60,22 +61,19 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     void on_buttonBox_rejected();
 
     //STEREO
-    void on_comboStereoMode_currentIndexChanged( int index );
-    void on_resetStereoDefaults_clicked();
+    void on_comboBoxStereoMode_currentIndexChanged( int index );
+    void on_pushButtonStereoResetDefaults_clicked();
 
     //ELEVATION
-    void on_elevationCombo_currentIndexChanged( QString type );
-    void on_elevationBrowse_clicked();
-    void on_elevationAdd_clicked();
-    void on_elevationRemove_clicked();
-    void on_elevationUp_clicked();
-    void on_elevationDown_clicked();
+    void on_comboBoxElevationLayerType_currentIndexChanged( QString type );
+    void on_pushButtonElevationLayerBrowse_clicked();
+    void on_pushButtonElevationLayerAdd_clicked();
+    void on_pushButtonElevationLayerRemove_clicked();
+    void on_pushButtonElevationLayerUp_clicked();
+    void on_pushButtonElevationLayerDown_clicked();
 
     //MAP
     void on_mBaseLayerComboBox_currentIndexChanged( int index );
-
-  private:
-    GlobePlugin* mGlobe;
 };
 
 #endif // QGSGLOBEPLUGINDIALOG_H

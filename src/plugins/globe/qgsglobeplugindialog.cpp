@@ -32,32 +32,31 @@
 #include <osgEarth/Version>
 #include <osgEarthUtil/EarthManipulator>
 
-QgsGlobePluginDialog::QgsGlobePluginDialog( GlobePlugin* globe , QWidget* parent, Qt::WFlags fl )
+QgsGlobePluginDialog::QgsGlobePluginDialog( QWidget* parent, Qt::WFlags fl )
     : QDialog( parent, fl )
-    , mGlobe( globe )
 {
   setupUi( this );
 
-  mBaseLayerComboBox->addItem( "Readymap: NASA BlueMarble Imagery", "http://readymap.org/readymap/tiles/1.0.0/1/" );
-  mBaseLayerComboBox->addItem( "Readymap: NASA BlueMarble with land removed, only ocean", "http://readymap.org/readymap/tiles/1.0.0/2/" );
-  mBaseLayerComboBox->addItem( "Readymap: High resolution insets from various locations around the world Austin, TX; Kandahar, Afghanistan; Bagram, Afghanistan; Boston, MA; Washington, DC", "http://readymap.org/readymap/tiles/1.0.0/3/" );
-  mBaseLayerComboBox->addItem( "Readymap: Global Land Cover Facility 15m Landsat", "http://readymap.org/readymap/tiles/1.0.0/6/" );
-  mBaseLayerComboBox->addItem( "Readymap: NASA BlueMarble + Landsat + Ocean Masking Layer", "http://readymap.org/readymap/tiles/1.0.0/7/" );
-  mBaseLayerComboBox->addItem( "[Custom]" );
+  comboBoxBaseLayer->addItem( "Readymap: NASA BlueMarble Imagery", "http://readymap.org/readymap/tiles/1.0.0/1/" );
+  comboBoxBaseLayer->addItem( "Readymap: NASA BlueMarble with land removed, only ocean", "http://readymap.org/readymap/tiles/1.0.0/2/" );
+  comboBoxBaseLayer->addItem( "Readymap: High resolution insets from various locations around the world Austin, TX; Kandahar, Afghanistan; Bagram, Afghanistan; Boston, MA; Washington, DC", "http://readymap.org/readymap/tiles/1.0.0/3/" );
+  comboBoxBaseLayer->addItem( "Readymap: Global Land Cover Facility 15m Landsat", "http://readymap.org/readymap/tiles/1.0.0/6/" );
+  comboBoxBaseLayer->addItem( "Readymap: NASA BlueMarble + Landsat + Ocean Masking Layer", "http://readymap.org/readymap/tiles/1.0.0/7/" );
+  comboBoxBaseLayer->addItem( tr( "[Custom]" ) );
 
-  comboStereoMode->addItem( "OFF", -1 );
-  comboStereoMode->addItem( "ANAGLYPHIC", osg::DisplaySettings::ANAGLYPHIC );
-  comboStereoMode->addItem( "QUAD_BUFFER", osg::DisplaySettings::ANAGLYPHIC );
-  comboStereoMode->addItem( "HORIZONTAL_SPLIT", osg::DisplaySettings::HORIZONTAL_SPLIT );
-  comboStereoMode->addItem( "VERTICAL_SPLIT", osg::DisplaySettings::VERTICAL_SPLIT );
+  comboBoxStereoMode->addItem( "OFF", -1 );
+  comboBoxStereoMode->addItem( "ANAGLYPHIC", osg::DisplaySettings::ANAGLYPHIC );
+  comboBoxStereoMode->addItem( "QUAD_BUFFER", osg::DisplaySettings::ANAGLYPHIC );
+  comboBoxStereoMode->addItem( "HORIZONTAL_SPLIT", osg::DisplaySettings::HORIZONTAL_SPLIT );
+  comboBoxStereoMode->addItem( "VERTICAL_SPLIT", osg::DisplaySettings::VERTICAL_SPLIT );
 
 
-  mAANumSamples->setValidator( new QIntValidator( mAANumSamples ) );
+  lineEditAASamples->setValidator( new QIntValidator( lineEditAASamples ) );
 
-  elevationPath->setText( QDir::homePath() );
+  lineEditElevationLayerPath->setText( QDir::homePath() );
 
 #if OSGEARTH_VERSION_LESS_THAN( 2, 5, 0 )
-  mTxtVerticalScale->setVisible( false );
+  mSpinBoxVerticalScale->setVisible( false );
 #endif
 
   connect( buttonBox->button( QDialogButtonBox::Apply ), SIGNAL( clicked( bool ) ), this, SLOT( apply() ) );
@@ -70,39 +69,40 @@ void QgsGlobePluginDialog::restoreSavedSettings()
   QSettings settings;
 
   // Stereo settings
-  comboStereoMode->setCurrentIndex( comboStereoMode->findText( settings.value( "/Plugin-Globe/stereoMode", "OFF" ).toString() ) );
-  screenDistance->setValue( settings.value( "/Plugin-Globe/screenDistance",
-                            osg::DisplaySettings::instance()->getScreenDistance() ).toDouble() );
-  screenWidth->setValue( settings.value( "/Plugin-Globe/screenWidth",
-                                         osg::DisplaySettings::instance()->getScreenWidth() ).toDouble() );
-  screenHeight->setValue( settings.value( "/Plugin-Globe/screenHeight",
-                                          osg::DisplaySettings::instance()->getScreenHeight() ).toDouble() );
-  eyeSeparation->setValue( settings.value( "/Plugin-Globe/eyeSeparation",
-                           osg::DisplaySettings::instance()->getEyeSeparation() ).toDouble() );
-  splitStereoHorizontalSeparation->setValue( settings.value( "/Plugin-Globe/splitStereoHorizontalSeparation",
+  comboBoxStereoMode->setCurrentIndex( comboBoxStereoMode->findText( settings.value( "/Plugin-Globe/stereoMode", "OFF" ).toString() ) );
+  spinBoxStereoScreenDistance->setValue( settings.value( "/Plugin-Globe/spinBoxStereoScreenDistance",
+                                         osg::DisplaySettings::instance()->getScreenDistance() ).toDouble() );
+  spinBoxStereoScreenWidth->setValue( settings.value( "/Plugin-Globe/spinBoxStereoScreenWidth",
+                                      osg::DisplaySettings::instance()->getScreenWidth() ).toDouble() );
+  spinBoxStereoScreenHeight->setValue( settings.value( "/Plugin-Globe/spinBoxStereoScreenHeight",
+                                       osg::DisplaySettings::instance()->getScreenHeight() ).toDouble() );
+  spinBoxStereoEyeSeparation->setValue( settings.value( "/Plugin-Globe/spinBoxStereoEyeSeparation",
+                                        osg::DisplaySettings::instance()->getEyeSeparation() ).toDouble() );
+  spinBoxSplitStereoHorizontalSeparation->setValue( settings.value( "/Plugin-Globe/spinBoxSplitStereoHorizontalSeparation",
       osg::DisplaySettings::instance()->getSplitStereoHorizontalSeparation() ).toInt() );
-  splitStereoVerticalSeparation->setValue( settings.value( "/Plugin-Globe/splitStereoVerticalSeparation",
+  spinBoxSplitStereoVerticalSeparation->setValue( settings.value( "/Plugin-Globe/spinBoxSplitStereoVerticalSeparation",
       osg::DisplaySettings::instance()->getSplitStereoVerticalSeparation() ).toInt() );
-  splitStereoHorizontalEyeMapping->setCurrentIndex( settings.value( "/Plugin-Globe/splitStereoHorizontalEyeMapping",
+  comboBoxSplitStereoHorizontalEyeMapping->setCurrentIndex( settings.value( "/Plugin-Globe/comboBoxSplitStereoHorizontalEyeMapping",
       osg::DisplaySettings::instance()->getSplitStereoHorizontalEyeMapping() ).toInt() );
-  splitStereoVerticalEyeMapping->setCurrentIndex( settings.value( "/Plugin-Globe/splitStereoVerticalEyeMapping",
+  comboBoxSplitStereoVerticalEyeMapping->setCurrentIndex( settings.value( "/Plugin-Globe/comboBoxSplitStereoVerticalEyeMapping",
       osg::DisplaySettings::instance()->getSplitStereoVerticalEyeMapping() ).toInt() );
 
   // Navigation settings
-  mScrollSensitivitySlider->setValue( settings.value( "/Plugin-Globe/scrollSensitivity", 20 ).toInt() );
-  mInvertScrollWheel->setChecked( settings.value( "/Plugin-Globe/invertScrollWheel", 0 ).toInt() );
+  sliderScrollSensitivity->setValue( settings.value( "/Plugin-Globe/scrollSensitivity", 20 ).toInt() );
+  checkBoxInvertScroll->setChecked( settings.value( "/Plugin-Globe/invertScrollWheel", 0 ).toInt() );
 
   // Video settings
-  mAntiAliasingGroupBox->setChecked( settings.value( "/Plugin-Globe/anti-aliasing", false ).toBool() );
-  mAANumSamples->setText( settings.value( "/Plugin-Globe/anti-aliasing-level", "" ).toString() );
+  groupBoxAntiAliasing->setChecked( settings.value( "/Plugin-Globe/anti-aliasing", false ).toBool() );
+  lineEditAASamples->setText( settings.value( "/Plugin-Globe/anti-aliasing-level", "" ).toString() );
+  checkBoxFrustumHighlighting->setChecked( settings.value( "/Plugin-Globe/frustum-highlighting", false ).toBool() );
 
   // Map settings
   mBaseLayerGroupBox->setChecked( settings.value( "/Plugin-Globe/baseLayerEnabled", true ).toBool() );
-  mBaseLayerURL->setText( settings.value( "/Plugin-Globe/baseLayerURL", "http://readymap.org/readymap/tiles/1.0.0/7/" ).toString() );
-  mBaseLayerComboBox->setCurrentIndex( mBaseLayerComboBox->findData( mBaseLayerURL->text() ) );
-  mSkyGroupBox->setChecked( settings.value( "/Plugin-Globe/skyEnabled", false ).toBool() );
-  mSkyAutoAmbient->setChecked( settings.value( "/Plugin-Globe/skyAutoAmbient", false ).toBool() );
-  mSkyDateTime->setDateTime( settings.value( "/Plugin-Globe/skyDateTime", QDateTime::currentDateTime() ).toDateTime() );
+  lineEditBaseLayerURL->setText( settings.value( "/Plugin-Globe/baseLayerURL", "http://readymap.org/readymap/tiles/1.0.0/7/" ).toString() );
+  comboBoxBaseLayer->setCurrentIndex( comboBoxBaseLayer->findData( lineEditBaseLayerURL->text() ) );
+  groupBoxSky->setChecked( settings.value( "/Plugin-Globe/skyEnabled", false ).toBool() );
+  checkBoxSkyAutoAmbient->setChecked( settings.value( "/Plugin-Globe/skyAutoAmbient", false ).toBool() );
+  dateTimeEditSky->setDateTime( settings.value( "/Plugin-Globe/skyDateTime", QDateTime::currentDateTime() ).toDateTime() );
 }
 
 void QgsGlobePluginDialog::on_buttonBox_accepted()
@@ -123,35 +123,36 @@ void QgsGlobePluginDialog::apply()
   QSettings settings;
 
   // Stereo settings
-  settings.setValue( "/Plugin-Globe/stereoMode", comboStereoMode->currentText() );
-  settings.setValue( "/Plugin-Globe/screenDistance", screenDistance->value() );
-  settings.setValue( "/Plugin-Globe/screenWidth", screenWidth->value() );
-  settings.setValue( "/Plugin-Globe/screenHeight", screenHeight->value() );
-  settings.setValue( "/Plugin-Globe/eyeSeparation", eyeSeparation->value() );
-  settings.setValue( "/Plugin-Globe/splitStereoHorizontalSeparation", splitStereoHorizontalSeparation->value() );
-  settings.setValue( "/Plugin-Globe/splitStereoVerticalSeparation", splitStereoVerticalSeparation->value() );
-  settings.setValue( "/Plugin-Globe/splitStereoHorizontalEyeMapping", splitStereoHorizontalEyeMapping->currentIndex() );
-  settings.setValue( "/Plugin-Globe/splitStereoVerticalEyeMapping", splitStereoVerticalEyeMapping->currentIndex() );
+  settings.setValue( "/Plugin-Globe/stereoMode", comboBoxStereoMode->currentText() );
+  settings.setValue( "/Plugin-Globe/stereoScreenDistance", spinBoxStereoScreenDistance->value() );
+  settings.setValue( "/Plugin-Globe/stereoScreenWidth", spinBoxStereoScreenWidth->value() );
+  settings.setValue( "/Plugin-Globe/stereoScreenHeight", spinBoxStereoScreenHeight->value() );
+  settings.setValue( "/Plugin-Globe/stereoEyeSeparation", spinBoxStereoEyeSeparation->value() );
+  settings.setValue( "/Plugin-Globe/SplitStereoHorizontalSeparation", spinBoxSplitStereoHorizontalSeparation->value() );
+  settings.setValue( "/Plugin-Globe/SplitStereoVerticalSeparation", spinBoxSplitStereoVerticalSeparation->value() );
+  settings.setValue( "/Plugin-Globe/SplitStereoHorizontalEyeMapping", comboBoxSplitStereoHorizontalEyeMapping->currentIndex() );
+  settings.setValue( "/Plugin-Globe/SplitStereoVerticalEyeMapping", comboBoxSplitStereoVerticalEyeMapping->currentIndex() );
 
   // Navigation settings
-  settings.setValue( "/Plugin-Globe/scrollSensitivity", mScrollSensitivitySlider->value() );
-  settings.setValue( "/Plugin-Globe/invertScrollWheel", mInvertScrollWheel->checkState() );
+  settings.setValue( "/Plugin-Globe/scrollSensitivity", sliderScrollSensitivity->value() );
+  settings.setValue( "/Plugin-Globe/invertScrollWheel", checkBoxInvertScroll->checkState() );
 
   // Video settings
-  settings.setValue( "/Plugin-Globe/anti-aliasing", mAntiAliasingGroupBox->isChecked() );
-  settings.setValue( "/Plugin-Globe/anti-aliasing-level", mAANumSamples->text() );
+  settings.setValue( "/Plugin-Globe/anti-aliasing", groupBoxAntiAliasing->isChecked() );
+  settings.setValue( "/Plugin-Globe/anti-aliasing-level", lineEditAASamples->text() );
+  settings.setValue( "/Plugin-Globe/frustum-highlighting", checkBoxFrustumHighlighting->isChecked() );
 
   // Map settings
   settings.setValue( "/Plugin-Globe/baseLayerEnabled", mBaseLayerGroupBox->isChecked() );
-  settings.setValue( "/Plugin-Globe/baseLayerURL", mBaseLayerURL->text() );
-  settings.setValue( "/Plugin-Globe/skyEnabled", mSkyGroupBox->isChecked() );
-  settings.setValue( "/Plugin-Globe/skyAutoAmbient", mSkyAutoAmbient->isChecked() );
-  settings.setValue( "/Plugin-Globe/skyDateTime", mSkyDateTime->dateTime() );
+  settings.setValue( "/Plugin-Globe/baseLayerURL", lineEditBaseLayerURL->text() );
+  settings.setValue( "/Plugin-Globe/skyEnabled", groupBoxSky->isChecked() );
+  settings.setValue( "/Plugin-Globe/skyAutoAmbient", checkBoxSkyAutoAmbient->isChecked() );
+  settings.setValue( "/Plugin-Globe/skyDateTime", dateTimeEditSky->dateTime() );
 
   writeProjectSettings();
 
   // Apply stereo settings
-  int stereoMode = comboStereoMode->itemData( comboStereoMode->currentIndex() ).toInt();
+  int stereoMode = comboBoxStereoMode->itemData( comboBoxStereoMode->currentIndex() ).toInt();
   if ( stereoMode == -1 )
   {
     osg::DisplaySettings::instance()->setStereo( false );
@@ -161,20 +162,20 @@ void QgsGlobePluginDialog::apply()
     osg::DisplaySettings::instance()->setStereo( true );
     osg::DisplaySettings::instance()->setStereoMode(
       static_cast<osg::DisplaySettings::StereoMode>( stereoMode ) );
-    osg::DisplaySettings::instance()->setEyeSeparation( eyeSeparation->value() );
-    osg::DisplaySettings::instance()->setScreenDistance( screenDistance->value() );
-    osg::DisplaySettings::instance()->setScreenWidth( screenWidth->value() );
-    osg::DisplaySettings::instance()->setScreenHeight( screenHeight->value() );
+    osg::DisplaySettings::instance()->setEyeSeparation( spinBoxStereoEyeSeparation->value() );
+    osg::DisplaySettings::instance()->setScreenDistance( spinBoxStereoScreenDistance->value() );
+    osg::DisplaySettings::instance()->setScreenWidth( spinBoxStereoScreenWidth->value() );
+    osg::DisplaySettings::instance()->setScreenHeight( spinBoxStereoScreenHeight->value() );
     osg::DisplaySettings::instance()->setSplitStereoVerticalSeparation(
-      splitStereoVerticalSeparation->value() );
+      spinBoxSplitStereoVerticalSeparation->value() );
     osg::DisplaySettings::instance()->setSplitStereoVerticalEyeMapping(
       static_cast<osg::DisplaySettings::SplitStereoVerticalEyeMapping>(
-        splitStereoVerticalEyeMapping->currentIndex() ) );
+        comboBoxSplitStereoVerticalEyeMapping->currentIndex() ) );
     osg::DisplaySettings::instance()->setSplitStereoHorizontalSeparation(
-      splitStereoHorizontalSeparation->value() );
+      spinBoxSplitStereoHorizontalSeparation->value() );
     osg::DisplaySettings::instance()->setSplitStereoHorizontalEyeMapping(
       static_cast<osg::DisplaySettings::SplitStereoHorizontalEyeMapping>(
-        splitStereoHorizontalEyeMapping->currentIndex() ) );
+        comboBoxSplitStereoHorizontalEyeMapping->currentIndex() ) );
   }
 
   emit settingsApplied();
@@ -196,7 +197,7 @@ void QgsGlobePluginDialog::readProjectSettings()
   }
 
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
-  mTxtVerticalScale->setValue( QgsProject::instance()->readDoubleEntry( "Globe-Plugin", "/verticalScale", 1 ) );
+  mSpinBoxVerticalScale->setValue( QgsProject::instance()->readDoubleEntry( "Globe-Plugin", "/verticalScale", 1 ) );
 #endif
 }
 
@@ -215,7 +216,7 @@ void QgsGlobePluginDialog::writeProjectSettings()
   }
 
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 5, 0 )
-  QgsProject::instance()->writeEntry( "Globe-Plugin", "/verticalScale", mTxtVerticalScale->value() );
+  QgsProject::instance()->writeEntry( "Globe-Plugin", "/verticalScale", mSpinBoxVerticalScale->value() );
 #endif
 }
 
@@ -276,28 +277,28 @@ QString QgsGlobePluginDialog::validateElevationResource( QString type, QString u
   }
 }
 
-void QgsGlobePluginDialog::on_elevationCombo_currentIndexChanged( QString type )
+void QgsGlobePluginDialog::on_comboBoxElevationLayerType_currentIndexChanged( QString type )
 {
-  elevationPath->setEnabled( true );
+  lineEditElevationLayerPath->setEnabled( true );
   if ( "Raster" == type )
   {
-    elevationActions->setCurrentIndex( 0 );
-    elevationPath->setText( QDir::homePath() );
+    pushButtonElevationLayerBrowse->setEnabled( true );
+    lineEditElevationLayerPath->setText( QDir::homePath() );
   }
   else if ( "Worldwind" == type )
   {
-    elevationActions->setCurrentIndex( 1 );
-    elevationPath->setText( "http://tileservice.worldwindcentral.com/getTile?bmng.topo.bathy.200401" );
-    elevationPath->setEnabled( false );
+    pushButtonElevationLayerBrowse->setEnabled( false );
+    lineEditElevationLayerPath->setText( "http://tileservice.worldwindcentral.com/getTile?bmng.topo.bathy.200401" );
+    lineEditElevationLayerPath->setEnabled( false );
   }
   else if ( "TMS" == type )
   {
-    elevationActions->setCurrentIndex( 1 );
-    elevationPath->setText( "http://readymap.org/readymap/tiles/1.0.0/9/" );
+    pushButtonElevationLayerBrowse->setEnabled( false );
+    lineEditElevationLayerPath->setText( "http://readymap.org/readymap/tiles/1.0.0/9/" );
   }
 }
 
-void QgsGlobePluginDialog::on_elevationBrowse_clicked()
+void QgsGlobePluginDialog::on_pushButtonElevationLayerBrowse_clicked()
 {
   //see http://www.gdal.org/formats_list.html
   QString filter = tr( "GDAL files" ) + " (*.dem *.tif *.tiff *.jpg *.jpeg *.asc);;"
@@ -306,37 +307,37 @@ void QgsGlobePluginDialog::on_elevationBrowse_clicked()
   QString newPath = QFileDialog::getOpenFileName( this, tr( "Open raster file" ), QDir::homePath(), filter );
   if ( ! newPath.isEmpty() )
   {
-    elevationPath->setText( newPath );
+    lineEditElevationLayerPath->setText( newPath );
   }
 }
 
-void QgsGlobePluginDialog::on_elevationAdd_clicked()
+void QgsGlobePluginDialog::on_pushButtonElevationLayerAdd_clicked()
 {
-  QString error = validateElevationResource( elevationCombo->currentText(), elevationPath->text() );
+  QString error = validateElevationResource( comboBoxElevationLayerType->currentText(), lineEditElevationLayerPath->text() );
   QString question = tr( "Do you want to add the datasource anyway?" );
   if ( error.isNull() || QMessageBox::warning( this, tr( "Warning" ), error + "\n" + question, QMessageBox::Ok, QMessageBox::Cancel ) == QMessageBox::Ok )
   {
     int row = elevationDatasourcesWidget->rowCount();
-    //cache->setCheckState(( elevationCombo->currentText() == "Worldwind" ) ? Qt::Checked : Qt::Unchecked ); //worldwind_cache will be active
+    //cache->setCheckState(( comboBoxElevationLayerType->currentText() == "Worldwind" ) ? Qt::Checked : Qt::Unchecked ); //worldwind_cache will be active
     elevationDatasourcesWidget->setRowCount( row + 1 );
-    elevationDatasourcesWidget->setItem( row, 0, new QTableWidgetItem( elevationCombo->currentText() ) );
+    elevationDatasourcesWidget->setItem( row, 0, new QTableWidgetItem( comboBoxElevationLayerType->currentText() ) );
     elevationDatasourcesWidget->setItem( row, 1, new QTableWidgetItem() );
-    elevationDatasourcesWidget->setItem( row, 2, new QTableWidgetItem( elevationPath->text() ) );
+    elevationDatasourcesWidget->setItem( row, 2, new QTableWidgetItem( lineEditElevationLayerPath->text() ) );
     elevationDatasourcesWidget->setCurrentIndex( elevationDatasourcesWidget->model()->index( row, 0 ) );
   }
 }
 
-void QgsGlobePluginDialog::on_elevationRemove_clicked()
+void QgsGlobePluginDialog::on_pushButtonElevationLayerRemove_clicked()
 {
   elevationDatasourcesWidget->removeRow( elevationDatasourcesWidget->currentRow() );
 }
 
-void QgsGlobePluginDialog::on_elevationUp_clicked()
+void QgsGlobePluginDialog::on_pushButtonElevationLayerUp_clicked()
 {
   moveRow( elevationDatasourcesWidget, -1 );
 }
 
-void QgsGlobePluginDialog::on_elevationDown_clicked()
+void QgsGlobePluginDialog::on_pushButtonElevationLayerDown_clicked()
 {
   moveRow( elevationDatasourcesWidget, + 1 );
 }
@@ -379,28 +380,28 @@ QList<QgsGlobePluginDialog::ElevationDataSource> QgsGlobePluginDialog::getElevat
 
 double QgsGlobePluginDialog::getVerticalScale() const
 {
-  return mTxtVerticalScale->value();
+  return mSpinBoxVerticalScale->value();
 }
 
 /// MAP ///////////////////////////////////////////////////////////////////////
 
 void QgsGlobePluginDialog::on_mBaseLayerComboBox_currentIndexChanged( int index )
 {
-  QVariant url = mBaseLayerComboBox->itemData( index );
+  QVariant url = comboBoxBaseLayer->itemData( index );
   if ( url.isValid() )
   {
-    mBaseLayerURL->setEnabled( false );
-    mBaseLayerURL->setText( url.toString() );
+    lineEditBaseLayerURL->setEnabled( false );
+    lineEditBaseLayerURL->setText( url.toString() );
   }
   else
   {
-    mBaseLayerURL->setEnabled( true );
+    lineEditBaseLayerURL->setEnabled( true );
   }
 }
 
 QString QgsGlobePluginDialog::getBaseLayerUrl() const
 {
-  return mBaseLayerGroupBox->isChecked() ? mBaseLayerURL->text() : QString::null;
+  return mBaseLayerGroupBox->isChecked() ? lineEditBaseLayerURL->text() : QString::null;
 }
 
 bool QgsGlobePluginDialog::getSkyEnabled() const
@@ -422,45 +423,52 @@ bool QgsGlobePluginDialog::getSkyAutoAmbience() const
 
 float QgsGlobePluginDialog::getScrollSensitivity() const
 {
-  return mScrollSensitivitySlider->value() / 10;
+  return sliderScrollSensitivity->value() / 10;
 }
 
 bool QgsGlobePluginDialog::getInvertScrollWheel() const
 {
-  return mInvertScrollWheel->checkState();
+  return checkBoxInvertScroll->checkState();
+}
+
+/// RENDERING /////////////////////////////////////////////////////////////////
+
+bool QgsGlobePluginDialog::getFrustumHighlighting() const
+{
+  return checkBoxFrustumHighlighting->isChecked();
 }
 
 /// STEREO ////////////////////////////////////////////////////////////////////
-void QgsGlobePluginDialog::on_resetStereoDefaults_clicked()
+void QgsGlobePluginDialog::on_pushButtonStereoResetDefaults_clicked()
 {
   //http://www.openscenegraph.org/projects/osg/wiki/Support/UserGuides/StereoSettings
-  comboStereoMode->setCurrentIndex( comboStereoMode->findText( "OFF" ) );
-  screenDistance->setValue( 0.5 );
-  screenHeight->setValue( 0.26 );
-  screenWidth->setValue( 0.325 );
-  eyeSeparation->setValue( 0.06 );
-  splitStereoHorizontalSeparation->setValue( 42 );
-  splitStereoVerticalSeparation->setValue( 42 );
-  splitStereoHorizontalEyeMapping->setCurrentIndex( 0 );
-  splitStereoVerticalEyeMapping->setCurrentIndex( 0 );
+  comboBoxStereoMode->setCurrentIndex( comboBoxStereoMode->findText( "OFF" ) );
+  spinBoxStereoScreenDistance->setValue( 0.5 );
+  spinBoxStereoScreenHeight->setValue( 0.26 );
+  spinBoxStereoScreenWidth->setValue( 0.325 );
+  spinBoxStereoEyeSeparation->setValue( 0.06 );
+  spinBoxSplitStereoHorizontalSeparation->setValue( 42 );
+  spinBoxSplitStereoVerticalSeparation->setValue( 42 );
+  comboBoxSplitStereoHorizontalEyeMapping->setCurrentIndex( 0 );
+  comboBoxSplitStereoVerticalEyeMapping->setCurrentIndex( 0 );
 }
 
-void QgsGlobePluginDialog::on_comboStereoMode_currentIndexChanged( int index )
+void QgsGlobePluginDialog::on_comboBoxStereoMode_currentIndexChanged( int index )
 {
   //http://www.openscenegraph.org/projects/osg/wiki/Support/UserGuides/StereoSettings
   //http://www.openscenegraph.org/documentation/OpenSceneGraphReferenceDocs/a00181.html
 
-  int stereoMode = comboStereoMode->itemData( index ).toInt();
+  int stereoMode = comboBoxStereoMode->itemData( index ).toInt();
   bool stereoEnabled = stereoMode != -1;
   bool verticalSplit = stereoMode == osg::DisplaySettings::VERTICAL_SPLIT;
   bool horizontalSplit = stereoMode == osg::DisplaySettings::HORIZONTAL_SPLIT;
 
-  screenDistance->setEnabled( stereoEnabled );
-  screenHeight->setEnabled( stereoEnabled );
-  screenWidth->setEnabled( stereoEnabled );
-  eyeSeparation->setEnabled( stereoEnabled );
-  splitStereoHorizontalSeparation->setEnabled( stereoEnabled && horizontalSplit );
-  splitStereoHorizontalEyeMapping->setEnabled( stereoEnabled && horizontalSplit );
-  splitStereoVerticalSeparation->setEnabled( stereoEnabled && verticalSplit );
-  splitStereoVerticalEyeMapping->setEnabled( stereoEnabled && verticalSplit );
+  spinBoxStereoScreenDistance->setEnabled( stereoEnabled );
+  spinBoxStereoScreenHeight->setEnabled( stereoEnabled );
+  spinBoxStereoScreenWidth->setEnabled( stereoEnabled );
+  spinBoxStereoEyeSeparation->setEnabled( stereoEnabled );
+  spinBoxSplitStereoHorizontalSeparation->setEnabled( stereoEnabled && horizontalSplit );
+  comboBoxSplitStereoHorizontalEyeMapping->setEnabled( stereoEnabled && horizontalSplit );
+  spinBoxSplitStereoVerticalSeparation->setEnabled( stereoEnabled && verticalSplit );
+  comboBoxSplitStereoVerticalEyeMapping->setEnabled( stereoEnabled && verticalSplit );
 }

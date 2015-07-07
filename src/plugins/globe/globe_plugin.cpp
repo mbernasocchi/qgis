@@ -270,7 +270,7 @@ GlobePlugin::~GlobePlugin() {}
 
 void GlobePlugin::initGui()
 {
-  mSettingsDialog = new QgsGlobePluginDialog( this, mQGisIface->mainWindow(), QgisGui::ModalDialogFlags );
+  mSettingsDialog = new QgsGlobePluginDialog( mQGisIface->mainWindow(), QgisGui::ModalDialogFlags );
   connect( mSettingsDialog, SIGNAL( settingsApplied() ), this, SLOT( applySettings() ) );
 
   // Create the action for tool
@@ -295,7 +295,7 @@ void GlobePlugin::initGui()
   mQGisIface->addPluginToMenu( tr( "&Globe" ), mActionUnload );
 
   // Add layer properties pages
-  mLayerPropertiesFactory = new QgsGlobeLayerPropertiesFactory(this);
+  mLayerPropertiesFactory = new QgsGlobeLayerPropertiesFactory( this );
   mQGisIface->registerMapLayerPropertiesFactory( mLayerPropertiesFactory );
 
   QgsMapLayerRegistry* layerRegistry = QgsMapLayerRegistry::instance();
@@ -525,14 +525,14 @@ void GlobePlugin::applySettings()
       mSkyNode->attach( mOsgViewer );
       mRootNode->addChild( mSkyNode );
       // Insert sky between root and map
-      mSkyNode->addChild(mMapNode);
-      mRootNode->removeChild(mMapNode);
+      mSkyNode->addChild( mMapNode );
+      mRootNode->removeChild( mMapNode );
     }
 
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL( 2, 4, 0 ) and OSGEARTH_VERSION_LESS_THAN(2, 6, 0)
     mSkyNode->setAutoAmbience( mSettingsDialog->getSkyAutoAmbience() );
 #elif OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
-    mSkyNode->setLighting(mSettingsDialog->getSkyAutoAmbience() ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
+    mSkyNode->setLighting( mSettingsDialog->getSkyAutoAmbience() ? osg::StateAttribute::ON : osg::StateAttribute::OFF );
 #endif
     QDateTime dateTime = mSettingsDialog->getSkyDateTime();
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
@@ -548,13 +548,16 @@ void GlobePlugin::applySettings()
                            dateTime.time().hour() + dateTime.time().minute() / 60.0 );
 #endif
   }
-  else if(mSkyNode != 0)
+  else if ( mSkyNode != 0 )
   {
-    mRootNode->addChild(mMapNode);
-    mSkyNode->removeChild(mMapNode);
+    mRootNode->addChild( mMapNode );
+    mSkyNode->removeChild( mMapNode );
     mRootNode->removeChild( mSkyNode );
     mSkyNode = 0;
   }
+
+  // Rendering settings
+  enableFrustumHighlight( mSettingsDialog->getFrustumHighlighting() );
 
   applyProjectSettings();
 }

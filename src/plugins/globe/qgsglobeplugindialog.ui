@@ -40,12 +40,12 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="tabMap">
       <attribute name="title">
        <string>Map</string>
       </attribute>
@@ -63,30 +63,30 @@
            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
           </property>
           <item row="0" column="0">
-           <widget class="QLabel" name="label">
+           <widget class="QLabel" name="labelBaseLayerSource">
+            <property name="text">
+             <string>Source</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="labelBaseLayerURL">
             <property name="text">
              <string>URL</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_2">
-            <property name="text">
-             <string>TextLabel</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
-           <widget class="QComboBox" name="mBaseLayerComboBox"/>
+           <widget class="QComboBox" name="comboBoxBaseLayer"/>
           </item>
           <item row="1" column="1">
-           <widget class="QLineEdit" name="mBaseLayerURL"/>
+           <widget class="QLineEdit" name="lineEditBaseLayerURL"/>
           </item>
          </layout>
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QGroupBox" name="mSkyGroupBox">
+        <widget class="QGroupBox" name="groupBoxSky">
          <property name="title">
           <string>Sk&amp;y</string>
          </property>
@@ -95,14 +95,14 @@
          </property>
          <layout class="QFormLayout" name="formLayout_3">
           <item row="0" column="0">
-           <widget class="QLabel" name="label_5">
+           <widget class="QLabel" name="labelDateTime">
             <property name="text">
              <string>Date / Time (UTC)</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QDateTimeEdit" name="mSkyDateTime">
+           <widget class="QDateTimeEdit" name="dateTimeEditSky">
             <property name="displayFormat">
              <string>dd.MM.yyyy HH:mm</string>
             </property>
@@ -112,7 +112,7 @@
            </widget>
           </item>
           <item row="2" column="0" colspan="2">
-           <widget class="QCheckBox" name="mSkyAutoAmbient">
+           <widget class="QCheckBox" name="checkBoxSkyAutoAmbient">
             <property name="text">
              <string>Auto ambient</string>
             </property>
@@ -121,21 +121,34 @@
          </layout>
         </widget>
        </item>
+       <item row="2" column="0">
+        <spacer name="verticalSpacerMapTab">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="tabNavigation">
       <attribute name="title">
        <string>Navigation</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QGroupBox" name="groupBox">
+        <widget class="QGroupBox" name="groupBoxScrolling">
          <property name="title">
           <string>Scrolling</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_9">
           <item row="2" column="1">
-           <widget class="QSlider" name="mScrollSensitivitySlider">
+           <widget class="QSlider" name="sliderScrollSensitivity">
             <property name="minimum">
              <number>10</number>
             </property>
@@ -154,21 +167,21 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="label_7">
+           <widget class="QLabel" name="labelScollSensitivity">
             <property name="text">
              <string>Sensitivity:</string>
             </property>
            </widget>
           </item>
           <item row="1" column="0" colspan="2">
-           <widget class="QCheckBox" name="mInvertScrollWheel">
+           <widget class="QCheckBox" name="checkBoxInvertScroll">
             <property name="text">
              <string>Invert scroll wheel</string>
             </property>
            </widget>
           </item>
           <item row="4" column="0" colspan="2">
-           <spacer name="verticalSpacer">
+           <spacer name="verticalSpacerNavigationTab">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
             </property>
@@ -185,39 +198,104 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="elevation">
+     <widget class="QWidget" name="tabElevation">
       <attribute name="title">
        <string>Elevation</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_7">
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="mTxtVerticalScale">
-         <property name="singleStep">
-          <double>0.100000000000000</double>
+       <item row="2" column="2">
+        <widget class="QPushButton" name="pushButtonElevationLayerBrowse">
+         <property name="enabled">
+          <bool>true</bool>
          </property>
-         <property name="value">
-          <double>1.000000000000000</double>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>27</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>...</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_6">
+       <item row="1" column="1" colspan="2">
+        <widget class="QComboBox" name="comboBoxElevationLayerType">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <item>
+          <property name="text">
+           <string>Raster</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>TMS</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="labelElevationLayerType">
+         <property name="text">
+          <string>T&amp;ype</string>
+         </property>
+         <property name="buddy">
+          <cstring>comboBoxElevationLayerType</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="labelVerticalScale">
          <property name="text">
           <string>Vertical Scale</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0" colspan="2">
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="lineEditElevationLayerPath">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelElevationLayerPath">
+         <property name="text">
+          <string>URL/File</string>
+         </property>
+         <property name="buddy">
+          <cstring>lineEditElevationLayerPath</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="3">
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <widget class="QPushButton" name="elevationUp">
+          <widget class="QPushButton" name="pushButtonElevationLayerUp">
            <property name="text">
             <string>Up</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="elevationDown">
+          <widget class="QPushButton" name="pushButtonElevationLayerDown">
            <property name="text">
             <string>Down</string>
            </property>
@@ -237,14 +315,14 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="elevationAdd">
+          <widget class="QPushButton" name="pushButtonElevationLayerAdd">
            <property name="text">
             <string>Add</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="elevationRemove">
+          <widget class="QPushButton" name="pushButtonElevationLayerRemove">
            <property name="text">
             <string>Remove</string>
            </property>
@@ -252,79 +330,7 @@
          </item>
         </layout>
        </item>
-       <item row="3" column="0" colspan="2">
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <property name="sizeConstraint">
-          <enum>QLayout::SetDefaultConstraint</enum>
-         </property>
-         <item>
-          <widget class="QLabel" name="label_13">
-           <property name="text">
-            <string>URL/File</string>
-           </property>
-           <property name="buddy">
-            <cstring>elevationPath</cstring>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="elevationPath">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QStackedWidget" name="elevationActions">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="elevationIsLocal">
-            <layout class="QGridLayout" name="gridLayout_5">
-             <item row="0" column="0">
-              <widget class="QPushButton" name="elevationBrowse">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>27</width>
-                 <height>16777215</height>
-                </size>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="elevationIsRemote">
-            <layout class="QGridLayout" name="gridLayout_6"/>
-           </widget>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="5" column="0" colspan="2">
+       <item row="4" column="0" colspan="3">
         <widget class="QTableWidget" name="elevationDatasourcesWidget">
          <property name="acceptDrops">
           <bool>true</bool>
@@ -424,45 +430,45 @@
          </column>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>T&amp;ype</string>
+       <item row="5" column="1" colspan="2">
+        <widget class="QDoubleSpinBox" name="mSpinBoxVerticalScale">
+         <property name="singleStep">
+          <double>0.100000000000000</double>
          </property>
-         <property name="buddy">
-          <cstring>elevationCombo</cstring>
+         <property name="value">
+          <double>1.000000000000000</double>
          </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="elevationCombo">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <item>
-          <property name="text">
-           <string>Raster</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>TMS</string>
-          </property>
-         </item>
         </widget>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="video">
+     <widget class="QWidget" name="tabVideo">
       <attribute name="title">
        <string>Video</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_8">
+       <item row="2" column="0">
+        <widget class="QLabel" name="labelVideoInfo">
+         <property name="text">
+          <string>&lt;i&gt;Changing video settings requires a restart of the globe plugin&lt;/i&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <spacer name="verticalSpacerVideoTab">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item row="0" column="0">
-        <widget class="QGroupBox" name="mAntiAliasingGroupBox">
+        <widget class="QGroupBox" name="groupBoxAntiAliasing">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -483,14 +489,14 @@
            <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
           </property>
           <item row="0" column="0">
-           <widget class="QLabel" name="label_3">
+           <widget class="QLabel" name="labelAASamples">
             <property name="text">
              <string>Samples</string>
             </property>
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QLineEdit" name="mAANumSamples">
+           <widget class="QLineEdit" name="lineEditAASamples">
             <property name="placeholderText">
              <string>[Leave empty for maximum]</string>
             </property>
@@ -499,39 +505,32 @@
          </layout>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>&lt;i&gt;Changing video settings requires a restart of the globe plugin&lt;/i&gt;</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="stereo">
+     <widget class="QWidget" name="tabStereo">
       <attribute name="title">
        <string>Stereo</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="0">
-        <widget class="QLabel" name="comboStereoModeLabel">
+        <widget class="QLabel" name="labelStereoMode">
          <property name="text">
           <string>Stereo Mode</string>
          </property>
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="screenDistanceLabel">
+        <widget class="QLabel" name="labelScreenDistance">
          <property name="text">
           <string>Screen distance (m)</string>
          </property>
          <property name="buddy">
-          <cstring>screenDistance</cstring>
+          <cstring>spinBoxStereoScreenDistance</cstring>
          </property>
         </widget>
        </item>
        <item row="4" column="2">
-        <widget class="QDoubleSpinBox" name="screenDistance">
+        <widget class="QDoubleSpinBox" name="spinBoxStereoScreenDistance">
          <property name="accelerated">
           <bool>true</bool>
          </property>
@@ -544,14 +543,14 @@
         </widget>
        </item>
        <item row="7" column="0">
-        <widget class="QLabel" name="screenWidthLabel">
+        <widget class="QLabel" name="labelScreenWidth">
          <property name="text">
           <string>Screen width (m)</string>
          </property>
         </widget>
        </item>
        <item row="7" column="2">
-        <widget class="QDoubleSpinBox" name="screenWidth">
+        <widget class="QDoubleSpinBox" name="spinBoxStereoScreenWidth">
          <property name="accelerated">
           <bool>true</bool>
          </property>
@@ -564,28 +563,28 @@
         </widget>
        </item>
        <item row="10" column="0" colspan="2">
-        <widget class="QLabel" name="splitStereoHorizontalSeparationLabel">
+        <widget class="QLabel" name="labelSplitStereoHorizontalSeparation">
          <property name="text">
           <string>Split stereo horizontal separation (px)</string>
          </property>
         </widget>
        </item>
        <item row="13" column="0" colspan="2">
-        <widget class="QLabel" name="splitStereoVerticalSeparationLabel">
+        <widget class="QLabel" name="labelSplitStereoVerticalSeparation">
          <property name="text">
           <string>Split stereo vertical separation (px)</string>
          </property>
         </widget>
        </item>
        <item row="15" column="0" colspan="2">
-        <widget class="QLabel" name="splitStereoVerticalEyeMappingLabel">
+        <widget class="QLabel" name="labelBoxSplitStereoVerticalEyeMapping">
          <property name="text">
           <string>Split stereo vertical eye mapping</string>
          </property>
         </widget>
        </item>
        <item row="15" column="2">
-        <widget class="QComboBox" name="splitStereoVerticalEyeMapping">
+        <widget class="QComboBox" name="comboBoxSplitStereoVerticalEyeMapping">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -602,7 +601,7 @@
         </widget>
        </item>
        <item row="8" column="2">
-        <widget class="QDoubleSpinBox" name="screenHeight">
+        <widget class="QDoubleSpinBox" name="spinBoxStereoScreenHeight">
          <property name="accelerated">
           <bool>true</bool>
          </property>
@@ -615,21 +614,21 @@
         </widget>
        </item>
        <item row="8" column="0">
-        <widget class="QLabel" name="screenHeightLabel">
+        <widget class="QLabel" name="labelScreenHeight">
          <property name="text">
           <string>Screen height (m)</string>
          </property>
         </widget>
        </item>
        <item row="13" column="2">
-        <widget class="QSpinBox" name="splitStereoVerticalSeparation">
+        <widget class="QSpinBox" name="spinBoxSplitStereoVerticalSeparation">
          <property name="accelerated">
           <bool>true</bool>
          </property>
         </widget>
        </item>
        <item row="10" column="2">
-        <widget class="QSpinBox" name="splitStereoHorizontalSeparation">
+        <widget class="QSpinBox" name="spinBoxSplitStereoHorizontalSeparation">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -639,17 +638,17 @@
         </widget>
        </item>
        <item row="0" column="2">
-        <widget class="QComboBox" name="comboStereoMode"/>
+        <widget class="QComboBox" name="comboBoxStereoMode"/>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="eyeSeparationLabel">
+        <widget class="QLabel" name="labelEyeSeparation">
          <property name="text">
           <string>Eye separation (m)</string>
          </property>
         </widget>
        </item>
        <item row="2" column="2">
-        <widget class="QDoubleSpinBox" name="eyeSeparation">
+        <widget class="QDoubleSpinBox" name="spinBoxStereoEyeSeparation">
          <property name="readOnly">
           <bool>false</bool>
          </property>
@@ -671,21 +670,21 @@
         </widget>
        </item>
        <item row="16" column="2">
-        <widget class="QPushButton" name="resetStereoDefaults">
+        <widget class="QPushButton" name="pushButtonStereoResetDefaults">
          <property name="text">
           <string>Reset to defaults</string>
          </property>
         </widget>
        </item>
        <item row="11" column="0">
-        <widget class="QLabel" name="splitStereoHorizontalEyeMappingLabel">
+        <widget class="QLabel" name="labelSplitStereoHorizontalEyeMapping">
          <property name="text">
           <string>Split stereo horizontal eye mapping</string>
          </property>
         </widget>
        </item>
        <item row="11" column="2">
-        <widget class="QComboBox" name="splitStereoHorizontalEyeMapping">
+        <widget class="QComboBox" name="comboBoxSplitStereoHorizontalEyeMapping">
          <item>
           <property name="text">
            <string notr="true">LEFT_EYE_LEFT_VIEWPORT</string>
@@ -700,22 +699,49 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabAdvanced">
+      <attribute name="title">
+       <string>Advanced</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QCheckBox" name="checkBoxFrustumHighlighting">
+         <property name="text">
+          <string>Enable frustum highlighting</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacerAdvancedTab">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
-  <tabstop>comboStereoMode</tabstop>
-  <tabstop>eyeSeparation</tabstop>
-  <tabstop>screenDistance</tabstop>
-  <tabstop>screenWidth</tabstop>
-  <tabstop>screenHeight</tabstop>
-  <tabstop>splitStereoHorizontalSeparation</tabstop>
-  <tabstop>splitStereoHorizontalEyeMapping</tabstop>
-  <tabstop>splitStereoVerticalSeparation</tabstop>
-  <tabstop>splitStereoVerticalEyeMapping</tabstop>
-  <tabstop>resetStereoDefaults</tabstop>
+  <tabstop>comboBoxStereoMode</tabstop>
+  <tabstop>spinBoxStereoEyeSeparation</tabstop>
+  <tabstop>spinBoxStereoScreenDistance</tabstop>
+  <tabstop>spinBoxStereoScreenWidth</tabstop>
+  <tabstop>spinBoxStereoScreenHeight</tabstop>
+  <tabstop>spinBoxSplitStereoHorizontalSeparation</tabstop>
+  <tabstop>comboBoxSplitStereoHorizontalEyeMapping</tabstop>
+  <tabstop>spinBoxSplitStereoVerticalSeparation</tabstop>
+  <tabstop>comboBoxSplitStereoVerticalEyeMapping</tabstop>
+  <tabstop>pushButtonStereoResetDefaults</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
