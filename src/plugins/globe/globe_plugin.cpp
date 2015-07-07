@@ -28,7 +28,7 @@
 #include "qgsglobelayerpropertiesfactory.h"
 #include "qgsglobevectorlayerconfig.h"
 #include "globefeatureidentify.h"
-#include "globefrustumhighlight.h"
+#include "qgsglobefrustumhighlight.h"
 
 #include <qgisinterface.h>
 #include <qgisgui.h>
@@ -460,7 +460,7 @@ void GlobePlugin::setupMap()
   layersAdded( mQGisIface->mapCanvas()->layers() );
 
   // Create the frustum highlight callback
-  mFrustumHighlightCallback = new GlobeFrustumHighlightCallback(
+  mFrustumHighlightCallback = new QgsGlobeFrustumHighlightCallback(
     mOsgViewer, mMapNode->getTerrain(), mQGisIface->mapCanvas(), QColor( 0, 0, 0, 50 ) );
 }
 

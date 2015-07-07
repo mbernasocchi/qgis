@@ -36,7 +36,7 @@ class QgsGlobeInterface;
 class QgsGlobePluginDialog;
 class QgsMapLayer;
 class QgsPoint;
-class GlobeFrustumHighlightCallback;
+class QgsGlobeFrustumHighlightCallback;
 class GlobeFeatureIdentifyCallback;
 class QgsGlobeTileSource;
 
@@ -79,8 +79,6 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     virtual QgsPluginInterface* pluginInterface();
     //! init the gui
     virtual void initGui() override;
-    //!  Reset globe
-    void reset();
     //! unload the plugin
     void unload() override;
 
@@ -142,7 +140,7 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
 
     //! Creates additional pages in the layer properties for adjusting 3D properties
     QgsGlobeLayerPropertiesFactory* mLayerPropertiesFactory;
-    osg::ref_ptr<GlobeFrustumHighlightCallback> mFrustumHighlightCallback;
+    osg::ref_ptr<QgsGlobeFrustumHighlightCallback> mFrustumHighlightCallback;
     osg::ref_ptr<GlobeFeatureIdentifyCallback> mFeatureQueryToolIdentifyCb;
     osg::ref_ptr<osgEarth::Util::FeatureHighlightCallback> mFeatureQueryToolHighlightCb;
     osg::ref_ptr<osgEarth::Util::FeatureQueryTool> mFeatureQueryTool;
@@ -155,6 +153,7 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     void applyProjectSettings();
 
   private slots:
+    void reset();
     void projectRead();
     void showSettings();
     void applySettings();

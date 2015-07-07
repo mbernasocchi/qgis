@@ -1,5 +1,5 @@
 /***************************************************************************
-    globefrustumhighlight.h
+    qgsglobefrustumhighlight.h
      --------------------------------------
     Date                 : 27.10.2013
     Copyright            : (C) 2013 Matthias Kuhn
@@ -13,28 +13,31 @@
  *                                                                         *
  ***************************************************************************/
 
-#ifndef GLOBEFRUSTUMHIGHLIGHT_H
-#define GLOBEFRUSTUMHIGHLIGHT_H
+#ifndef QGSGLOBEFRUSTUMHIGHLIGHT_H
+#define QGSGLOBEFRUSTUMHIGHLIGHT_H
 
-#include <qgsrubberband.h>
 #include <osg/NodeCallback>
-#include <osgEarth/Terrain>
 
-struct GlobeFrustumHighlightCallback : public osg::NodeCallback
+class QgsRubberBand;
+namespace osg { class View; }
+namespace osgEarth {
+  class Terrain;
+  class SpatialReference;
+}
+
+struct QgsGlobeFrustumHighlightCallback : public osg::NodeCallback
 {
-  // NodeCallback interface
 public:
-  GlobeFrustumHighlightCallback( osg::View* view, osgEarth::Terrain* terrain, QgsMapCanvas* mapCanvas, QColor color );
+  QgsGlobeFrustumHighlightCallback( osg::View* view, osgEarth::Terrain* terrain, QgsMapCanvas* mapCanvas, QColor color );
+  ~QgsGlobeFrustumHighlightCallback();
 
-  virtual void operator()( osg::Node* node, osg::NodeVisitor* nv );
+  void operator()( osg::Node*, osg::NodeVisitor* ) override;
 
 private:
   osg::View* mView;
   osgEarth::Terrain* mTerrain;
-  osg::Vec3d mCorners[4];
-  osg::Vec3d mTmpCorners[4];
-  QgsRubberBand mRubberBand;
+  QgsRubberBand* mRubberBand;
   osgEarth::SpatialReference* mSrs;
 };
 
-#endif // GLOBEFRUSTUMHIGHLIGHT_H
+#endif // QGSGLOBEFRUSTUMHIGHLIGHT_H
