@@ -59,6 +59,7 @@ QgsGlobePluginDialog::QgsGlobePluginDialog( QWidget* parent, Qt::WFlags fl )
   mSpinBoxVerticalScale->setVisible( false );
 #endif
 
+  connect( checkBoxSkyAutoAmbient, SIGNAL( toggled( bool ) ), horizontalSliderMinAmbient, SLOT( setEnabled( bool ) ) );
   connect( buttonBox->button( QDialogButtonBox::Apply ), SIGNAL( clicked( bool ) ), this, SLOT( apply() ) );
 
   restoreSavedSettings();
@@ -101,8 +102,9 @@ void QgsGlobePluginDialog::restoreSavedSettings()
   lineEditBaseLayerURL->setText( settings.value( "/Plugin-Globe/baseLayerURL", "http://readymap.org/readymap/tiles/1.0.0/7/" ).toString() );
   comboBoxBaseLayer->setCurrentIndex( comboBoxBaseLayer->findData( lineEditBaseLayerURL->text() ) );
   groupBoxSky->setChecked( settings.value( "/Plugin-Globe/skyEnabled", false ).toBool() );
-  checkBoxSkyAutoAmbient->setChecked( settings.value( "/Plugin-Globe/skyAutoAmbient", false ).toBool() );
   dateTimeEditSky->setDateTime( settings.value( "/Plugin-Globe/skyDateTime", QDateTime::currentDateTime() ).toDateTime() );
+  checkBoxSkyAutoAmbient->setChecked( settings.value( "/Plugin-Globe/skyAutoAmbient", false ).toBool() );
+  horizontalSliderMinAmbient->setValue( settings.value( "/Plugin-Globe/skyMinAmbient", 30 ) .toInt() );
 }
 
 void QgsGlobePluginDialog::on_buttonBox_accepted()
@@ -146,8 +148,9 @@ void QgsGlobePluginDialog::apply()
   settings.setValue( "/Plugin-Globe/baseLayerEnabled", mBaseLayerGroupBox->isChecked() );
   settings.setValue( "/Plugin-Globe/baseLayerURL", lineEditBaseLayerURL->text() );
   settings.setValue( "/Plugin-Globe/skyEnabled", groupBoxSky->isChecked() );
-  settings.setValue( "/Plugin-Globe/skyAutoAmbient", checkBoxSkyAutoAmbient->isChecked() );
   settings.setValue( "/Plugin-Globe/skyDateTime", dateTimeEditSky->dateTime() );
+  settings.setValue( "/Plugin-Globe/skyAutoAmbient", checkBoxSkyAutoAmbient->isChecked() );
+  settings.setValue( "/Plugin-Globe/skyMinAmbient", horizontalSliderMinAmbient->value() );
 
   writeProjectSettings();
 
@@ -417,6 +420,11 @@ QDateTime QgsGlobePluginDialog::getSkyDateTime() const
 bool QgsGlobePluginDialog::getSkyAutoAmbience() const
 {
   return QSettings().value( "/Plugin-Globe/skyAutoAmbient", false ).toBool();
+}
+
+double QgsGlobePluginDialog::getSkyMinAmbient() const
+{
+  return QSettings().value( "/Plugin-Globe/skyMinAmbient", 30 ).toInt() / 100.;
 }
 
 /// NAVIGATION ////////////////////////////////////////////////////////////////

@@ -40,6 +40,7 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     bool getSkyEnabled() const;
     QDateTime getSkyDateTime() const;
     bool getSkyAutoAmbience() const;
+    double getSkyMinAmbient() const;
     float getScrollSensitivity() const;
     bool getInvertScrollWheel() const;
     QList<ElevationDataSource> getElevationDataSources() const;

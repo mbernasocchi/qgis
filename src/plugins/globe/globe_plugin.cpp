@@ -50,6 +50,7 @@
 #include <QDockWidget>
 #include <QStringList>
 
+#include <osg/Light>
 #include <osgDB/ReadFile>
 #include <osgDB/Registry>
 
@@ -533,6 +534,8 @@ void GlobePlugin::applySettings()
     mSkyNode->setAutoAmbience( mSettingsDialog->getSkyAutoAmbience() );
 #elif OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
     mSkyNode->setLighting( mSettingsDialog->getSkyAutoAmbience() ? osg::StateAttribute::ON : osg::StateAttribute::OFF );
+    double ambient = mSettingsDialog->getSkyMinAmbient();
+    mSkyNode->getSunLight()->setAmbient(osg::Vec4(ambient, ambient, ambient, 1));
 #endif
     QDateTime dateTime = mSettingsDialog->getSkyDateTime();
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
