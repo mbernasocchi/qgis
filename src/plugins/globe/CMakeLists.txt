@@ -5,14 +5,6 @@ FIND_PACKAGE(OSG REQUIRED)
 FIND_PACKAGE(OSGEARTH REQUIRED)
 FIND_PACKAGE(Threads)
 
-IF(HAVE_OSGEARTH_CHILD_SPACING)
-  ADD_DEFINITIONS(-DHAVE_OSGEARTH_CHILD_SPACING)
-ENDIF(HAVE_OSGEARTH_CHILD_SPACING)
-
-IF(OSGEARTH_ELEVATION_QUERY)
-  ADD_DEFINITIONS(-DHAVE_OSGEARTH_ELEVATION_QUERY)
-ENDIF(OSGEARTH_ELEVATION_QUERY)
-
 ########################################################
 # Files
 
@@ -21,46 +13,32 @@ SET (GLOBE_PLUGIN_SRCS
      qgsglobetilesource.cpp
      qgsglobeplugindialog.cpp
      qgsglobeinterface.cpp
-     qgsglobelayerpropertiesfactory.cpp
-     qgsglobevectorlayerpropertiespage.cpp
+     qgsglobevectorlayerproperties.cpp
      globefeatureidentify.cpp
      qgsglobefrustumhighlight.cpp
 )
-IF (NOT HAVE_OSGEARTHQT)
-    SET(GLOBE_PLUGIN_SRCS
-        ${GLOBE_PLUGIN_SRCS}
-        osgEarthQt/ViewerWidget.cpp
-        osgEarthUtil/Controls.cpp
-        )
-ENDIF (NOT HAVE_OSGEARTHQT)
 
 SET (GLOBE_PLUGIN_UIS
      qgsglobeplugindialog.ui
      qgsglobevectorlayerpropertiespage.ui
-     )
+)
 
 SET (GLOBE_PLUGIN_MOC_HDRS
      globe_plugin.h
      qgsglobeplugindialog.h
      qgsglobeinterface.h
-     qgsglobelayerpropertiesfactory.h
-     qgsglobevectorlayerpropertiespage.h
-     qgsglobevectorlayerconfig.h
+     qgsglobevectorlayerproperties.h
 )
 
 SET (GLOBE_PLUGIN_HDRS
      qgsglobetilesource.h
      qgsosgearthfeaturesource.h
      qgsosgearthfeatureoptions.h
-
      qgsglobefeatureutils.h
      qgsglobeinterface.h
-     qgsglobelayerpropertiesfactory.h
-     qgsglobevectorlayerpropertiespage.h
-     qgsglobevectorlayerconfig.h
+     qgsglobevectorlayerproperties.h
      globefeatureidentify.h
      qgsglobefrustumhighlight.h
-
 )
 
 SET (GLOBE_PLUGIN_RCCS  globe_plugin.qrc)
@@ -68,12 +46,10 @@ SET (GLOBE_PLUGIN_RCCS  globe_plugin.qrc)
 ########################################################
 # Build
 
-ADD_DEFINITIONS("-DGLOBE_EXPORT=")
-
 IF(WIN32)
-  IF(MSVC)
-    ADD_DEFINITIONS("-DGLOBE_EXPORT=${DLLEXPORT}")
-  ENDIF(MSVC)
+    ADD_DEFINITIONS("\"-DGLOBE_EXPORT=${DLLEXPORT}\"")
+ELSE(WIN32)
+    ADD_DEFINITIONS("-DGLOBE_EXPORT=")
 ENDIF(WIN32)
 
 QT4_WRAP_UI (GLOBE_PLUGIN_UIS_H  ${GLOBE_PLUGIN_UIS})

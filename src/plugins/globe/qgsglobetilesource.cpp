@@ -110,7 +110,7 @@ osg::Image* QgsGlobeTileSource::createImage( const osgEarth::TileKey& key, osgEa
   QgsDebugMsg( QString( "earth tile key:%1 ext:%2" ).arg( key.str().c_str() ).arg( tileExtent.toString( 5 ) ) );
 
   QgsDebugMsg( QString( "text0:%1" ).arg( tileExtent.toString( 5 ) ) );
-  if ( !(viewExtent.intersects( tileExtent ) || viewExtent.contains( tileExtent )) )
+  if ( !( viewExtent.intersects( tileExtent ) || viewExtent.contains( tileExtent ) ) )
   {
     QgsDebugMsg( QString( "earth tile key:%1 ext:%2: NO INTERSECT" ).arg( key.str().c_str() ).arg( tileExtent.toString( 5 ) ) );
     return osgEarth::ImageUtils::createEmptyImage();
@@ -131,7 +131,6 @@ QgsGlobeTile* QgsGlobeTileSource::renderImage( int tileSize, const QgsRectangle&
     return 0;
   qImage.fill( 0 );
 
-  mMapRenderer->setLayerSet( mCanvas->mapRenderer()->layerSet() );
   mMapRenderer->setOutputSize( QSize( tileSize, tileSize ), qImage.logicalDpiX() );
   mMapRenderer->setExtent( tileExtent );
 
@@ -151,4 +150,14 @@ void QgsGlobeTileSource::updateModifiedTime()
   osgEarth::TimeStamp old = mLastModifiedTime;
   mLastModifiedTime = osgEarth::DateTime().asTimeStamp();
   QgsDebugMsg( QString( "Updated QGIS map layer modified time from %1 to %2" ).arg( old ).arg( mLastModifiedTime ) );
+}
+
+void QgsGlobeTileSource::setLayerSet( const QStringList &layerSet )
+{
+  mMapRenderer->setLayerSet( layerSet );
+}
+
+const QStringList& QgsGlobeTileSource::layerSet() const
+{
+  return mMapRenderer->layerSet();
 }

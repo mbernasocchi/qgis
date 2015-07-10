@@ -65,6 +65,8 @@ class QgsGlobeTileSource : public osgEarth::TileSource
     bool isDynamic() const { return true; }
     osgEarth::TimeStamp getLastModifiedTime() const { return mLastModifiedTime; }
     void updateModifiedTime();
+    void setLayerSet( const QStringList& layerSet );
+    const QStringList &layerSet() const;
 
   private:
     QgsMapRenderer *mMapRenderer;

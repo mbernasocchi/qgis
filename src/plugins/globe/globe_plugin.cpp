@@ -25,8 +25,7 @@
 #include "qgsglobetilesource.h"
 #include "qgsosgearthfeaturesource.h"
 #include "qgsosgearthfeatureoptions.h"
-#include "qgsglobelayerpropertiesfactory.h"
-#include "qgsglobevectorlayerconfig.h"
+#include "qgsglobevectorlayerproperties.h"
 #include "globefeatureidentify.h"
 #include "qgsglobefrustumhighlight.h"
 
@@ -35,11 +34,11 @@
 #include <qgslogger.h>
 #include <qgsapplication.h>
 #include <qgsmapcanvas.h>
+#include <qgsvectorlayer.h>
 #include <qgsmaplayerregistry.h>
 #include <qgsfeature.h>
 #include <qgsgeometry.h>
 #include <qgspoint.h>
-#include <qgsproject.h>
 #include <qgsdistancearea.h>
 #include <symbology-ng/qgsrendererv2.h>
 #include <symbology-ng/qgssymbolv2.h>
@@ -263,8 +262,6 @@ GlobePlugin::GlobePlugin( QgisInterface* theQgisInterface )
     }
   }
 #endif
-  connect( QgsProject::instance(), SIGNAL( readMapLayer( QgsMapLayer*, QDomElement ) ), this, SLOT( readGlobeVectorLayerConfig( QgsMapLayer*, QDomElement ) ) );
-  connect( QgsProject::instance(), SIGNAL( writeMapLayer( QgsMapLayer*, QDomElement&, QDomDocument& ) ), this, SLOT( writeGlobeVectorLayerConfig( QgsMapLayer*, QDomElement&, QDomDocument& ) ) );
 }
 
 GlobePlugin::~GlobePlugin() {}
@@ -535,7 +532,7 @@ void GlobePlugin::applySettings()
 #elif OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
     mSkyNode->setLighting( mSettingsDialog->getSkyAutoAmbience() ? osg::StateAttribute::ON : osg::StateAttribute::OFF );
     double ambient = mSettingsDialog->getSkyMinAmbient();
-    mSkyNode->getSunLight()->setAmbient(osg::Vec4(ambient, ambient, ambient, 1));
+    mSkyNode->getSunLight()->setAmbient( osg::Vec4( ambient, ambient, ambient, 1 ) );
 #endif
     QDateTime dateTime = mSettingsDialog->getSkyDateTime();
 #if OSGEARTH_VERSION_GREATER_OR_EQUAL(2, 6, 0)
@@ -775,18 +772,21 @@ void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
 {
   if ( mIsGlobeRunning )
   {
-    bool refreshDrapedLayer = false;
+    QStringList drapedLayers;
 
     Q_FOREACH( QgsMapLayer* mapLayer, mapLayers )
     {
-      if ( false /*mapLayer->type() == QgsMapLayer::VectorLayer*/ )
+      QgsGlobeVectorLayerConfig* layerConfig = 0;
+      if ( mapLayer->type() == QgsMapLayer::VectorLayer )
       {
-        // Add a new feature source for vector layers
+        layerConfig = QgsGlobeVectorLayerConfig::getConfig( static_cast<QgsVectorLayer*>( mapLayer ) );
+      }
 
-        QgsVectorLayer* vLayer = dynamic_cast<QgsVectorLayer*>( mapLayer );
-        Q_ASSERT( vLayer );
+      if ( layerConfig && layerConfig->renderingMode == QgsGlobeVectorLayerConfig::RenderingModeModel )
+      {
+        drapedLayers.removeAll( mapLayer->id() );
 
-        QgsGlobeVectorLayerConfig* layerConfig = QgsGlobeVectorLayerConfig::configForLayer( vLayer );
+        QgsVectorLayer* vLayer = static_cast<QgsVectorLayer*>( mapLayer );
 
         osgEarth::Drivers::QgsGlobeFeatureOptions  featureOpt;
         featureOpt.setLayer( vLayer );
@@ -813,113 +813,54 @@ void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
         }
 
         osgEarth::AltitudeSymbol* altitudeSymbol = style.getOrCreateSymbol<osgEarth::AltitudeSymbol>();
-
-        switch ( layerConfig->altitudeClamping() )
-        {
-          case QgsGlobeVectorLayerConfig::AltitudeClampingRelative:
-            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_RELATIVE_TO_TERRAIN;
-            break;
-
-          case QgsGlobeVectorLayerConfig::AltitudeClampingTerrain:
-            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_TO_TERRAIN;
-            break;
-
-          case QgsGlobeVectorLayerConfig::AltitudeClampingAbsolute:
-            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_ABSOLUTE;
-            break;
-
-          default:
-            altitudeSymbol->clamping() = osgEarth::Symbology::AltitudeSymbol::CLAMP_NONE;
-            break;
-        }
-
-        switch ( layerConfig->altitudeTechnique() )
-        {
-          case QgsGlobeVectorLayerConfig::AltitudeTechniqueMap:
-            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_MAP;
-            break;
-
-          case QgsGlobeVectorLayerConfig::AltitudeTechniqueDrape:
-            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_DRAPE;
-            break;
-
-          case QgsGlobeVectorLayerConfig::AltitudeTechniqueGpu:
-            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_GPU;
-            break;
-
-          default:
-            altitudeSymbol->technique() = osgEarth::Symbology::AltitudeSymbol::TECHNIQUE_SCENE;
-        }
-
-        switch ( layerConfig->altitudeBinding() )
-        {
-          case QgsGlobeVectorLayerConfig::AltitudeBindingVertex:
-            altitudeSymbol->binding() = osgEarth::Symbology::AltitudeSymbol::BINDING_VERTEX;
-            break;
-
-          default:
-            altitudeSymbol->binding() = osgEarth::Symbology::AltitudeSymbol::BINDING_CENTROID;
-            break;
-        }
-
+        altitudeSymbol->clamping() = layerConfig->altitudeClamping;
+        altitudeSymbol->technique() = layerConfig->altitudeTechnique;
+        altitudeSymbol->binding() = layerConfig->altitudeBinding;
+        altitudeSymbol->verticalOffset() = layerConfig->verticalOffset;
+        altitudeSymbol->verticalScale() = layerConfig->verticalScale;
+        altitudeSymbol->clampingResolution() = layerConfig->clampingResolution;
         style.addSymbol( altitudeSymbol );
 
-        if ( layerConfig->extrusionEnabled() )
+        if ( layerConfig->extrusionEnabled )
         {
           osgEarth::ExtrusionSymbol* extrusionSymbol = style.getOrCreateSymbol<osgEarth::ExtrusionSymbol>();
-
-          if ( layerConfig->isExtrusionHeightNumeric() )
+          bool extrusionHeightOk = false;
+          float extrusionHeight = layerConfig->extrusionHeight.toFloat( &extrusionHeightOk );
+          if ( extrusionHeightOk )
           {
-            extrusionSymbol->height() = layerConfig->extrusionHeightNumeric();
+            extrusionSymbol->height() = extrusionHeight;
           }
           else
           {
-            extrusionSymbol->heightExpression() = layerConfig->extrusionHeight().toStdString();
+            extrusionSymbol->heightExpression() = layerConfig->extrusionHeight.toStdString();
           }
 
-          extrusionSymbol->flatten() = layerConfig->extrusionFlatten();
-          extrusionSymbol->wallGradientPercentage() = layerConfig->extrusionWallGradient();
+          extrusionSymbol->flatten() = layerConfig->extrusionFlatten;
+          extrusionSymbol->wallGradientPercentage() = layerConfig->extrusionWallGradient;
           style.addSymbol( extrusionSymbol );
         }
 
-        if ( layerConfig->labelingEnabled() )
+        if ( layerConfig->labelingEnabled )
         {
           osgEarth::TextSymbol* textSymbol = style.getOrCreateSymbol<osgEarth::TextSymbol>();
-#if 0
-          osgEarth::textSymbol->declutter() = layerConfig->labelingDeclutter();
-#endif
-          // load labeling settings from layer
+          textSymbol->declutter() = layerConfig->labelingDeclutter;
           QgsPalLayerSettings lyr;
           lyr.readFromLayer( vLayer );
-#if 0
           textSymbol->content() = QString( "[%1]" ).arg( lyr.fieldName ).toStdString();
-#endif
-          textSymbol->content() = std::string( "test" );
-          textSymbol->font() = "Cantarell";
-          textSymbol->size() = 20;
-          /*
-                    Stroke stroke;
-                    stroke.color() = osgEarth::Symbology::Color( lyr.bufferColor.redF(), lyr.bufferColor.greenF(), lyr.bufferColor.blueF(), lyr.bufferColor.alphaF() );
-                    textSymbol->halo() = stroke;
-                    textSymbol->haloOffset() = lyr.bufferSize;
-                    textSymbol->font() = lyr.textFont.family().toStdString();
-                    textSymbol->size() = lyr.textFont.pointSize();
-          */
+          textSymbol->font() = lyr.textFont.family().toStdString();
+          textSymbol->size() = lyr.textFont.pointSize();
           textSymbol->alignment() = osgEarth::TextSymbol::ALIGN_CENTER_TOP;
-
+          osgEarth::Stroke stroke;
+          stroke.color() = osgEarth::Symbology::Color( lyr.bufferColor.redF(), lyr.bufferColor.greenF(), lyr.bufferColor.blueF(), lyr.bufferColor.alphaF() );
+          textSymbol->halo() = stroke;
+          textSymbol->haloOffset() = lyr.bufferSize;
           style.addSymbol( textSymbol );
         }
 
         osgEarth::RenderSymbol* renderSymbol = style.getOrCreateSymbol<osgEarth::RenderSymbol>();
-        renderSymbol->lighting() = layerConfig->lighting();
-
+        renderSymbol->lighting() = layerConfig->lightingEnabled;
         style.addSymbol( renderSymbol );
-#if 0
-        FeatureDisplayLayout layout;
 
-        layout.tileSizeFactor() = 45.0;
-        layout.addLevel( FeatureLevel( 0.0f, 200000.0f ) );
-#endif
         osgEarth::Drivers::FeatureGeomModelOptions geomOpt;
         geomOpt.featureOptions() = featureOpt;
         geomOpt.styles() = new osgEarth::StyleSheet();
@@ -928,6 +869,9 @@ void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
         geomOpt.featureIndexing() = osgEarth::Features::FeatureSourceIndexOptions();
 
 #if 0
+        FeatureDisplayLayout layout;
+        layout.tileSizeFactor() = 45.0;
+        layout.addLevel( FeatureLevel( 0.0f, 200000.0f ) );
         geomOpt.layout() = layout;
 #endif
 
@@ -935,9 +879,7 @@ void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
 
         osgEarth::ModelLayer* nLayer = new osgEarth::ModelLayer( modelOptions );
 
-        osg::ref_ptr<osgEarth::Map> map = mMapNode->getMap();
-
-        map->addModelLayer( nLayer );
+        mMapNode->getMap()->addModelLayer( nLayer );
 #if 0
         osgEarth::Features::FeatureModelSource *ms = dynamic_cast<osgEarth::Features::FeatureModelSource*>(
               map->getModelLayerByName( nLayer->getName() )->getModelSource() );
@@ -946,14 +888,12 @@ void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
       }
       else
       {
-        refreshDrapedLayer = true;
+        drapedLayers.append( mapLayer->id() );
       }
     }
 
-    if ( refreshDrapedLayer )
-    {
-      refreshQGISMapLayer();
-    }
+    mTileSource->setLayerSet( drapedLayers );
+    refreshQGISMapLayer();
   }
 }
 
@@ -962,11 +902,14 @@ void GlobePlugin::layersRemoved( const QStringList &layerIds )
   QgsDebugMsg( QString( "layers removed [%1]" ).arg( layerIds.join( ", " ) ) );
   if ( mIsGlobeRunning )
   {
+    QStringList drapedLayers = mTileSource->layerSet();
     foreach ( const QString &layer, layerIds )
     {
       osgEarth::ModelLayer* modelLayer = mMapNode->getMap()->getModelLayerByName( layer.toStdString() );
       mMapNode->getMap()->removeModelLayer( modelLayer );
+      drapedLayers.removeAll( layer );
     }
+    mTileSource->setLayerSet( drapedLayers );
     refreshQGISMapLayer();
   }
 }
@@ -1005,11 +948,6 @@ void GlobePlugin::unload()
   delete mSettingsDialog;
   mSettingsDialog = 0;
 
-  QgsMapLayerRegistry* layerRegistry = QgsMapLayerRegistry::instance();
-  disconnect( layerRegistry , SIGNAL( layersAdded( QList<QgsMapLayer*> ) ),
-              this, SLOT( refreshQGISMapLayer() ) );
-  disconnect( layerRegistry , SIGNAL( layersRemoved( QStringList ) ),
-              this, SLOT( refreshQGISMapLayer( ) ) );
   disconnect( mQGisIface->mapCanvas(), SIGNAL( extentsChanged() ),
               this, SLOT( extentsChanged() ) );
   disconnect( this, SIGNAL( xyCoordinates( const QgsPoint & ) ),
@@ -1036,24 +974,6 @@ void GlobePlugin::layerSettingsChanged( QgsMapLayer* layer )
 {
   layersRemoved( QStringList() << layer->id() );
   layersAdded( QList<QgsMapLayer*>() << layer );
-}
-
-void GlobePlugin::readGlobeVectorLayerConfig( QgsMapLayer* mapLayer, const QDomElement& elem )
-{
-  if ( mapLayer->type() == QgsMapLayer::VectorLayer )
-  {
-    QgsVectorLayer* vLayer = static_cast<QgsVectorLayer*>( mapLayer );
-    QgsGlobeVectorLayerConfig::readLayer( vLayer, elem );
-  }
-}
-
-void GlobePlugin::writeGlobeVectorLayerConfig( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc )
-{
-  if ( mapLayer->type() == QgsMapLayer::VectorLayer )
-  {
-    QgsVectorLayer* vLayer = static_cast<QgsVectorLayer*>( mapLayer );
-    QgsGlobeVectorLayerConfig::writeLayer( vLayer, elem, doc );
-  }
 }
 
 bool NavigationControl::handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa, osgEarth::Util::Controls::ControlContext& cx )

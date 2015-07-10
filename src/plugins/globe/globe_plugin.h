@@ -29,8 +29,6 @@
 class QAction;
 class QDateTime;
 class QDockWidget;
-class QDomDocument;
-class QDomElement;
 class QgsGlobeLayerPropertiesFactory;
 class QgsGlobeInterface;
 class QgsGlobePluginDialog;
@@ -160,8 +158,6 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     void layersAdded( const QList<QgsMapLayer*>& );
     void layersRemoved( const QStringList& layerIds );
     void layerSettingsChanged( QgsMapLayer* layer );
-    void readGlobeVectorLayerConfig( QgsMapLayer* mapLayer, const QDomElement &elem );
-    void writeGlobeVectorLayerConfig( QgsMapLayer* mapLayer, QDomElement& elem, QDomDocument& doc );
 
   signals:
     //! emits current mouse position
