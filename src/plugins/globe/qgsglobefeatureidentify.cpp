@@ -1,5 +1,5 @@
 /***************************************************************************
-    globefeatureidentify.cpp
+    qgsglobefeatureidentify.cpp
      --------------------------------------
     Date                 : 27.10.2013
     Copyright            : (C) 2013 Matthias Kuhn
@@ -13,13 +13,13 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "globefeatureidentify.h"
-#include "qgsosgearthfeaturesource.h"
+#include "qgsglobefeatureidentify.h"
+#include "featuresource/qgsglobefeaturesource.h"
 
 #include <qgsvectorlayer.h>
-#include <qgsmapcanvas.h>
+#include <qgsrubberband.h>
 
-GlobeFeatureIdentifyCallback::GlobeFeatureIdentifyCallback( QgsMapCanvas* mapCanvas )
+QgsGlobeFeatureIdentifyCallback::QgsGlobeFeatureIdentifyCallback( QgsMapCanvas* mapCanvas )
     : mRubberBand( new QgsRubberBand( mapCanvas, QGis::Polygon ) )
 {
   QColor color( Qt::green );
@@ -28,16 +28,14 @@ GlobeFeatureIdentifyCallback::GlobeFeatureIdentifyCallback( QgsMapCanvas* mapCan
   mRubberBand->setColor( color );
 }
 
-GlobeFeatureIdentifyCallback::~GlobeFeatureIdentifyCallback()
+QgsGlobeFeatureIdentifyCallback::~QgsGlobeFeatureIdentifyCallback()
 {
   delete mRubberBand;
 }
 
-void GlobeFeatureIdentifyCallback::onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args )
+void QgsGlobeFeatureIdentifyCallback::onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& /*args*/ )
 {
-  Q_UNUSED( args )
-  osgEarth::Features::FeatureSource* featSource = index->getFeatureSource();
-  const osgEarth::Features::QgsGlobeFeatureSource* globeSource = dynamic_cast<const osgEarth::Features::QgsGlobeFeatureSource*>( featSource );
+  QgsGlobeFeatureSource* globeSource = dynamic_cast<QgsGlobeFeatureSource*>( index->getFeatureSource() );
 
   if ( globeSource )
   {
@@ -55,4 +53,9 @@ void GlobeFeatureIdentifyCallback::onHit( osgEarth::Features::FeatureSourceIndex
   {
     QgsDebugMsg( "Clicked feature was not on a QGIS layer" );
   }
+}
+
+void QgsGlobeFeatureIdentifyCallback::onMiss(const EventArgs &/*args*/)
+{
+  mRubberBand->reset( QGis::Polygon );
 }

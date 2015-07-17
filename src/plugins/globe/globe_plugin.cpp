@@ -22,12 +22,11 @@
 
 #include "globe_plugin.h"
 #include "qgsglobeplugindialog.h"
-#include "qgsglobetilesource.h"
-#include "qgsosgearthfeaturesource.h"
-#include "qgsosgearthfeatureoptions.h"
-#include "qgsglobevectorlayerproperties.h"
-#include "globefeatureidentify.h"
+#include "qgsglobefeatureidentify.h"
 #include "qgsglobefrustumhighlight.h"
+#include "qgsglobetilesource.h"
+#include "qgsglobevectorlayerproperties.h"
+#include "featuresource/qgsglobefeatureoptions.h"
 
 #include <qgisinterface.h>
 #include <qgisgui.h>
@@ -302,8 +301,8 @@ void GlobePlugin::initGui()
            this, SLOT( layersAdded( QList<QgsMapLayer*> ) ) );
   connect( layerRegistry , SIGNAL( layersRemoved( QStringList ) ),
            this, SLOT( layersRemoved( QStringList ) ) );
-  connect( mLayerPropertiesFactory, SIGNAL( layerSettingsChanged( QgsMapLayer* ) ),
-           this, SLOT( layerSettingsChanged( QgsMapLayer* ) ) );
+  connect( mLayerPropertiesFactory, SIGNAL( layerChanged( QgsMapLayer* ) ),
+           this, SLOT( layerChanged( QgsMapLayer* ) ) );
   connect( mQGisIface->mapCanvas(), SIGNAL( extentsChanged() ),
            this, SLOT( extentsChanged() ) );
   connect( this, SIGNAL( xyCoordinates( const QgsPoint & ) ),
@@ -385,18 +384,18 @@ void GlobePlugin::run()
       mViewerWidget->setFormat( glf );
     }
 
-    setupControls();
-    applySettings();
+    mDockWidget = new QDockWidget( tr( "Globe" ), mQGisIface->mainWindow() );
+    mDockWidget->setWidget( mViewerWidget );
+    mQGisIface->addDockWidget( Qt::BottomDockWidgetArea, mDockWidget );
 
     mFeatureQueryTool = new osgEarth::Util::FeatureQueryTool( mMapNode );
-    mFeatureQueryToolIdentifyCb = new GlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() );
+    mFeatureQueryToolIdentifyCb = new QgsGlobeFeatureIdentifyCallback( mQGisIface->mapCanvas() );
     mFeatureQueryToolHighlightCb = new osgEarth::Util::FeatureHighlightCallback();
     mFeatureQueryTool->addCallback( mFeatureQueryToolIdentifyCb.get() );
     mFeatureQueryTool->addCallback( mFeatureQueryToolHighlightCb.get() );
 
-    mDockWidget = new QDockWidget( tr( "Globe" ), mQGisIface->mainWindow() );
-    mDockWidget->setWidget( mViewerWidget );
-    mQGisIface->addDockWidget( Qt::BottomDockWidgetArea, mDockWidget );
+    setupControls();
+    applySettings();
   }
   else
   {
@@ -556,8 +555,9 @@ void GlobePlugin::applySettings()
     mSkyNode = 0;
   }
 
-  // Rendering settings
+  // Advanced settings
   enableFrustumHighlight( mSettingsDialog->getFrustumHighlighting() );
+  enableFeatureIdentification( mSettingsDialog->getFeatureIdenification() );
 
   applyProjectSettings();
 }
@@ -788,7 +788,7 @@ void GlobePlugin::layersAdded( const QList<QgsMapLayer *> &mapLayers )
 
         QgsVectorLayer* vLayer = static_cast<QgsVectorLayer*>( mapLayer );
 
-        osgEarth::Drivers::QgsGlobeFeatureOptions  featureOpt;
+        QgsGlobeFeatureOptions  featureOpt;
         featureOpt.setLayer( vLayer );
         osgEarth::Style style;
 
@@ -970,7 +970,7 @@ void GlobePlugin::enableFeatureIdentification( bool status )
     mOsgViewer->removeEventHandler( mFeatureQueryTool );
 }
 
-void GlobePlugin::layerSettingsChanged( QgsMapLayer* layer )
+void GlobePlugin::layerChanged( QgsMapLayer* layer )
 {
   layersRemoved( QStringList() << layer->id() );
   layersAdded( QList<QgsMapLayer*>() << layer );

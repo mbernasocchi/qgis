@@ -1,7 +1,7 @@
 /***************************************************************************
-    qgsglobefeaturecursor.cpp
+    qgsglobefeatureidentify.h
      --------------------------------------
-    Date                 : 11.7.2013
+    Date                 : 27.10.2013
     Copyright            : (C) 2013 Matthias Kuhn
     Email                : matthias dot kuhn at gmx dot ch
  ***************************************************************************
@@ -13,8 +13,25 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "qgsglobefeaturecursor.h"
+#ifndef QGSGLOBEFEATUREIDENTIFY_H
+#define QGSGLOBEFEATUREIDENTIFY_H
 
-QgsGlobeFeatureCursor::QgsGlobeFeatureCursor()
+#include <osgEarthUtil/FeatureQueryTool>
+
+class QgsMapCanvas;
+class QgsRubberBand;
+
+struct QgsGlobeFeatureIdentifyCallback : public osgEarth::Util::FeatureQueryTool::Callback
 {
-}
+public:
+  QgsGlobeFeatureIdentifyCallback( QgsMapCanvas* mapCanvas );
+  ~QgsGlobeFeatureIdentifyCallback();
+
+  void onHit( osgEarth::Features::FeatureSourceIndexNode* index, osgEarth::Features::FeatureID fid, const EventArgs& args ) override;
+  void onMiss(const EventArgs &args) override;
+
+private:
+  QgsRubberBand* mRubberBand;
+};
+
+#endif // QGSGLOBEFEATUREIDENTIFY_H

@@ -95,7 +95,6 @@ void QgsGlobePluginDialog::restoreSavedSettings()
   // Video settings
   groupBoxAntiAliasing->setChecked( settings.value( "/Plugin-Globe/anti-aliasing", false ).toBool() );
   lineEditAASamples->setText( settings.value( "/Plugin-Globe/anti-aliasing-level", "" ).toString() );
-  checkBoxFrustumHighlighting->setChecked( settings.value( "/Plugin-Globe/frustum-highlighting", false ).toBool() );
 
   // Map settings
   mBaseLayerGroupBox->setChecked( settings.value( "/Plugin-Globe/baseLayerEnabled", true ).toBool() );
@@ -105,6 +104,10 @@ void QgsGlobePluginDialog::restoreSavedSettings()
   dateTimeEditSky->setDateTime( settings.value( "/Plugin-Globe/skyDateTime", QDateTime::currentDateTime() ).toDateTime() );
   checkBoxSkyAutoAmbient->setChecked( settings.value( "/Plugin-Globe/skyAutoAmbient", false ).toBool() );
   horizontalSliderMinAmbient->setValue( settings.value( "/Plugin-Globe/skyMinAmbient", 30 ) .toInt() );
+
+  // Advanced
+  checkBoxFrustumHighlighting->setChecked( settings.value( "/Plugin-Globe/frustum-highlighting", false ).toBool() );
+  checkBoxFeatureIdentification->setChecked( settings.value( "/Plugin-Globe/feature-identification", false ).toBool() );
 }
 
 void QgsGlobePluginDialog::on_buttonBox_accepted()
@@ -142,7 +145,6 @@ void QgsGlobePluginDialog::apply()
   // Video settings
   settings.setValue( "/Plugin-Globe/anti-aliasing", groupBoxAntiAliasing->isChecked() );
   settings.setValue( "/Plugin-Globe/anti-aliasing-level", lineEditAASamples->text() );
-  settings.setValue( "/Plugin-Globe/frustum-highlighting", checkBoxFrustumHighlighting->isChecked() );
 
   // Map settings
   settings.setValue( "/Plugin-Globe/baseLayerEnabled", mBaseLayerGroupBox->isChecked() );
@@ -151,6 +153,10 @@ void QgsGlobePluginDialog::apply()
   settings.setValue( "/Plugin-Globe/skyDateTime", dateTimeEditSky->dateTime() );
   settings.setValue( "/Plugin-Globe/skyAutoAmbient", checkBoxSkyAutoAmbient->isChecked() );
   settings.setValue( "/Plugin-Globe/skyMinAmbient", horizontalSliderMinAmbient->value() );
+
+  // Advanced settings
+  settings.setValue( "/Plugin-Globe/frustum-highlighting", checkBoxFrustumHighlighting->isChecked() );
+  settings.setValue( "/Plugin-Globe/feature-identification", checkBoxFeatureIdentification->isChecked() );
 
   writeProjectSettings();
 
@@ -439,11 +445,16 @@ bool QgsGlobePluginDialog::getInvertScrollWheel() const
   return checkBoxInvertScroll->checkState();
 }
 
-/// RENDERING /////////////////////////////////////////////////////////////////
+/// ADVANCED //////////////////////////////////////////////////////////////////
 
 bool QgsGlobePluginDialog::getFrustumHighlighting() const
 {
   return checkBoxFrustumHighlighting->isChecked();
+}
+
+bool QgsGlobePluginDialog::getFeatureIdenification() const
+{
+  return checkBoxFeatureIdentification->isChecked();
 }
 
 /// STEREO ////////////////////////////////////////////////////////////////////

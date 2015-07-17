@@ -20,7 +20,6 @@
 #include <osgEarth/SpatialReference>
 #include <osgEarth/Terrain>
 
-#include "qgsglobefeatureutils.h"
 #include "qgsglobefrustumhighlight.h"
 
 QgsGlobeFrustumHighlightCallback::QgsGlobeFrustumHighlightCallback( osg::View* view, osgEarth::Terrain* terrain, QgsMapCanvas* mapCanvas, QColor color )
@@ -55,6 +54,6 @@ void QgsGlobeFrustumHighlightCallback::operator()( osg::Node*, osg::NodeVisitor*
   {
     osg::Vec3d localCoords;
     mSrs->transformFromWorld( corners[i], localCoords );
-    mRubberBand->addPoint( QgsGlobeFeatureUtils::qgsPointFromPoint( localCoords ) );
+    mRubberBand->addPoint( QgsPoint( localCoords.x(), localCoords.y() ) );
   }
 }

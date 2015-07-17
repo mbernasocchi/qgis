@@ -20,11 +20,7 @@
 
 #include <qgsfield.h>
 #include <qgsgeometry.h>
-#include <qgslogger.h>
 #include <qgspoint.h>
-
-
-using namespace osgEarth::Features;
 
 class QgsGlobeFeatureUtils
 {
@@ -39,36 +35,36 @@ class QgsGlobeFeatureUtils
       return QgsPoint( pt.x(), pt.y() );
     }
 
-    static inline Polygon* polygonFromQgsPolygon( const QgsPolygon& poly )
+    static inline osgEarth::Features::Polygon* polygonFromQgsPolygon( const QgsPolygon& poly )
     {
       Q_ASSERT( poly.size() > 0 );
 
       // a ring for osg earth is open (first point != last point)
       // an outer ring is oriented CCW, an inner ring is oriented CW
-      Polygon* retPoly = new Polygon();
+      osgEarth::Features::Polygon* retPoly = new osgEarth::Features::Polygon();
 
       // the outer ring
-      Q_FOREACH( const QgsPoint& pt, poly[0] )
+      foreach( const QgsPoint& pt, poly[0] )
       {
         retPoly->push_back( pointFromQgsPoint( pt ) );
       }
-      retPoly->rewind( Symbology::Ring::ORIENTATION_CCW );
+      retPoly->rewind( osgEarth::Symbology::Ring::ORIENTATION_CCW );
 
       size_t nRings = poly.size();
       for ( size_t i = 1; i < nRings; ++i )
       {
-        Ring* innerRing = new Ring();
-        Q_FOREACH( const QgsPoint& pt, poly[i] )
+        osgEarth::Features::Ring* innerRing = new osgEarth::Features::Ring();
+        foreach( const QgsPoint& pt, poly[i] )
         {
           innerRing->push_back( pointFromQgsPoint( pt ) );
         }
-        innerRing->rewind( Symbology::Ring::ORIENTATION_CW );
-        retPoly->getHoles().push_back( osg::ref_ptr<Ring>( innerRing ) );
+        innerRing->rewind( osgEarth::Symbology::Ring::ORIENTATION_CW );
+        retPoly->getHoles().push_back( osg::ref_ptr<osgEarth::Features::Ring>( innerRing ) );
       }
       return retPoly;
     }
 
-    static inline Geometry* geometryFromQgsGeometry( const QgsGeometry& geom )
+    static inline osgEarth::Features::Geometry* geometryFromQgsGeometry( const QgsGeometry& geom )
     {
 #if 0
       // test srid
@@ -79,26 +75,22 @@ class QgsGlobeFeatureUtils
       std::cout << "srid = " << srid << std::endl;
 #endif
 
-      Geometry* retGeom = NULL;
+      osgEarth::Features::Geometry* retGeom = NULL;
 
-      switch ( geom.wkbType() )
+      switch ( QGis::flatType( geom.wkbType() ) )
       {
         case QGis::WKBPoint:
-        case QGis::WKBPoint25D:
         {
-          PointSet* retPt = new PointSet();
+          osgEarth::Features::PointSet* retPt = new osgEarth::Features::PointSet();
           retPt->push_back( pointFromQgsPoint( geom.asPoint() ) );
           retGeom = retPt;
         }
         break;
 
-
         case QGis::WKBLineString:
-        case QGis::WKBLineString25D:
         {
-          LineString* retLs = new LineString();
-
-          Q_FOREACH( const QgsPoint& pt, geom.asPolyline() )
+          osgEarth::Features::LineString* retLs = new osgEarth::Features::LineString();
+          foreach( const QgsPoint& pt, geom.asPolyline() )
           {
             retLs->push_back( pointFromQgsPoint( pt ) );
           }
@@ -106,21 +98,16 @@ class QgsGlobeFeatureUtils
         }
         break;
 
-
         case QGis::WKBPolygon:
-        case QGis::WKBPolygon25D:
         {
           retGeom = polygonFromQgsPolygon( geom.asPolygon() );
         }
         break;
 
-
         case QGis::WKBMultiPoint:
-        case QGis::WKBMultiPoint25D:
         {
-          PointSet* retPt = new PointSet();
-
-          Q_FOREACH( const QgsPoint& point, geom.asMultiPoint() )
+          osgEarth::Features::PointSet* retPt = new osgEarth::Features::PointSet();
+          foreach( const QgsPoint& point, geom.asMultiPoint() )
           {
             retPt->push_back( pointFromQgsPoint( point ) );
           }
@@ -128,17 +115,15 @@ class QgsGlobeFeatureUtils
         }
         break;
 
-
         case QGis::WKBMultiLineString:
-        case QGis::WKBMultiLineString25D:
         {
-          MultiGeometry* retMulti = new MultiGeometry();
+          osgEarth::Features::MultiGeometry* retMulti = new osgEarth::Features::MultiGeometry();
 
-          Q_FOREACH( const QgsPolyline& line, geom.asMultiPolyline() )
+          foreach( const QgsPolyline& line, geom.asMultiPolyline() )
           {
-            LineString* retLs = new LineString();
+            osgEarth::Features::LineString* retLs = new osgEarth::Features::LineString();
 
-            Q_FOREACH( const QgsPoint& pt, line )
+            foreach( const QgsPoint& pt, line )
             {
               retLs->push_back( pointFromQgsPoint( pt ) );
             }
@@ -151,13 +136,12 @@ class QgsGlobeFeatureUtils
 
 
         case QGis::WKBMultiPolygon:
-        case QGis::WKBMultiPolygon25D:
         {
-          MultiGeometry* retMulti = new MultiGeometry();
+          osgEarth::Features::MultiGeometry* retMulti = new osgEarth::Features::MultiGeometry();
 
-          Q_FOREACH( const QgsPolygon& poly, geom.asMultiPolygon() )
+          foreach( const QgsPolygon& poly, geom.asMultiPolygon() )
           {
-            retMulti->getComponents().push_back( osg::ref_ptr<Polygon>( polygonFromQgsPolygon( poly ) ) );
+            retMulti->getComponents().push_back( osg::ref_ptr<osgEarth::Features::Polygon>( polygonFromQgsPolygon( poly ) ) );
           }
           retGeom = retMulti;
         }
@@ -170,18 +154,14 @@ class QgsGlobeFeatureUtils
       return retGeom;
     }
 
-    static Feature* featureFromQgsFeature( const QgsFields& fields, QgsFeature& feat )
+    static osgEarth::Features::Feature* featureFromQgsFeature( const QgsFields& fields, QgsFeature& feat )
     {
-      const QgsGeometry* geom = feat.geometry();
-
-      Geometry* nGeom = geometryFromQgsGeometry( *geom );
-      Feature* retFeat = new Feature( nGeom, 0, Style(), feat.id() );
+      osgEarth::Features::Geometry* nGeom = geometryFromQgsGeometry( *feat.geometry() );
+      osgEarth::Features::Feature* retFeat = new osgEarth::Features::Feature( nGeom, 0, osgEarth::Style(), feat.id() );
 
       const QgsAttributes& attrs = feat.attributes();
 
-      int numFlds = fields.size();
-
-      for ( int idx = 0; idx < numFlds; idx ++ )
+      for ( int idx = 0, numFlds = fields.size(); idx < numFlds; ++idx )
       {
         const QgsField& fld = fields.at( idx );
         std::string name = fld.name().toStdString();
@@ -192,7 +172,7 @@ class QgsGlobeFeatureUtils
             if ( !attrs[idx].isNull() )
               retFeat->set( name, attrs[idx].toBool() );
             else
-              retFeat->setNull( name, ATTRTYPE_BOOL );
+              retFeat->setNull( name, osgEarth::Features::ATTRTYPE_BOOL );
 
             break;
 
@@ -203,7 +183,7 @@ class QgsGlobeFeatureUtils
             if ( !attrs[idx].isNull() )
               retFeat->set( name, attrs[idx].toInt() );
             else
-              retFeat->setNull( name, ATTRTYPE_INT );
+              retFeat->setNull( name, osgEarth::Features::ATTRTYPE_INT );
 
             break;
 
@@ -211,7 +191,7 @@ class QgsGlobeFeatureUtils
             if ( !attrs[idx].isNull() )
               retFeat->set( name, attrs[idx].toDouble() );
             else
-              retFeat->setNull( name, ATTRTYPE_DOUBLE );
+              retFeat->setNull( name, osgEarth::Features::ATTRTYPE_DOUBLE );
 
             break;
 
@@ -221,13 +201,49 @@ class QgsGlobeFeatureUtils
             if ( !attrs[idx].isNull() )
               retFeat->set( name, attrs[idx].toString().toStdString() );
             else
-              retFeat->setNull( name, ATTRTYPE_STRING );
+              retFeat->setNull( name, osgEarth::Features::ATTRTYPE_STRING );
 
             break;
         }
       }
 
       return retFeat;
+    }
+
+    static osgEarth::Features::FeatureSchema schemaForFields(const QgsFields& fields)
+    {
+      osgEarth::Features::FeatureSchema schema;
+
+      for ( int idx = 0, numFlds = fields.size(); idx < numFlds; ++idx )
+      {
+        const QgsField& fld = fields.at( idx );
+        std::string name = fld.name().toStdString();
+
+        switch ( fld.type() )
+        {
+          case QVariant::Bool:
+            schema.insert(std::make_pair(name, osgEarth::Features::ATTRTYPE_BOOL));
+            break;
+
+          case QVariant::Int:
+          case QVariant::UInt:
+          case QVariant::LongLong:
+          case QVariant::ULongLong:
+            schema.insert(std::make_pair(name, osgEarth::Features::ATTRTYPE_INT));
+            break;
+
+          case QVariant::Double:
+            schema.insert(std::make_pair(name, osgEarth::Features::ATTRTYPE_DOUBLE));
+            break;
+
+          case QVariant::Char:
+          case QVariant::String:
+          default:
+            schema.insert(std::make_pair(name, osgEarth::Features::ATTRTYPE_STRING));
+            break;
+        }
+      }
+      return schema;
     }
 };
 

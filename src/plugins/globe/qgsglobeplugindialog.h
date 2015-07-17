@@ -46,6 +46,7 @@ class QgsGlobePluginDialog: public QDialog, private Ui::QgsGlobePluginDialogGuiB
     QList<ElevationDataSource> getElevationDataSources() const;
     double getVerticalScale() const;
     bool getFrustumHighlighting() const;
+    bool getFeatureIdenification() const;
 
   signals:
     void settingsApplied();

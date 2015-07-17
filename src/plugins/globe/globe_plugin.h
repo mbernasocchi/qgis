@@ -35,7 +35,7 @@ class QgsGlobePluginDialog;
 class QgsMapLayer;
 class QgsPoint;
 class QgsGlobeFrustumHighlightCallback;
-class GlobeFeatureIdentifyCallback;
+class QgsGlobeFeatureIdentifyCallback;
 class QgsGlobeTileSource;
 
 namespace osg
@@ -139,7 +139,7 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     //! Creates additional pages in the layer properties for adjusting 3D properties
     QgsGlobeLayerPropertiesFactory* mLayerPropertiesFactory;
     osg::ref_ptr<QgsGlobeFrustumHighlightCallback> mFrustumHighlightCallback;
-    osg::ref_ptr<GlobeFeatureIdentifyCallback> mFeatureQueryToolIdentifyCb;
+    osg::ref_ptr<QgsGlobeFeatureIdentifyCallback> mFeatureQueryToolIdentifyCb;
     osg::ref_ptr<osgEarth::Util::FeatureHighlightCallback> mFeatureQueryToolHighlightCb;
     osg::ref_ptr<osgEarth::Util::FeatureQueryTool> mFeatureQueryTool;
 
@@ -157,7 +157,7 @@ class GLOBE_EXPORT GlobePlugin : public QObject, public QgisPlugin
     void applySettings();
     void layersAdded( const QList<QgsMapLayer*>& );
     void layersRemoved( const QStringList& layerIds );
-    void layerSettingsChanged( QgsMapLayer* layer );
+    void layerChanged( QgsMapLayer* layer );
 
   signals:
     //! emits current mouse position
