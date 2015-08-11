@@ -445,8 +445,11 @@ void GlobePlugin::setupMap()
   mRootNode = new osg::Group();
   mRootNode->addChild( mMapNode );
 
-  //add QGIS layer
+#if OSGEARTH_VERSION_GREATER_THAN(2, 5, 0)
   osgEarth::Registry::instance()->unRefImageDataAfterApply() = false;
+#endif
+
+  //add QGIS layer
   mTileSource = new QgsGlobeTileSource( mQGisIface->mapCanvas() );
 
   osgEarth::ImageLayerOptions options( "QGIS" );
