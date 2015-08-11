@@ -87,7 +87,9 @@ TARGET_LINK_LIBRARIES(globeplugin
   osgdb_osgearth_feature_qgis
 )
 
-ADD_SUBDIRECTORY(python)
+IF (WITH_BINDINGS)
+    ADD_SUBDIRECTORY(python)
+ENDIF (WITH_BINDINGS)
 ADD_SUBDIRECTORY(featuresource)
 
 ########################################################
