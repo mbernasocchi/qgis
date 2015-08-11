@@ -434,7 +434,7 @@ void GlobePlugin::setupMap()
   osgEarth::TerrainOptions terrainOptions;
   //terrainOptions.loadingPolicy() = loadingPolicy;
 #if OSGEARTH_VERSION_LESS_THAN(2, 6, 0)
-  terrainOptions.compositingTechnique() = TerrainOptions::COMPOSITING_MULTITEXTURE_FFP;
+  terrainOptions.compositingTechnique() = osgEarth::TerrainOptions::COMPOSITING_MULTITEXTURE_FFP;
 #endif
   //terrainOptions.lodFallOff() = 6.0;
   nodeOptions.setTerrainOptions( terrainOptions );
