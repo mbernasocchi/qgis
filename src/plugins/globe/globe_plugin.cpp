@@ -521,7 +521,11 @@ void GlobePlugin::applySettings()
     // Create if not yet done
     if ( !mSkyNode.get() )
     {
-      mSkyNode = osgEarth::Util::SkyNode::create( mMapNode );
+#if OSGEARTH_VERSION_LESS_THAN(2,6,0)
+    mSkyNode = new osgEarth::Util::SkyNode( mMapNode->getMap() );
+#else
+    mSkyNode = osgEarth::Util::SkyNode::create( mMapNode );
+#endif
       mSkyNode->attach( mOsgViewer );
       mRootNode->addChild( mSkyNode );
       // Insert sky between root and map
