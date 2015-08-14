@@ -451,6 +451,7 @@ void GlobePlugin::setupMap()
 
   //add QGIS layer
   mTileSource = new QgsGlobeTileSource( mQGisIface->mapCanvas() );
+  mTileSource->initialize(0);
 
   osgEarth::ImageLayerOptions options( "QGIS" );
   mQgisMapLayer = new osgEarth::ImageLayer( options, mTileSource );
