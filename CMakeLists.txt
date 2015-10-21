@@ -120,6 +120,7 @@ ENDIF (ANDROID)
 SET (WITH_QTMOBILITY ${DEFAULT_WITH_QTMOBILITY} CACHE BOOL "Determines if QtMobility related code should be build (for example internal GPS)")
 
 SET (WITH_GLOBE FALSE CACHE BOOL "Determines whether Globe plugin should be built")
+SET (WITH_GLOBE_BINDINGS FALSE CACHE BOOL "Determines whether Globe bindings should be built")
 IF (WITH_GLOBE)
   SET(QT_USE_QTOPENGL 1)
   FIND_PACKAGE(OSGEARTH REQUIRED)
