@@ -354,10 +354,10 @@ namespace QgsWfs
         sequenceElem.appendChild( attElem );
 
         QString alias = field.alias();
-        if ( !alias.isEmpty() )
-        {
-          attElem.setAttribute( QStringLiteral( "alias" ), alias );
-        }
+        // if ( !alias.isEmpty() )
+        // {
+        //  attElem.setAttribute( QStringLiteral( "alias" ), alias );
+        // }
       }
     }
   }
